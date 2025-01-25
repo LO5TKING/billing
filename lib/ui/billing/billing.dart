@@ -14,6 +14,7 @@ import '../../utils/utility.dart';
 
 class Billing extends StatelessWidget {
   ScribbleController scribbleController = Get.put(ScribbleController());
+  final ScrollController scrollController = ScrollController();
 
   Map<int, List<Offset>> fingerPaths = {};
 
@@ -128,7 +129,7 @@ class Billing extends StatelessWidget {
                                   ? 120.0
                                   : 100), // Rate
                               4: FixedColumnWidth(scribbleController.showButtons.value
-                                  ? 120.0
+                                  ? 125.0
                                   : 100), // Amount
                             },
                             children: const [
@@ -187,19 +188,32 @@ class Billing extends StatelessWidget {
                       ),
                       // Dynamic Rows
                       Expanded(
-                        child: Obx(
-                          () => ListView.builder(
+                        child: Obx(() {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (scrollController.hasClients) {
+                              scrollController.animateTo(
+                                scrollController.position.maxScrollExtent,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            }
+                          });
+                          return ListView.builder(
                             itemCount: scribbleController.itemList.length,
                             padding: EdgeInsets.zero,
+                            controller: scrollController,
                             itemBuilder: (context, index) {
                               final item = scribbleController.itemList[index];
                               final rate = double.tryParse(item['rate'] ?? '0') ?? 0;
                               final quantity =
                                   double.tryParse(item['quantity'] ?? '0') ?? 0;
                               final amount = rate * quantity;
+                              final amountDisplay = amount.truncateToDouble() == amount
+                                  ? amount.toInt().toString()
+                                  : amount.toString();
 
                               return Obx(
-                                () => Row(
+                                    () => Row(
                                   children: [
                                     Expanded(
                                       child: Table(
@@ -228,7 +242,7 @@ class Billing extends StatelessWidget {
                                             children: [
                                               Padding(
                                                 padding:
-                                                    const EdgeInsets.only(top: 22.0),
+                                                const EdgeInsets.only(top: 22.0),
                                                 child: Text(
                                                   '${index + 1}',
                                                   textAlign: TextAlign.center,
@@ -238,16 +252,16 @@ class Billing extends StatelessWidget {
                                                 padding: const EdgeInsets.all(8.0),
                                                 child: item['particulars'] != null
                                                     ? Container(
-                                                        alignment: Alignment.topLeft,
-                                                        child: Image.memory(
-                                                            item['particulars'],
-                                                            height: 50,
-                                                            fit: BoxFit.contain))
+                                                    alignment: Alignment.topLeft,
+                                                    child: Image.memory(
+                                                        item['particulars'],
+                                                        height: 50,
+                                                        fit: BoxFit.contain))
                                                     : Container(),
                                               ),
                                               Padding(
                                                 padding:
-                                                    const EdgeInsets.only(top: 22.0),
+                                                const EdgeInsets.only(top: 22.0),
                                                 child: Text(
                                                   item['quantity'] ?? '',
                                                   textAlign: TextAlign.center,
@@ -255,7 +269,7 @@ class Billing extends StatelessWidget {
                                               ),
                                               Padding(
                                                 padding:
-                                                    const EdgeInsets.only(top: 22.0),
+                                                const EdgeInsets.only(top: 22.0),
                                                 child: Text(
                                                   item['rate'] ?? '',
                                                   textAlign: TextAlign.center,
@@ -263,9 +277,9 @@ class Billing extends StatelessWidget {
                                               ),
                                               Padding(
                                                 padding:
-                                                    const EdgeInsets.only(top: 22.0),
+                                                const EdgeInsets.only(top: 22.0),
                                                 child: Text(
-                                                  '$amount',
+                                                  '$amountDisplay',
                                                   textAlign: TextAlign.center,
                                                 ),
                                               ),
@@ -275,7 +289,7 @@ class Billing extends StatelessWidget {
                                       ),
                                     ),
                                     Obx(
-                                      () => Visibility(
+                                          () => Visibility(
                                         visible: scribbleController.showButtons.value,
                                         child: GestureDetector(
                                           onTap: () {
@@ -286,10 +300,10 @@ class Billing extends StatelessWidget {
                                           },
                                           child: Padding(
                                             padding:
-                                                const EdgeInsets.only(right: 10.0),
+                                            const EdgeInsets.only(right: 10.0),
                                             child: Container(
-                                              width: 10.0,
-                                              height: 10.0,
+                                              width: 15.0,
+                                              height: 15.0,
                                               alignment: Alignment.bottomCenter,
                                               decoration: const BoxDecoration(
                                                 shape: BoxShape.circle,
@@ -304,8 +318,8 @@ class Billing extends StatelessWidget {
                                 ),
                               );
                             },
-                          ),
-                        ),
+                          );
+                        },),
                       ),
                       // Total Row
                       Obx(
@@ -317,7 +331,7 @@ class Billing extends StatelessWidget {
                             2: FixedColumnWidth(
                                 scribbleController.showButtons.value ? 240.0 : 200),
                             3: FixedColumnWidth(
-                                scribbleController.showButtons.value ? 140.0 : 120),
+                                scribbleController.showButtons.value ? 145.0 : 120),
                             4: FixedColumnWidth(
                                 scribbleController.showButtons.value ? 120.0 : 120),
                           },
@@ -404,7 +418,7 @@ class Billing extends StatelessWidget {
                                                 borderRadius: BorderRadius.all(
                                                     Radius.circular(5))),
                                           ),
-                                          onPressed: () {
+                                          onPressed: () async {
                                             ///PdfPageFormat.roll57 for pos printer
                                             /// a4 is standard
                                             // scribbleController.printDocument(pageFormat: PdfPageFormat.a4);
@@ -437,7 +451,7 @@ class Billing extends StatelessWidget {
                                               },
                                             ];
 
-                                            Get.to(() =>PrintPage(data: data,));
+                                            await PrintDialog.show(data);
                                             // scribbleController.printDocument(
                                             //     pageFormat: PdfPageFormat.a4);
                                             // scribbleController.printPOSReceipt(pageFormat: PdfPageFormat.roll57);

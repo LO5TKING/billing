@@ -62,13 +62,6 @@ class SplashScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Start with this here',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
-                      ),
                       Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -97,9 +90,9 @@ class SplashScreen extends StatelessWidget {
                             ),
                             Container(
                                 margin: const EdgeInsets.symmetric(
-                                    vertical: DesignConstants.padding20),
-                                height: DesignConstants.padding50,
-                                width: DesignConstants.padding50,
+                                    vertical: DesignConstants.padding10),
+                                height: DesignConstants.padding80,
+                                width: DesignConstants.padding80,
                                 alignment: Alignment.center,
                                 child: ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
@@ -115,11 +108,14 @@ class SplashScreen extends StatelessWidget {
                                     onPressed: () {
                                       Get.to(() =>const BillingOptions());
                                     },
-                                    label: const Center(
-                                        child: Icon(
-                                      Icons.arrow_forward,
-                                      size: 20,
-                                    ))
+                                    label: Text(
+                                      'Start',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                 )
                             ),
                           ],
