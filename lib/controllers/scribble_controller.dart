@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:billing/ui/billing/billing.dart';
@@ -29,26 +30,83 @@ class ScribbleController extends GetxController {
   String recognizedQuantity = '';
   RxBool showButtons = false.obs;
 
-  // static const platform = MethodChannel('palm_rejection'); // Add this line
-  
-  // Future<void> setPalmRejection(bool enabled) async {
-  //   try {
-  //     await platform.invokeMethod('setPalmRejection', {'enabled': enabled});
-  //   } on PlatformException catch (e) {
-  //     debugPrint('Failed to set palm rejection: ${e.message}');
-  //   }
-  // } // Add this method
+  RxBool isModelLoading = true.obs;
+  RxString downloadStatus = 'Initializing...'.obs;
+
+  Future<bool> _downloadModelWithTimeout() async {
+    try {
+      // Create a timeout future
+      final timeout = Future.delayed(const Duration(seconds: 30), () {
+        throw TimeoutException('Model download took too long');
+      });
+
+      // Create the download future
+      final download = modelManager.downloadModel(language);
+
+      // Race between timeout and download
+      final result = await Future.any([download, timeout]);
+      return result;
+    } on TimeoutException {
+      throw 'Download timed out. Please check your internet connection and try again.';
+    } catch (e) {
+      throw 'Failed to download model: $e';
+    }
+  }
 
   @override
   void onInit() async {
     super.onInit();
-    bool downloadedModel = await isModelDownloaded();
-    if (downloadedModel) {
-      // await setPalmRejection(true);
-      return;
-    } else {
-      // await setPalmRejection(true);
-      downloadModel();
+    try {
+      isModelLoading(true);
+      downloadStatus('Checking model status...');
+
+      bool downloadedModel = await isModelDownloaded();
+      if (!downloadedModel) {
+        downloadStatus('Downloading recognition model...');
+
+        // Try to download with timeout
+        bool success = await _downloadModelWithTimeout();
+        if (!success) {
+          throw 'Model download failed';
+        }
+
+        // Verify download
+        downloadStatus('Verifying download...');
+        bool verified = await isModelDownloaded();
+        if (!verified) {
+          throw 'Model verification failed';
+        }
+      }
+
+      downloadStatus('Model ready');
+      isModelLoading(false);
+    } catch (e) {
+      isModelLoading(false);
+      downloadStatus('Error: $e');
+
+      // Show error dialog
+      Get.dialog(
+        AlertDialog(
+          title: const Text('Initialization Error'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              child: const Text('Retry'),
+              onPressed: () {
+                Get.back();
+                onInit(); // Retry initialization
+              },
+            ),
+            TextButton(
+              child: const Text('Close App'),
+              onPressed: () {
+                SystemNavigator.pop(); // Close the app
+              },
+            ),
+          ],
+        ),
+        barrierDismissible: false,
+      );
     }
   }
 

@@ -15,10 +15,10 @@ class PrintController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _initBluetooth();
+    // initBluetooth();
   }
 
-  Future<void> _initBluetooth() async {
+  Future<void> initBluetooth() async {
     try {
       // Initialize FlutterBluePlus
       await FlutterBluePlus.turnOn();
@@ -29,8 +29,35 @@ class PrintController extends GetxController {
         return;
       }
 
-      // Start scanning
-      startScanning();
+      // Wait for Bluetooth state to stabilize
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Check Bluetooth state
+      final isOn = await FlutterBluePlus.isOn;
+      if (!isOn) {
+        devicesMsg("Please enable Bluetooth");
+        return;
+      }
+
+      // Start scanning with retry mechanism
+      int retryCount = 0;
+      while (retryCount < 3) {
+        try {
+          await startScanning();
+          if (devices.isNotEmpty) {
+            break; // Successfully found devices
+          }
+          retryCount++;
+          if (retryCount < 3) {
+            await Future.delayed(const Duration(seconds: 2)); // Wait before retry
+          }
+        } catch (e) {
+          print('Scan attempt $retryCount failed: $e');
+          retryCount++;
+          if (retryCount >= 3) rethrow;
+          await Future.delayed(const Duration(seconds: 2));
+        }
+      }
     } catch (e) {
       if (e.toString().contains('bluetooth_unavailable')) {
         devicesMsg("Please enable Bluetooth");
@@ -54,47 +81,52 @@ class PrintController extends GetxController {
       }
 
       // Start new scan
-      _scanSubscription?.cancel();
+      // Cancel existing subscription
+      await _scanSubscription?.cancel();
+
       _scanSubscription = FlutterBluePlus.scanResults.listen(
             (results) {
-          // Filter and add devices
-          final printerDevices = results.where((r) =>
-          r.device.localName.isNotEmpty &&
-              (r.device.localName.toLowerCase().contains('printer') ||
-                  r.device.localName.toLowerCase().contains('pos') ||
-                  r.device.localName.toLowerCase().contains('thermal'))
-          ).toList();
+          // Add all devices that have a name
+          final newDevices = results.toList();
 
-          devices(printerDevices);
+          // Debug print for found devices
+          for (var device in newDevices) {
+            print('Found device: ${device.device.localName} (${device.device.id})');
+            print('Advertisement name: ${device.advertisementData.localName}');
+            print('RSSI: ${device.rssi}');
+          }
 
-          if (printerDevices.isEmpty) {
-            devicesMsg("No printer devices found");
-          } else {
+          devices(newDevices);
+
+          if (newDevices.isNotEmpty) {
             devicesMsg("");
+            isScanning(false);
+            FlutterBluePlus.stopScan(); // Stop scan when devices are found
           }
         },
         onError: (e) {
+          print('Scan error: $e');
           isScanning(false);
           devicesMsg("Error scanning: $e");
         },
       );
 
-      // Start scanning with timeout
+      // Start scanning with longer timeout
       await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 4),
-        androidUsesFineLocation: false,
+        timeout: const Duration(seconds: 15),  // Increased timeout
+        androidUsesFineLocation: true,        // Use fine location for better results
       );
 
       // Wait for scan to complete
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 15));
       if (isScanning.value) {
         isScanning(false);
         await FlutterBluePlus.stopScan();
       }
     } catch (e) {
+      print('Scanning error: $e');
       isScanning(false);
       devicesMsg("Error: ${e.toString()}");
-      print("Scan error: $e");
     }
   }
 

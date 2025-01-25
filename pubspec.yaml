@@ -45,6 +45,7 @@ dependencies:
   esc_pos_bluetooth: ^0.4.1
   esc_pos_utils: ^1.1.0
   flutter_blue_plus: ^1.31.8
+  permission_handler: ^11.0.1
 #  print_bluetooth_thermal: any
 #  esc_pos_bluetooth: any
 
