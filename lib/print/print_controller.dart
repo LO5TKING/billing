@@ -4,6 +4,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:typed_data';
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class PrintController extends GetxController {
   RxList<ScanResult> devices = <ScanResult>[].obs;
   RxString devicesMsg = "".obs;
@@ -11,11 +13,31 @@ class PrintController extends GetxController {
   RxBool isConnected = false.obs;
   StreamSubscription? _scanSubscription;
   BluetoothDevice? _connectedDevice;
+  Rx<String?> savedPrinterId = Rx<String?>(null);
+
 
   @override
   void onInit() {
     super.onInit();
-    // initBluetooth();
+    _loadSavedPrinter();
+    initBluetooth();
+  }
+
+  Future<void> _loadSavedPrinter() async {
+    final prefs = await SharedPreferences.getInstance();
+    savedPrinterId.value = prefs.getString('saved_printer_id');
+  }
+
+  Future<void> saveSelectedPrinter(BluetoothDevice device) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('saved_printer_id', device.id.toString());
+    savedPrinterId.value = device.id.toString();
+  }
+
+  Future<void> clearSavedPrinter() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_printer_id');
+    savedPrinterId.value = null;
   }
 
   Future<void> initBluetooth() async {
@@ -86,22 +108,21 @@ class PrintController extends GetxController {
 
       _scanSubscription = FlutterBluePlus.scanResults.listen(
             (results) {
-          // Add all devices that have a name
-          final newDevices = results.toList();
+          // Update devices list with new results
+          devices.value = results.where((result) =>
+          result.device.localName.isNotEmpty ||
+              result.advertisementData.localName.isNotEmpty
+          ).toList();
 
           // Debug print for found devices
-          for (var device in newDevices) {
+          for (var device in results) {
             print('Found device: ${device.device.localName} (${device.device.id})');
             print('Advertisement name: ${device.advertisementData.localName}');
             print('RSSI: ${device.rssi}');
           }
 
-          devices(newDevices);
-
-          if (newDevices.isNotEmpty) {
+          if (devices.isNotEmpty) {
             devicesMsg("");
-            isScanning(false);
-            FlutterBluePlus.stopScan(); // Stop scan when devices are found
           }
         },
         onError: (e) {
@@ -113,8 +134,8 @@ class PrintController extends GetxController {
 
       // Start scanning with longer timeout
       await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 15),  // Increased timeout
-        androidUsesFineLocation: true,        // Use fine location for better results
+        timeout: const Duration(seconds: 15),
+        androidUsesFineLocation: true,
       );
 
       // Wait for scan to complete
@@ -122,11 +143,104 @@ class PrintController extends GetxController {
       if (isScanning.value) {
         isScanning(false);
         await FlutterBluePlus.stopScan();
+        if (devices.isEmpty) {
+          devicesMsg("No devices found");
+        }
       }
     } catch (e) {
       print('Scanning error: $e');
       isScanning(false);
       devicesMsg("Error: ${e.toString()}");
+    }
+  }
+
+  // Method to directly print with saved printer
+  Future<void> printWithSavedPrinter(List<Map<String, dynamic>> data) async {
+    // Get printer ID directly from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final savedPrinterIdFromPrefs = prefs.getString('saved_printer_id');
+
+    // Null check for saved printer ID
+    if (savedPrinterIdFromPrefs == null || savedPrinterIdFromPrefs.isEmpty) {
+      throw Exception('No saved printer found');
+    }
+
+    try {
+      // Initialize Bluetooth if needed
+      if (!await FlutterBluePlus.isOn) {
+        await FlutterBluePlus.turnOn();
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      // Start scanning and wait for the saved device
+      BluetoothDevice? savedDevice;
+      bool deviceFound = false;
+
+      // Create a completer to handle the timeout
+      final completer = Completer<void>();
+
+      // Start scanning
+      await startScanning();
+
+      // Listen to scan results
+      final subscription = FlutterBluePlus.scanResults.listen((results) {
+        savedDevice = results
+            .firstWhereOrNull((result) =>
+        result.device.id.toString() == savedPrinterIdFromPrefs)
+            ?.device;
+
+        if (savedDevice != null && !deviceFound) {
+          deviceFound = true;
+          completer.complete();
+        }
+      });
+
+      // Wait for device to be found or timeout
+      try {
+        await Future.any([
+          completer.future,
+          Future.delayed(const Duration(seconds: 30)) // Increased timeout to 30 seconds
+              .then((_) {
+            if (!deviceFound) {
+              throw Exception('Scan timeout: Printer not found after 30 seconds');
+            }
+          })
+        ]);
+      } catch (e) {
+        print('Scan error or timeout: $e');
+        throw Exception('Could not find saved printer. Please try again or select a new printer.');
+      }
+
+      // Clean up subscription
+      await subscription.cancel();
+
+      // Stop scanning
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+
+      // Check if device was found
+      if (savedDevice == null) {
+        // If printer not found, clear the saved ID
+        await prefs.remove('saved_printer_id');
+        savedPrinterId.value = null;
+        throw Exception('Saved printer not found. Please scan for printers.');
+      }
+
+      // Print with the saved printer
+      if(savedDevice != null) {
+        await connectAndPrint(savedDevice!, data);
+      }else{
+        throw Exception('Saved printer not found. Please scan for printers.');
+      }
+    } catch (e) {
+      print('Error printing with saved printer: $e');
+      rethrow;
+    } finally {
+      // Clean up
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
     }
   }
 
