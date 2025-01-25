@@ -435,7 +435,7 @@ class Billing extends StatelessWidget {
                                           },
                                         ];
           
-                                        Get.to(() =>PrintPage(data));
+                                        Get.to(() =>PrintPage(data: data,));
                                         // scribbleController.printDocument(
                                         //     pageFormat: PdfPageFormat.a4);
                                         // scribbleController.printPOSReceipt(pageFormat: PdfPageFormat.roll57);
