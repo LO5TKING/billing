@@ -423,33 +423,7 @@ class Billing extends StatelessWidget {
                                             /// a4 is standard
                                             // scribbleController.printDocument(pageFormat: PdfPageFormat.a4);
 
-                                            final List<Map<String, dynamic>> data = [
-                                              {
-                                                'title': 'Cadbury Dairy Milk',
-                                                'price': 15,
-                                                'qty': 2
-                                              },
-                                              {
-                                                'title': 'Parle-G Gluco Biscut',
-                                                'price': 5,
-                                                'qty': 5
-                                              },
-                                              {
-                                                'title': 'Fresh Onion - 1KG',
-                                                'price': 20,
-                                                'qty': 1
-                                              },
-                                              {
-                                                'title': 'Fresh Sweet Lime',
-                                                'price': 20,
-                                                'qty': 5
-                                              },
-                                              {
-                                                'title': 'Maggi',
-                                                'price': 10,
-                                                'qty': 5
-                                              },
-                                            ];
+                                            final List<Map<String, dynamic>> data = scribbleController.itemList;
 
                                             await PrintDialog.show(data);
                                             // scribbleController.printDocument(

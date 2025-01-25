@@ -1,8 +1,12 @@
+import 'dart:ui';
+
 import 'package:get/get.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:typed_data';
 import 'dart:async';
+import 'package:image/image.dart';
+import 'dart:ui' as ui;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -342,50 +346,70 @@ class PrintController extends GetxController {
   }
 
   Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
-    var profile = await CapabilityProfile.load();
-    var generator = Generator(PaperSize.mm58, profile);
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm58, profile);
     List<int> bytes = [];
 
     // Add header
-    bytes += generator.text('Store Name',
-        styles: PosStyles(align: PosAlign.center, height: PosTextSize.size2, width: PosTextSize.size2));
-    bytes += generator.text('Address Line 1', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Address Line 2', styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Logo',
+        styles: PosStyles(align: PosAlign.center, height: PosTextSize.size1, width: PosTextSize.size1));
     bytes += generator.hr();
 
     // Add date
-    bytes += generator.text('Date: ${DateTime.now().toString().split('.')[0]}',
-        styles: PosStyles(align: PosAlign.left));
+    bytes += generator.text('Date:- ${DateTime.now().toString().split(' ')[0]}',
+        styles: PosStyles(align: PosAlign.right));
     bytes += generator.hr();
 
     // Add items
     double total = 0;
-    for (var item in data) {
-      double price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
+    for (int i = 0; i < data.length; i++) {
+      var item = data[i];
       int qty = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
-      double itemTotal = price * qty;
-      total += itemTotal;
+      double rate = double.tryParse(item['rate']?.toString() ?? '0') ?? 0;
+      double amount = qty * rate;
+      total += amount;
 
+      // Add serial number
+      bytes += generator.text('${i + 1}.',
+          styles: PosStyles(align: PosAlign.left));
+
+      // Handle the image data for particulars
+      if (item['particulars'] is Uint8List) {
+        try {
+          // Process and add the image
+          final imageBytes = await processImage(item['particulars']);
+          bytes += imageBytes;
+          bytes += generator.feed(1); // Add some space after the image
+        } catch (e) {
+          print('Error processing image: $e');
+          bytes += generator.text('(Image processing failed)',
+              styles: PosStyles(align: PosAlign.left));
+        }
+      }
+
+      // Add quantity, rate and amount
       bytes += generator.row([
-        PosColumn(text: item['title']?.toString() ?? '', width: 4),
-        PosColumn(text: qty.toString(), width: 2),
-        PosColumn(text: price.toStringAsFixed(2), width: 2),
-        PosColumn(text: itemTotal.toStringAsFixed(2), width: 4),
+        PosColumn(text: 'Qty: $qty', width: 4),
+        PosColumn(text: 'Rate: $rate', width: 4),
+        PosColumn(text: 'Amt: ${amount.toStringAsFixed(2)}', width: 4),
       ]);
+
+      bytes += generator.hr(); // Add a line after each item
     }
 
-    bytes += generator.hr();
+    // Add total
     bytes += generator.row([
-      PosColumn(text: 'TOTAL', width: 6, styles: PosStyles(bold: true)),
-      PosColumn(text: total.toStringAsFixed(2), width: 6, styles: PosStyles(bold: true)),
+      PosColumn(
+          text: 'TOTAL',
+          width: 6,
+          styles: PosStyles(bold: true, align: PosAlign.left)),
+      PosColumn(
+          text: total.toStringAsFixed(2),
+          width: 6,
+          styles: PosStyles(bold: true, align: PosAlign.right)),
     ]);
-    bytes += generator.hr();
 
-    // Add footer
-    bytes += generator.text('Thank you for your business!',
-        styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Please visit again',
-        styles: PosStyles(align: PosAlign.center));
+    bytes += generator.hr();
     bytes += generator.feed(2);
     bytes += generator.cut();
 
@@ -403,4 +427,40 @@ class PrintController extends GetxController {
     }
     super.onClose();
   }
+
+  Future<List<int>> processImage(Uint8List imageBytes) async {
+    try {
+      final profile = await CapabilityProfile.load();
+      final generator = Generator(PaperSize.mm58, profile);
+
+      // Create ESC/POS command for image
+      final List<int> bytes = [];
+
+      // Select bit image mode
+      bytes.add(0x1B);
+      bytes.add(0x2A);
+      bytes.add(33); // 24-dot double-density
+      bytes.add(imageBytes.length % 256);
+      bytes.add(imageBytes.length ~/ 256);
+
+      // Add the image data
+      bytes.addAll(imageBytes);
+
+      // Add line feeds
+      bytes.add(0x0A);
+      bytes.add(0x0A);
+
+      return bytes;
+    } catch (e) {
+      print('Error processing image: $e');
+      return [];
+    }
+  }
+
 }
+
+// bytes += generator.hr();f
+// bytes += generator.text('Thank you for your business!',
+// styles: PosStyles(align: PosAlign.center));
+// bytes += generator.text('Please visit again',
+// styles: PosStyles(align: PosAlign.center));
