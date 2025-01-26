@@ -6,9 +6,6 @@ import 'package:flutter/material.dart' hide Ink;
 import 'package:get/get.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import '../utils/activity_indicator.dart';
-// import 'package:pdf/pdf.dart';
-// import 'package:pdf/widgets.dart' as pw;
-// import 'package:printing/printing.dart';
 import 'package:flutter/services.dart'; // Import this package
 
 class ScribbleController extends GetxController {
@@ -57,6 +54,7 @@ class ScribbleController extends GetxController {
   void onInit() async {
     super.onInit();
     try {
+      clearPadAndSignature();
       isModelLoading(true);
       downloadStatus('Checking model status...');
 
@@ -274,7 +272,7 @@ class ScribbleController extends GetxController {
         'rate': recognizedRate,
       });
       update();
-      // clearPadAndSignature();
+
     } else {
       Get.snackbar("Error", "Field is Empty");
     }

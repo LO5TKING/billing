@@ -1,12 +1,12 @@
 import 'dart:ui';
 
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:typed_data';
 import 'dart:async';
-import 'package:image/image.dart';
-import 'dart:ui' as ui;
+import 'package:image/image.dart' as img;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,7 +18,6 @@ class PrintController extends GetxController {
   StreamSubscription? _scanSubscription;
   BluetoothDevice? _connectedDevice;
   Rx<String?> savedPrinterId = Rx<String?>(null);
-
 
   @override
   void onInit() {
@@ -46,36 +45,31 @@ class PrintController extends GetxController {
 
   Future<void> initBluetooth() async {
     try {
-      // Initialize FlutterBluePlus
       await FlutterBluePlus.turnOn();
 
-      // Check if Bluetooth is available
       if (!await FlutterBluePlus.isSupported) {
         devicesMsg("Bluetooth is not supported on this device");
         return;
       }
 
-      // Wait for Bluetooth state to stabilize
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Check Bluetooth state
       final isOn = await FlutterBluePlus.isOn;
       if (!isOn) {
         devicesMsg("Please enable Bluetooth");
         return;
       }
 
-      // Start scanning with retry mechanism
       int retryCount = 0;
       while (retryCount < 3) {
         try {
           await startScanning();
           if (devices.isNotEmpty) {
-            break; // Successfully found devices
+            break;
           }
           retryCount++;
           if (retryCount < 3) {
-            await Future.delayed(const Duration(seconds: 2)); // Wait before retry
+            await Future.delayed(const Duration(seconds: 2));
           }
         } catch (e) {
           print('Scan attempt $retryCount failed: $e');
@@ -101,26 +95,23 @@ class PrintController extends GetxController {
       devices.clear();
       devicesMsg("Scanning...");
 
-      // Stop any existing scan
       if (FlutterBluePlus.isScanningNow) {
         await FlutterBluePlus.stopScan();
       }
 
-      // Start new scan
-      // Cancel existing subscription
       await _scanSubscription?.cancel();
 
       _scanSubscription = FlutterBluePlus.scanResults.listen(
-            (results) {
-          // Update devices list with new results
-          devices.value = results.where((result) =>
-          result.device.localName.isNotEmpty ||
-              result.advertisementData.localName.isNotEmpty
-          ).toList();
+        (results) {
+          devices.value = results
+              .where((result) =>
+                  result.device.localName.isNotEmpty ||
+                  result.advertisementData.localName.isNotEmpty)
+              .toList();
 
-          // Debug print for found devices
           for (var device in results) {
-            print('Found device: ${device.device.localName} (${device.device.id})');
+            print(
+                'Found device: ${device.device.localName} (${device.device.id})');
             print('Advertisement name: ${device.advertisementData.localName}');
             print('RSSI: ${device.rssi}');
           }
@@ -136,13 +127,11 @@ class PrintController extends GetxController {
         },
       );
 
-      // Start scanning with longer timeout
       await FlutterBluePlus.startScan(
         timeout: const Duration(seconds: 15),
         androidUsesFineLocation: true,
       );
 
-      // Wait for scan to complete
       await Future.delayed(const Duration(seconds: 15));
       if (isScanning.value) {
         isScanning(false);
@@ -158,39 +147,31 @@ class PrintController extends GetxController {
     }
   }
 
-  // Method to directly print with saved printer
   Future<void> printWithSavedPrinter(List<Map<String, dynamic>> data) async {
-    // Get printer ID directly from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final savedPrinterIdFromPrefs = prefs.getString('saved_printer_id');
 
-    // Null check for saved printer ID
     if (savedPrinterIdFromPrefs == null || savedPrinterIdFromPrefs.isEmpty) {
       throw Exception('No saved printer found');
     }
 
     try {
-      // Initialize Bluetooth if needed
       if (!await FlutterBluePlus.isOn) {
         await FlutterBluePlus.turnOn();
         await Future.delayed(const Duration(milliseconds: 500));
       }
 
-      // Start scanning and wait for the saved device
       BluetoothDevice? savedDevice;
       bool deviceFound = false;
 
-      // Create a completer to handle the timeout
       final completer = Completer<void>();
 
-      // Start scanning
       await startScanning();
 
-      // Listen to scan results
       final subscription = FlutterBluePlus.scanResults.listen((results) {
         savedDevice = results
             .firstWhereOrNull((result) =>
-        result.device.id.toString() == savedPrinterIdFromPrefs)
+                result.device.id.toString() == savedPrinterIdFromPrefs)
             ?.device;
 
         if (savedDevice != null && !deviceFound) {
@@ -199,49 +180,43 @@ class PrintController extends GetxController {
         }
       });
 
-      // Wait for device to be found or timeout
       try {
         await Future.any([
           completer.future,
-          Future.delayed(const Duration(seconds: 30)) // Increased timeout to 30 seconds
-              .then((_) {
+          Future.delayed(const Duration(seconds: 30)).then((_) {
             if (!deviceFound) {
-              throw Exception('Scan timeout: Printer not found after 30 seconds');
+              throw Exception(
+                  'Scan timeout: Printer not found after 30 seconds');
             }
           })
         ]);
       } catch (e) {
         print('Scan error or timeout: $e');
-        throw Exception('Could not find saved printer. Please try again or select a new printer.');
+        throw Exception(
+            'Could not find saved printer. Please try again or select a new printer.');
       }
 
-      // Clean up subscription
       await subscription.cancel();
 
-      // Stop scanning
       if (FlutterBluePlus.isScanningNow) {
         await FlutterBluePlus.stopScan();
       }
 
-      // Check if device was found
       if (savedDevice == null) {
-        // If printer not found, clear the saved ID
         await prefs.remove('saved_printer_id');
         savedPrinterId.value = null;
         throw Exception('Saved printer not found. Please scan for printers.');
       }
 
-      // Print with the saved printer
-      if(savedDevice != null) {
+      if (savedDevice != null) {
         await connectAndPrint(savedDevice!, data);
-      }else{
+      } else {
         throw Exception('Saved printer not found. Please scan for printers.');
       }
     } catch (e) {
       print('Error printing with saved printer: $e');
       rethrow;
     } finally {
-      // Clean up
       if (FlutterBluePlus.isScanningNow) {
         await FlutterBluePlus.stopScan();
       }
@@ -250,29 +225,25 @@ class PrintController extends GetxController {
 
   Future<void> connectAndPrint(BluetoothDevice device, List<Map<String, dynamic>> data) async {
     try {
-      // Disconnect from any existing connection
       if (_connectedDevice != null) {
         await _connectedDevice!.disconnect();
         await Future.delayed(const Duration(milliseconds: 500));
       }
 
-      // Connect to the device
       await device.connect(timeout: const Duration(seconds: 5));
       _connectedDevice = device;
       isConnected(true);
 
-      // Wait for connection to stabilize
       await Future.delayed(const Duration(seconds: 1));
 
-      // Discover services
       List<BluetoothService> services = await device.discoverServices();
       BluetoothCharacteristic? writeCharacteristic;
 
-      // Find the printer service and characteristic
       for (var service in services) {
         var characteristics = service.characteristics;
         for (var characteristic in characteristics) {
-          if (characteristic.properties.write || characteristic.properties.writeWithoutResponse) {
+          if (characteristic.properties.write ||
+              characteristic.properties.writeWithoutResponse) {
             writeCharacteristic = characteristic;
             break;
           }
@@ -284,32 +255,28 @@ class PrintController extends GetxController {
         throw Exception('Printer service not found');
       }
 
-      // Get the MTU size (Maximum Transmission Unit)
-      int mtuSize = 20; // Default minimum BLE MTU size
+      int mtuSize = 20;
       try {
-        // Some devices support requesting MTU size
         final negotiatedMtu = await device.mtu.first;
-        mtuSize = negotiatedMtu - 3; // Subtract 3 bytes for ATT header
+        mtuSize = negotiatedMtu - 3;
       } catch (e) {
         print('Could not get MTU size: $e');
       }
 
-      // Generate print data
       final bytes = await _generatePrintData(data);
 
-      // Send data in smaller chunks
-      final chunkSize = mtuSize < 180 ? mtuSize : 180; // Use smaller of MTU or 180 bytes
+      final chunkSize = mtuSize < 180 ? mtuSize : 180;
       print('Using chunk size: $chunkSize bytes');
 
       for (var i = 0; i < bytes.length; i += chunkSize) {
         try {
-          final end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+          final end =
+              (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
           final chunk = bytes.sublist(i, end);
 
-          // Print progress
-          print('Sending chunk ${i ~/ chunkSize + 1} of ${(bytes.length / chunkSize).ceil()} (${chunk.length} bytes)');
+          print(
+              'Sending chunk ${i ~/ chunkSize + 1} of ${(bytes.length / chunkSize).ceil()} (${chunk.length} bytes)');
 
-          // Write chunk with retry mechanism
           int retryCount = 0;
           while (retryCount < 3) {
             try {
@@ -322,7 +289,6 @@ class PrintController extends GetxController {
             }
           }
 
-          // Add delay between chunks to prevent data loss
           await Future.delayed(Duration(milliseconds: 150));
         } catch (e) {
           print('Error sending chunk: $e');
@@ -330,10 +296,8 @@ class PrintController extends GetxController {
         }
       }
 
-      // Add final delay to ensure all data is processed
       await Future.delayed(Duration(seconds: 1));
 
-      // Disconnect after printing
       await device.disconnect();
       _connectedDevice = null;
       isConnected(false);
@@ -347,20 +311,44 @@ class PrintController extends GetxController {
 
   Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm58, profile);
+    final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];
 
-    // Add header
-    bytes += generator.text('Logo',
-        styles: PosStyles(align: PosAlign.center, height: PosTextSize.size1, width: PosTextSize.size1));
+    final ByteData imageData = await rootBundle.load('assets/sai.png');
+    final Uint8List bytesss = imageData.buffer.asUint8List();
+    final img.Image image = img.decodeImage(bytesss)!;
+    final img.Image resizedSaiImage =
+        img.copyResize(image, height: 200, width: 200);
+
+    bytes += generator.image(resizedSaiImage, align: PosAlign.center);
+
     bytes += generator.hr();
 
-    // Add date
-    bytes += generator.text('Date:- ${DateTime.now().toString().split(' ')[0]}',
+    bytes += generator.text('Date: ${DateTime.now().toString().split(' ')[0]}',
         styles: PosStyles(align: PosAlign.right));
     bytes += generator.hr();
 
-    // Add items
+    bytes += generator.row([
+      PosColumn(
+          text: '#',
+          width: 1,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(text: 'Particulars', width: 5, styles: PosStyles(bold: true)),
+      PosColumn(
+          text: 'Qty',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
+          text: 'Rate',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
+          text: 'Amt',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+    ]);
+    bytes += generator.hr();
+
     double total = 0;
     for (int i = 0; i < data.length; i++) {
       var item = data[i];
@@ -369,47 +357,99 @@ class PrintController extends GetxController {
       double amount = qty * rate;
       total += amount;
 
-      // Add serial number
-      bytes += generator.text('${i + 1}.',
-          styles: PosStyles(align: PosAlign.left));
-
-      // Handle the image data for particulars
       if (item['particulars'] is Uint8List) {
         try {
-          // Process and add the image
-          final imageBytes = await processImage(item['particulars']);
-          bytes += imageBytes;
-          bytes += generator.feed(1); // Add some space after the image
+          final imageBytes = item['particulars'];
+          final img.Image originalImage = img.decodeImage(imageBytes)!;
+
+          final img.Image resizedImage =
+              img.copyResize(originalImage, height: 50);
+
+          bytes += generator.row([
+            PosColumn(
+                text: '${i + 1}',
+                width: 1,
+                styles: PosStyles(align: PosAlign.center)),
+            PosColumn(width: 5, text: ''),
+            PosColumn(
+                text: '$qty',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center)),
+            PosColumn(
+                text: '$rate',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center)),
+            PosColumn(
+                text: '${amount.toStringAsFixed(2)}',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center)),
+          ]);
+
+          bytes += generator.image(resizedImage, align: PosAlign.left);
         } catch (e) {
           print('Error processing image: $e');
-          bytes += generator.text('(Image processing failed)',
-              styles: PosStyles(align: PosAlign.left));
+          bytes += generator.row([
+            PosColumn(
+                text: '${i + 1}',
+                width: 1,
+                styles: PosStyles(align: PosAlign.center)),
+            PosColumn(
+                text: '(Image failed)',
+                width: 5,
+                styles: PosStyles(align: PosAlign.left)),
+            PosColumn(
+                text: '$qty',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center)),
+            PosColumn(
+                text: '$rate',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center)),
+            PosColumn(
+                text: '${amount.toStringAsFixed(2)}',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center)),
+          ]);
         }
+      } else {
+        bytes += generator.row([
+          PosColumn(
+              text: '${i + 1}',
+              width: 1,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(text: '${item['particulars'] ?? ''}', width: 5),
+          PosColumn(
+              text: '$qty',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '$rate',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '${amount.toStringAsFixed(2)}',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+        ]);
       }
-
-      // Add quantity, rate and amount
-      bytes += generator.row([
-        PosColumn(text: 'Qty: $qty', width: 4),
-        PosColumn(text: 'Rate: $rate', width: 4),
-        PosColumn(text: 'Amt: ${amount.toStringAsFixed(2)}', width: 4),
-      ]);
-
-      bytes += generator.hr(); // Add a line after each item
     }
 
-    // Add total
-    bytes += generator.row([
-      PosColumn(
-          text: 'TOTAL',
-          width: 6,
-          styles: PosStyles(bold: true, align: PosAlign.left)),
-      PosColumn(
-          text: total.toStringAsFixed(2),
-          width: 6,
-          styles: PosStyles(bold: true, align: PosAlign.right)),
-    ]);
-
     bytes += generator.hr();
+    bytes += generator.row([
+      PosColumn(text: 'TOTAL', width: 6, styles: PosStyles(bold: true)),
+      PosColumn(text: '', width: 2),
+      PosColumn(text: '', width: 2),
+      PosColumn(
+          text: '${total.toStringAsFixed(2)}',
+          width: 2,
+          styles: PosStyles(align: PosAlign.right, bold: true)),
+    ]);
+    bytes += generator.hr();
+
+    bytes += generator.text('Thank you for your business!',
+        styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Please visit again',
+        styles: PosStyles(align: PosAlign.center));
     bytes += generator.feed(2);
     bytes += generator.cut();
 
@@ -427,40 +467,4 @@ class PrintController extends GetxController {
     }
     super.onClose();
   }
-
-  Future<List<int>> processImage(Uint8List imageBytes) async {
-    try {
-      final profile = await CapabilityProfile.load();
-      final generator = Generator(PaperSize.mm58, profile);
-
-      // Create ESC/POS command for image
-      final List<int> bytes = [];
-
-      // Select bit image mode
-      bytes.add(0x1B);
-      bytes.add(0x2A);
-      bytes.add(33); // 24-dot double-density
-      bytes.add(imageBytes.length % 256);
-      bytes.add(imageBytes.length ~/ 256);
-
-      // Add the image data
-      bytes.addAll(imageBytes);
-
-      // Add line feeds
-      bytes.add(0x0A);
-      bytes.add(0x0A);
-
-      return bytes;
-    } catch (e) {
-      print('Error processing image: $e');
-      return [];
-    }
-  }
-
 }
-
-// bytes += generator.hr();f
-// bytes += generator.text('Thank you for your business!',
-// styles: PosStyles(align: PosAlign.center));
-// bytes += generator.text('Please visit again',
-// styles: PosStyles(align: PosAlign.center));
