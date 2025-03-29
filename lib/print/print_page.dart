@@ -1,3 +1,7 @@
+
+
+import 'dart:typed_data';
+
 import 'package:billing/app/config/color_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,11 +10,12 @@ import 'package:permission_handler/permission_handler.dart';
 import 'print_controller.dart';
 
 class PrintDialog extends StatelessWidget {
-  final List<Map<String, dynamic>> data;
+  final List<Uint8List?> data;
+  // final List<Map<String, dynamic>> data;
 
   const PrintDialog({Key? key, required this.data}) : super(key: key);
 
-  static Future<void> show(List<Map<String, dynamic>> data) async {
+  static Future<void> show(List<Uint8List?> data) async {
     final PrintController controller = Get.put(PrintController());
 
     try {

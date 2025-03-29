@@ -147,7 +147,7 @@ class PrintController extends GetxController {
     }
   }
 
-  Future<void> printWithSavedPrinter(List<Map<String, dynamic>> data) async {
+  Future<void> printWithSavedPrinter(List<Uint8List?> data) async {
     final prefs = await SharedPreferences.getInstance();
     final savedPrinterIdFromPrefs = prefs.getString('saved_printer_id');
 
@@ -223,7 +223,7 @@ class PrintController extends GetxController {
     }
   }
 
-  Future<void> connectAndPrint(BluetoothDevice device, List<Map<String, dynamic>> data) async {
+  Future<void> connectAndPrint(BluetoothDevice device, List<Uint8List?> data) async {
     try {
       if (_connectedDevice != null) {
         await _connectedDevice!.disconnect();
@@ -263,7 +263,7 @@ class PrintController extends GetxController {
         print('Could not get MTU size: $e');
       }
 
-      final bytes = await _generatePrintData(data);
+      final bytes = await generatePrintData(data);
 
       final chunkSize = mtuSize < 180 ? mtuSize : 180;
       print('Using chunk size: $chunkSize bytes');
@@ -309,128 +309,43 @@ class PrintController extends GetxController {
     }
   }
 
-  Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
+  Future<List<int>> generatePrintData(List<Uint8List?> data) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];
 
-    final ByteData imageData = await rootBundle.load('assets/sai.png');
-    final Uint8List bytesss = imageData.buffer.asUint8List();
-    final img.Image image = img.decodeImage(bytesss)!;
-    final img.Image resizedSaiImage =
-        img.copyResize(image, height: 200, width: 200);
-
-    bytes += generator.image(resizedSaiImage, align: PosAlign.center);
-
-    bytes += generator.hr();
-
-    bytes += generator.text('Date: ${DateTime.now().toString().split(' ')[0]}',
-        styles: PosStyles(align: PosAlign.right));
+    bytes += generator.text(
+      'Date: ${DateTime.now().toString().split(' ')[0]}',
+      styles: PosStyles(align: PosAlign.right),
+    );
     bytes += generator.hr();
 
     bytes += generator.row([
-      PosColumn(
-          text: '#',
-          width: 1,
-          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(text: '#', width: 1, styles: PosStyles(bold: true, align: PosAlign.center)),
       PosColumn(text: 'Particulars', width: 5, styles: PosStyles(bold: true)),
-      PosColumn(
-          text: 'Qty',
-          width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.center)),
-      PosColumn(
-          text: 'Rate',
-          width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.center)),
-      PosColumn(
-          text: 'Amt',
-          width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(text: 'Qty', width: 2, styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(text: 'Rate', width: 2, styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(text: 'Amt', width: 2, styles: PosStyles(bold: true, align: PosAlign.center)),
     ]);
     bytes += generator.hr();
 
     double total = 0;
     for (int i = 0; i < data.length; i++) {
       var item = data[i];
-      int qty = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
-      double rate = double.tryParse(item['rate']?.toString() ?? '0') ?? 0;
-      double amount = qty * rate;
-      total += amount;
 
-      if (item['particulars'] is Uint8List) {
-        try {
-          final imageBytes = item['particulars'];
-          final img.Image originalImage = img.decodeImage(imageBytes)!;
+      if (item != null) {
+        final img.Image originalImage = img.decodeImage(item)!;
 
-          final img.Image resizedImage =
-              img.copyResize(originalImage, height: 50);
+        // Resize image to fit receipt width
+        final img.Image resizedImage = img.copyResize(
+          originalImage,
+          width: 576,
+          height: 100,
+        );
 
-          bytes += generator.row([
-            PosColumn(
-                text: '${i + 1}',
-                width: 1,
-                styles: PosStyles(align: PosAlign.center)),
-            PosColumn(width: 5, text: ''),
-            PosColumn(
-                text: '$qty',
-                width: 2,
-                styles: PosStyles(align: PosAlign.center)),
-            PosColumn(
-                text: '$rate',
-                width: 2,
-                styles: PosStyles(align: PosAlign.center)),
-            PosColumn(
-                text: '${amount.toStringAsFixed(2)}',
-                width: 2,
-                styles: PosStyles(align: PosAlign.center)),
-          ]);
-
-          bytes += generator.image(resizedImage, align: PosAlign.left);
-        } catch (e) {
-          print('Error processing image: $e');
-          bytes += generator.row([
-            PosColumn(
-                text: '${i + 1}',
-                width: 1,
-                styles: PosStyles(align: PosAlign.center)),
-            PosColumn(
-                text: '(Image failed)',
-                width: 5,
-                styles: PosStyles(align: PosAlign.left)),
-            PosColumn(
-                text: '$qty',
-                width: 2,
-                styles: PosStyles(align: PosAlign.center)),
-            PosColumn(
-                text: '$rate',
-                width: 2,
-                styles: PosStyles(align: PosAlign.center)),
-            PosColumn(
-                text: '${amount.toStringAsFixed(2)}',
-                width: 2,
-                styles: PosStyles(align: PosAlign.center)),
-          ]);
-        }
+        bytes += generator.image(resizedImage, align: PosAlign.left);
       } else {
-        bytes += generator.row([
-          PosColumn(
-              text: '${i + 1}',
-              width: 1,
-              styles: PosStyles(align: PosAlign.center)),
-          PosColumn(text: '${item['particulars'] ?? ''}', width: 5),
-          PosColumn(
-              text: '$qty',
-              width: 2,
-              styles: PosStyles(align: PosAlign.center)),
-          PosColumn(
-              text: '$rate',
-              width: 2,
-              styles: PosStyles(align: PosAlign.center)),
-          PosColumn(
-              text: '${amount.toStringAsFixed(2)}',
-              width: 2,
-              styles: PosStyles(align: PosAlign.center)),
-        ]);
+        bytes += generator.text('(Image failed to load)', styles: PosStyles(align: PosAlign.left));
       }
     }
 
@@ -440,20 +355,38 @@ class PrintController extends GetxController {
       PosColumn(text: '', width: 2),
       PosColumn(text: '', width: 2),
       PosColumn(
-          text: '${total.toStringAsFixed(2)}',
-          width: 2,
-          styles: PosStyles(align: PosAlign.right, bold: true)),
+        text: '${total.toStringAsFixed(2)}',
+        width: 2,
+        styles: PosStyles(align: PosAlign.right, bold: true),
+      ),
     ]);
     bytes += generator.hr();
 
-    bytes += generator.text('Thank you for your business!',
-        styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Please visit again',
-        styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Thank you for your business!', styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Please visit again', styles: PosStyles(align: PosAlign.center));
     bytes += generator.feed(2);
     bytes += generator.cut();
 
     return bytes;
+  }
+
+
+
+  String convertImageToAscii(img.Image image) {
+    int width = 8; // Reduce to small blocks
+    int height = 8; // Lower size for readability
+    img.Image smallImage = img.copyResize(image, width: width, height: height);
+
+    String ascii = '';
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        int pixel = smallImage.getPixel(x, y);
+        int brightness = img.getLuminance(pixel);
+        ascii += (brightness > 128) ? '⬜' : '⬛'; // White or black block
+      }
+      ascii += '\n'; // New row for ASCII image
+    }
+    return ascii;
   }
 
   @override
@@ -468,3 +401,152 @@ class PrintController extends GetxController {
     super.onClose();
   }
 }
+
+
+/*
+Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
+  final profile = await CapabilityProfile.load();
+  final generator = Generator(PaperSize.mm80, profile);
+  List<int> bytes = [];
+
+  // final ByteData imageData = await rootBundle.load('assets/sai.png');
+  // final Uint8List bytesss = imageData.buffer.asUint8List();
+  // final img.Image image = img.decodeImage(bytesss)!;
+  // final img.Image resizedSaiImage =
+  //     img.copyResize(image, height: 150, width: 150);
+  //
+  // bytes += generator.image(resizedSaiImage, align: PosAlign.center);
+
+  // bytes += generator.hr();
+
+  bytes += generator.text('Date: ${DateTime.now().toString().split(' ')[0]}',
+      styles: PosStyles(align: PosAlign.right));
+  bytes += generator.hr();
+
+  bytes += generator.row([
+    PosColumn(
+        text: '#',
+        width: 1,
+        styles: PosStyles(bold: true, align: PosAlign.center)),
+    PosColumn(text: 'Particulars', width: 5, styles: PosStyles(bold: true)),
+    PosColumn(
+        text: 'Qty',
+        width: 2,
+        styles: PosStyles(bold: true, align: PosAlign.center)),
+    PosColumn(
+        text: 'Rate',
+        width: 2,
+        styles: PosStyles(bold: true, align: PosAlign.center)),
+    PosColumn(
+        text: 'Amt',
+        width: 2,
+        styles: PosStyles(bold: true, align: PosAlign.center)),
+  ]);
+  bytes += generator.hr();
+
+  double total = 0;
+  for (int i = 0; i < data.length; i++) {
+    var item = data[i];
+    int qty = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+    double rate = double.tryParse(item['rate']?.toString() ?? '0') ?? 0;
+    double amount = qty * rate;
+    total += amount;
+
+    if (item['particulars'] is Uint8List) {
+      try {
+        final imageBytes = item['particulars'];
+        final img.Image originalImage = img.decodeImage(imageBytes)!;
+
+        final img.Image resizedImage =
+        img.copyResize(originalImage, height: 50);
+
+        bytes += generator.row([
+          PosColumn(
+              text: '${i + 1}',
+              width: 1,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(width: 5, text: ''),
+          PosColumn(
+              text: '$qty',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '$rate',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '${amount.toStringAsFixed(2)}',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+        ]);
+
+        // bytes += generator.image(resizedImage, align: PosAlign.left);
+      } catch (e) {
+        print('Error processing image: $e');
+        bytes += generator.row([
+          PosColumn(
+              text: '${i + 1}',
+              width: 1,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '(Image failed)',
+              width: 5,
+              styles: PosStyles(align: PosAlign.left)),
+          PosColumn(
+              text: '$qty',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '$rate',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+          PosColumn(
+              text: '${amount.toStringAsFixed(2)}',
+              width: 2,
+              styles: PosStyles(align: PosAlign.center)),
+        ]);
+      }
+    } else {
+      bytes += generator.row([
+        PosColumn(
+            text: '${i + 1}',
+            width: 1,
+            styles: PosStyles(align: PosAlign.center)),
+        PosColumn(text: '${item['particulars'] ?? ''}', width: 5),
+        PosColumn(
+            text: '$qty',
+            width: 2,
+            styles: PosStyles(align: PosAlign.center)),
+        PosColumn(
+            text: '$rate',
+            width: 2,
+            styles: PosStyles(align: PosAlign.center)),
+        PosColumn(
+            text: '${amount.toStringAsFixed(2)}',
+            width: 2,
+            styles: PosStyles(align: PosAlign.center)),
+      ]);
+    }
+  }
+
+  bytes += generator.hr();
+  bytes += generator.row([
+    PosColumn(text: 'TOTAL', width: 6, styles: PosStyles(bold: true)),
+    PosColumn(text: '', width: 2),
+    PosColumn(text: '', width: 2),
+    PosColumn(
+        text: '${total.toStringAsFixed(2)}',
+        width: 2,
+        styles: PosStyles(align: PosAlign.right, bold: true)),
+  ]);
+  bytes += generator.hr();
+
+  bytes += generator.text('Thank you for your business!',
+      styles: PosStyles(align: PosAlign.center));
+  bytes += generator.text('Please visit again',
+      styles: PosStyles(align: PosAlign.center));
+  bytes += generator.feed(2);
+  bytes += generator.cut();
+
+  return bytes;
+}*/

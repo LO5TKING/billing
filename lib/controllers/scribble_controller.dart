@@ -4,19 +4,20 @@ import 'dart:ui' as ui;
 import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart' hide Ink;
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
 
 class ScribbleController extends GetxController {
-
   var itemList = <Map<String, dynamic>>[].obs;
+  List<Uint8List?> newItemList = [];
 
   final DigitalInkRecognizerModelManager modelManager =
-  DigitalInkRecognizerModelManager();
+      DigitalInkRecognizerModelManager();
   final String language = 'en-US';
   late final DigitalInkRecognizer digitalInkRecognizer =
-  DigitalInkRecognizer(languageCode: language);
+      DigitalInkRecognizer(languageCode: language);
   final Ink rateInk = Ink();
   final Ink quantityInk = Ink();
   final Ink descriptionInk = Ink();
@@ -170,7 +171,8 @@ class ScribbleController extends GetxController {
         var text = candidates[0].text;
 
         // Perform replacements and assign them back to `text`
-        text = text.toUpperCase()
+        text = text
+            .toUpperCase()
             .replaceAll('O', '0')
             .replaceAll('I', '1')
             .replaceAll('L', '1')
@@ -196,9 +198,7 @@ class ScribbleController extends GetxController {
       }
 
       update();
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 
   Future<void> recogniseQuantityText() async {
@@ -211,7 +211,8 @@ class ScribbleController extends GetxController {
         var text = candidates[0].text;
 
         // Perform replacements and assign them back to `text`
-        text = text.toUpperCase()
+        text = text
+            .toUpperCase()
             .replaceAll('O', '0')
             .replaceAll('I', '1')
             .replaceAll('L', '1')
@@ -244,38 +245,134 @@ class ScribbleController extends GetxController {
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(
-        recorder, Rect.fromPoints(Offset.zero, Offset(width, height)));
+    final canvas =
+        Canvas(recorder, Rect.fromPoints(Offset.zero, Offset(width, height)));
 
     final painter = SignatureStyle(ink: descriptionInk);
     painter.paint(canvas, Size(width, height));
 
-    final ui.Image image = await recorder.endRecording().toImage(
-        width.toInt(), height.toInt());
+    final ui.Image image =
+        await recorder.endRecording().toImage(width.toInt(), height.toInt());
 
-    final ByteData? byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png);
+    final ByteData? byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData?.buffer.asUint8List();
   }
-
 
   Future<void> addItem() async {
     await recogniseRateText();
     await recogniseQuantityText();
 
-    Uint8List? particularImage = await convertToPngBytes(Get.width * 0.8, 75,);
-    if (particularImage != null && recognizedQuantity.isNotEmpty &&
+    Uint8List? particularImage = await convertToPngBytes(
+      Get.width * 0.8,
+      75,
+    );
+    if (particularImage != null &&
+        recognizedQuantity.isNotEmpty &&
         recognizedRate.isNotEmpty) {
       itemList.add({
         'particulars': particularImage,
         'quantity': recognizedQuantity,
         'rate': recognizedRate,
       });
-      update();
 
+      update();
     } else {
       Get.snackbar("Error", "Field is Empty");
     }
+  }
+
+  Future<List<Uint8List?>> generateReceiptImages(
+      List<Map<String, dynamic>> itemList, double width) async {
+    List<Uint8List?> images = [];
+    double rowHeight = 100; // Height for each row
+
+    for (var item in itemList) {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width, rowHeight));
+
+      // Background
+      final Paint backgroundPaint = Paint()..color = Colors.white;
+      canvas.drawRect(Rect.fromLTWH(0, 0, width, rowHeight), backgroundPaint);
+
+      // Column width calculations
+      double particularsWidth = width * 0.52; // 55% for Particulars
+      double columnWidth = (width - particularsWidth) /
+          3; // Remaining split equally among Qty, Rate, Amt
+
+      // Paint configurations
+      final textStyle = GoogleFonts.azeretMono(
+        color: Colors.black,
+        fontSize: 18, // Adjusted font size
+      );
+      final textPainter = TextPainter(
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      );
+
+      // Draw Particulars (Image and Text)
+      Uint8List imageBytes = item['particulars'];
+      final ui.Codec codec = await ui.instantiateImageCodec(imageBytes,
+          targetWidth: (particularsWidth)
+              .toInt(), // Match the column width for sharper scaling
+          targetHeight: 100);
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image img = frameInfo.image;
+
+      // Calculate the image scaling factor to fit within the column
+      double scale = particularsWidth / img.width;
+      double imageHeight = img.height * scale;
+
+      canvas.drawImageRect(
+        img,
+        Rect.fromLTWH(0, 0, img.width.toDouble(),
+            img.height.toDouble()), // Source rectangle (entire image)
+        Rect.fromLTWH(
+          10, // Padding from the left
+          (rowHeight - imageHeight) / 2, // Center vertically
+          particularsWidth - 20, // Fit within column width with padding
+          imageHeight, // Scaled height
+        ),
+        Paint(),
+      );
+
+      // Draw Quantity
+      textPainter.text = TextSpan(text: item['quantity'], style: textStyle);
+      textPainter.layout(minWidth: columnWidth, maxWidth: columnWidth);
+      textPainter.paint(
+        canvas,
+        Offset(particularsWidth, (rowHeight - textPainter.height) / 2),
+      );
+
+      // Draw Rate
+      textPainter.text = TextSpan(text: item['rate'], style: textStyle);
+      textPainter.layout(minWidth: columnWidth, maxWidth: columnWidth);
+      textPainter.paint(
+        canvas,
+        Offset(particularsWidth + columnWidth,
+            (rowHeight - textPainter.height) / 2),
+      );
+
+      // Draw Amount (calculated as integer)
+      int amount = int.parse(item['quantity']) * int.parse(item['rate']);
+      textPainter.text = TextSpan(text: amount.toString(), style: textStyle);
+      textPainter.layout(minWidth: columnWidth, maxWidth: columnWidth);
+      textPainter.paint(
+        canvas,
+        Offset(particularsWidth + 2 * columnWidth,
+            (rowHeight - textPainter.height) / 2),
+      );
+
+      // Convert to Image
+      final ui.Image finalImage = await recorder
+          .endRecording()
+          .toImage(width.toInt(), rowHeight.toInt());
+      final ByteData? byteData =
+          await finalImage.toByteData(format: ui.ImageByteFormat.png);
+      images.add(byteData?.buffer.asUint8List());
+    }
+
+    return images;
   }
 
   double get totalAmount {
@@ -661,8 +758,4 @@ class ScribbleController extends GetxController {
   //     onLayout: (PdfPageFormat format) async => doc.save(),
   //   );
   // }
-
-
-
-
 }

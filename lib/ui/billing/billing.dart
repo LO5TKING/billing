@@ -34,7 +34,8 @@ class Billing extends StatelessWidget {
                   // Replace your DesignConstants
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: AppColors.stainedGlass), // Replace with your color
+                        color:
+                            AppColors.stainedGlass), // Replace with your color
                   ),
                   child: Column(
                     children: [
@@ -56,16 +57,19 @@ class Billing extends StatelessWidget {
                             ),
                             Positioned(
                               right: 0,
-                              child: Obx(() =>
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
-                                    child: Text(getCurrentDateTime(),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.stainedGlass,
-                                      ),),
+                              child: Obx(
+                                () => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: DesignConstants.padding5),
+                                  child: Text(
+                                    getCurrentDateTime(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.stainedGlass,
+                                    ),
                                   ),
+                                ),
                               ),
                             ),
                           ],
@@ -118,19 +122,23 @@ class Billing extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 20.0),
                           child: Table(
                             // border: TableBorder(verticalInside: BorderSide(color: AppColors.stainedGlass)), // Only vertical borders
-                            border: TableBorder.all(color: AppColors.stainedGlass),
+                            border:
+                                TableBorder.all(color: AppColors.stainedGlass),
                             columnWidths: {
                               0: FixedColumnWidth(60.0), // Sr.No
                               1: FlexColumnWidth(), // Particulars
-                              2: FixedColumnWidth(scribbleController.showButtons.value
-                                  ? 120.0
-                                  : 100), // QTY
-                              3: FixedColumnWidth(scribbleController.showButtons.value
-                                  ? 120.0
-                                  : 100), // Rate
-                              4: FixedColumnWidth(scribbleController.showButtons.value
-                                  ? 125.0
-                                  : 100), // Amount
+                              2: FixedColumnWidth(
+                                  scribbleController.showButtons.value
+                                      ? 120.0
+                                      : 100), // QTY
+                              3: FixedColumnWidth(
+                                  scribbleController.showButtons.value
+                                      ? 120.0
+                                      : 100), // Rate
+                              4: FixedColumnWidth(
+                                  scribbleController.showButtons.value
+                                      ? 125.0
+                                      : 100), // Amount
                             },
                             children: const [
                               TableRow(
@@ -140,8 +148,8 @@ class Billing extends StatelessWidget {
                                       padding: EdgeInsets.all(8.0),
                                       child: Text('Sr. No.',
                                           textAlign: TextAlign.center,
-                                          style:
-                                              TextStyle(fontWeight: FontWeight.bold)),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                   TableCell(
@@ -149,8 +157,8 @@ class Billing extends StatelessWidget {
                                       padding: EdgeInsets.all(8.0),
                                       child: Text('PARTICULARS',
                                           textAlign: TextAlign.center,
-                                          style:
-                                              TextStyle(fontWeight: FontWeight.bold)),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                   TableCell(
@@ -158,8 +166,8 @@ class Billing extends StatelessWidget {
                                       padding: EdgeInsets.all(8.0),
                                       child: Text('QTY.',
                                           textAlign: TextAlign.center,
-                                          style:
-                                              TextStyle(fontWeight: FontWeight.bold)),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                   TableCell(
@@ -167,8 +175,8 @@ class Billing extends StatelessWidget {
                                       padding: EdgeInsets.all(8.0),
                                       child: Text('RATE',
                                           textAlign: TextAlign.center,
-                                          style:
-                                              TextStyle(fontWeight: FontWeight.bold)),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                   TableCell(
@@ -176,8 +184,8 @@ class Billing extends StatelessWidget {
                                       padding: EdgeInsets.all(8.0),
                                       child: Text('AMOUNT',
                                           textAlign: TextAlign.center,
-                                          style:
-                                              TextStyle(fontWeight: FontWeight.bold)),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                 ],
@@ -188,152 +196,181 @@ class Billing extends StatelessWidget {
                       ),
                       // Dynamic Rows
                       Expanded(
-                        child: Obx(() {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (scrollController.hasClients) {
-                              scrollController.animateTo(
-                                scrollController.position.maxScrollExtent,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOut,
-                              );
-                            }
-                          });
-                          return ListView.builder(
-                            itemCount: scribbleController.itemList.length,
-                            padding: EdgeInsets.zero,
-                            controller: scrollController,
-                            itemBuilder: (context, index) {
-                              final item = scribbleController.itemList[index];
-                              final rate = double.tryParse(item['rate'] ?? '0') ?? 0;
-                              final quantity =
-                                  double.tryParse(item['quantity'] ?? '0') ?? 0;
-                              final amount = rate * quantity;
-                              final amountDisplay = amount.truncateToDouble() == amount
-                                  ? amount.toInt().toString()
-                                  : amount.toString();
+                        child: Obx(
+                          () {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (scrollController.hasClients) {
+                                scrollController.animateTo(
+                                  scrollController.position.maxScrollExtent,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                );
+                              }
+                            });
+                            return ListView.builder(
+                              itemCount: scribbleController.itemList.length,
+                              padding: EdgeInsets.zero,
+                              controller: scrollController,
+                              itemBuilder: (context, index) {
+                                final item = scribbleController.itemList[index];
+                                final rate =
+                                    double.tryParse(item['rate'] ?? '0') ?? 0;
+                                final quantity =
+                                    double.tryParse(item['quantity'] ?? '0') ??
+                                        0;
+                                final amount = rate * quantity;
+                                final amountDisplay =
+                                    amount.truncateToDouble() == amount
+                                        ? amount.toInt().toString()
+                                        : amount.toString();
 
-                              return Obx(
-                                    () => Row(
-                                  children: [
-                                    Expanded(
-                                      child: Table(
-                                        border: const TableBorder(
-                                          verticalInside: BorderSide(
-                                              color: AppColors.stainedGlass),
-                                        ),
-                                        columnWidths: {
-                                          0: FixedColumnWidth(60.0),
-                                          1: FlexColumnWidth(),
-                                          2: FixedColumnWidth(
-                                              scribbleController.showButtons.value
-                                                  ? 120.0
-                                                  : 100),
-                                          3: FixedColumnWidth(
-                                              scribbleController.showButtons.value
-                                                  ? 120.0
-                                                  : 100),
-                                          4: FixedColumnWidth(
-                                              scribbleController.showButtons.value
-                                                  ? 120.0
-                                                  : 120),
-                                        },
-                                        children: [
-                                          TableRow(
-                                            children: [
-                                              Padding(
-                                                padding:
-                                                const EdgeInsets.only(top: 22.0),
-                                                child: Text(
-                                                  '${index + 1}',
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding: const EdgeInsets.all(8.0),
-                                                child: item['particulars'] != null
-                                                    ? Container(
-                                                    alignment: Alignment.topLeft,
-                                                    child: Image.memory(
-                                                        item['particulars'],
-                                                        height: 50,
-                                                        fit: BoxFit.contain))
-                                                    : Container(),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                const EdgeInsets.only(top: 22.0),
-                                                child: Text(
-                                                  item['quantity'] ?? '',
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                const EdgeInsets.only(top: 22.0),
-                                                child: Text(
-                                                  item['rate'] ?? '',
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding:
-                                                const EdgeInsets.only(top: 22.0),
-                                                child: Text(
-                                                  '$amountDisplay',
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                              ),
-                                            ],
+                                return Obx(
+                                  () => Row(
+                                    children: [
+                                      Expanded(
+                                        child: Table(
+                                          border: const TableBorder(
+                                            verticalInside: BorderSide(
+                                                color: AppColors.stainedGlass),
                                           ),
-                                        ],
+                                          columnWidths: {
+                                            0: FixedColumnWidth(60.0),
+                                            1: FlexColumnWidth(),
+                                            2: FixedColumnWidth(
+                                                scribbleController
+                                                        .showButtons.value
+                                                    ? 120.0
+                                                    : 100),
+                                            3: FixedColumnWidth(
+                                                scribbleController
+                                                        .showButtons.value
+                                                    ? 120.0
+                                                    : 100),
+                                            4: FixedColumnWidth(
+                                                scribbleController
+                                                        .showButtons.value
+                                                    ? 120.0
+                                                    : 120),
+                                          },
+                                          children: [
+                                            TableRow(
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 22.0),
+                                                  child: Text(
+                                                    '${index + 1}',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: item['particulars'] !=
+                                                          null
+                                                      ? Container(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: Image.memory(
+                                                              item[
+                                                                  'particulars'],
+                                                              height: 50,
+                                                              fit: BoxFit
+                                                                  .contain))
+                                                      : Container(),
+                                                ),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 22.0),
+                                                  child: Text(
+                                                    item['quantity'] ?? '',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 22.0),
+                                                  child: Text(
+                                                    item['rate'] ?? '',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 22.0),
+                                                  child: Text(
+                                                    '$amountDisplay',
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Obx(
-                                          () => Visibility(
-                                        visible: scribbleController.showButtons.value,
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            scribbleController.editItem(index);
-                                          },
-                                          onDoubleTap: () {
-                                            scribbleController.deleteItem(index);
-                                          },
-                                          child: Padding(
-                                            padding:
-                                            const EdgeInsets.only(right: 10.0),
-                                            child: Container(
-                                              width: 15.0,
-                                              height: 15.0,
-                                              alignment: Alignment.bottomCenter,
-                                              decoration: const BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Colors.black, // Dot color
+                                      Obx(
+                                        () => Visibility(
+                                          visible: scribbleController
+                                              .showButtons.value,
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              scribbleController
+                                                  .editItem(index);
+                                            },
+                                            onDoubleTap: () {
+                                              scribbleController
+                                                  .deleteItem(index);
+                                            },
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  right: 10.0),
+                                              child: Container(
+                                                width: 15.0,
+                                                height: 15.0,
+                                                alignment:
+                                                    Alignment.bottomCenter,
+                                                decoration: const BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color:
+                                                      Colors.black, // Dot color
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        },),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                       // Total Row
                       Obx(
                         () => Table(
-                          border: TableBorder.all(color: AppColors.stainedGlass),
+                          border:
+                              TableBorder.all(color: AppColors.stainedGlass),
                           columnWidths: {
                             0: FixedColumnWidth(60.0),
                             1: FlexColumnWidth(),
                             2: FixedColumnWidth(
-                                scribbleController.showButtons.value ? 240.0 : 200),
+                                scribbleController.showButtons.value
+                                    ? 240.0
+                                    : 200),
                             3: FixedColumnWidth(
-                                scribbleController.showButtons.value ? 145.0 : 120),
+                                scribbleController.showButtons.value
+                                    ? 145.0
+                                    : 120),
                             4: FixedColumnWidth(
-                                scribbleController.showButtons.value ? 120.0 : 120),
+                                scribbleController.showButtons.value
+                                    ? 120.0
+                                    : 120),
                           },
                           children: [
                             TableRow(
@@ -342,24 +379,24 @@ class Billing extends StatelessWidget {
                                   child: Padding(
                                     padding: EdgeInsets.all(8.0),
                                     child: Text('',
-                                        style:
-                                            TextStyle(fontWeight: FontWeight.bold)),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                                 const TableCell(
                                   child: Padding(
                                     padding: EdgeInsets.all(8.0),
                                     child: Text('',
-                                        style:
-                                            TextStyle(fontWeight: FontWeight.bold)),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                                 const TableCell(
                                   child: Padding(
                                     padding: EdgeInsets.all(8.0),
                                     child: Text('TOTAL',
-                                        style:
-                                            TextStyle(fontWeight: FontWeight.bold)),
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                                 Padding(
@@ -398,22 +435,28 @@ class Billing extends StatelessWidget {
                                         visible: false,
                                         child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppColors.stainedGlass,
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(5))),
+                                              backgroundColor:
+                                                  AppColors.stainedGlass,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  5))),
                                             ),
                                             onPressed: () {},
                                             child: const Text(
                                               'View',
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: DesignConstants.fontSize20),
+                                                  fontSize: DesignConstants
+                                                      .fontSize20),
                                             )),
                                       ),
                                       ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.stainedGlass,
+                                            backgroundColor:
+                                                AppColors.stainedGlass,
                                             shape: const RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.all(
                                                     Radius.circular(5))),
@@ -423,9 +466,17 @@ class Billing extends StatelessWidget {
                                             /// a4 is standard
                                             // scribbleController.printDocument(pageFormat: PdfPageFormat.a4);
 
-                                            final List<Map<String, dynamic>> data = scribbleController.itemList;
+                                            final List<Map<String, dynamic>>
+                                                data =
+                                                scribbleController.itemList;
 
-                                            await PrintDialog.show(data);
+                                            await PrintDialog.show(
+                                                await scribbleController
+                                                    .generateReceiptImages(
+                                                        scribbleController
+                                                            .itemList,
+                                                        150));
+                                            // await PrintDialog.show(data);
                                             // scribbleController.printDocument(
                                             //     pageFormat: PdfPageFormat.a4);
                                             // scribbleController.printPOSReceipt(pageFormat: PdfPageFormat.roll57);
@@ -434,23 +485,29 @@ class Billing extends StatelessWidget {
                                             'Print',
                                             style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: DesignConstants.fontSize20),
+                                                fontSize:
+                                                    DesignConstants.fontSize20),
                                           )),
                                       Visibility(
                                         visible: false,
                                         child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppColors.stainedGlass,
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(5))),
+                                              backgroundColor:
+                                                  AppColors.stainedGlass,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  5))),
                                             ),
                                             onPressed: () {},
                                             child: const Text(
                                               'Save',
                                               style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: DesignConstants.fontSize20),
+                                                  fontSize: DesignConstants
+                                                      .fontSize20),
                                             )),
                                       ),
                                     ],
@@ -465,7 +522,8 @@ class Billing extends StatelessWidget {
                                   child: IconButton(
                                       onPressed: () {
                                         scribbleController.showButtons.value =
-                                            !scribbleController.showButtons.value;
+                                            !scribbleController
+                                                .showButtons.value;
                                       },
                                       icon: const Icon(
                                         Icons.house_siding_rounded,
@@ -487,32 +545,32 @@ class Billing extends StatelessWidget {
               // Improved loading overlay
               Obx(() => scribbleController.isModelLoading.value
                   ? Container(
-                color: Colors.black54,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 20),
-                        Obx(() => Text(
-                          scribbleController.downloadStatus.value,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                      color: Colors.black54,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          textAlign: TextAlign.center,
-                        )),
-                      ],
-                    ),
-                  ),
-                ),
-              )
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 20),
+                              Obx(() => Text(
+                                    scribbleController.downloadStatus.value,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
                   : const SizedBox.shrink()),
             ],
           ),
@@ -731,7 +789,10 @@ class Billing extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               // padding: const EdgeInsets.all(8.0),
-              child: Icon(Icons.close, color: Colors.black,),
+              child: Icon(
+                Icons.close,
+                color: Colors.black,
+              ),
             ),
           ),
         ),
