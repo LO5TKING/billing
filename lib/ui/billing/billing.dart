@@ -107,8 +107,9 @@ class Billing extends StatelessWidget {
                                 ),
                               ),
                               IconButton(
-                                  onPressed: () {
-                                    scribbleController.addItem();
+                                  onPressed: () async {
+                                    await scribbleController.addItem();
+                                    scribbleController.clearPadAndSignature();
                                   },
                                   icon: const Icon(Icons.add)),
                             ],
@@ -275,7 +276,7 @@ class Billing extends StatelessWidget {
                                                           child: Image.memory(
                                                               item[
                                                                   'particulars'],
-                                                              height: 50,
+                                                              height: 65,
                                                               fit: BoxFit
                                                                   .contain))
                                                       : Container(),
@@ -477,7 +478,7 @@ class Billing extends StatelessWidget {
                                       ),
                                       const SizedBox(width: 10),
                                       Container(
-                                        height: 50,
+                                        height: 40,
                                         child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
@@ -498,7 +499,7 @@ class Billing extends StatelessWidget {
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: DesignConstants
-                                                      .fontSize20),
+                                                      .fontSize16),
                                             )),
                                       ),
                                     ],
@@ -811,7 +812,8 @@ class SignatureStyle extends CustomPainter {
     final Paint paint = Paint()
       ..color = AppColors.stainedGlass
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 4.0;
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 5.0;
 
     for (final stroke in ink.strokes) {
       for (int i = 0; i < stroke.points.length - 1; i++) {

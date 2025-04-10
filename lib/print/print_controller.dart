@@ -36,10 +36,17 @@ class PrintController extends GetxController {
     savedPrinterId.value = prefs.getString('saved_printer_id');
   }
 
-  Future<void> saveSelectedPrinter(BluetoothDevice device) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('saved_printer_id', device.id.toString());
-    savedPrinterId.value = device.id.toString();
+  Future<void> saveSelectedPrinter(BluetoothDevice? device) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final deviceId = device?.id.toString();
+      await prefs.setString('saved_printer_id', deviceId ?? "");
+      savedPrinterId.value = deviceId;
+      print('Printer saved successfully: ${device?.name} ($deviceId)');
+    } catch (e) {
+      print('Error saving printer: $e');
+      // Don't throw - this is not critical
+    }
   }
 
   Future<void> clearSavedPrinter() async {
@@ -423,93 +430,132 @@ class PrintController extends GetxController {
     return bytes;
   }
 
-  // Update the printPdfWithSavedPrinter method to use the direct receipt generation
   Future<void> printPdfWithSavedPrinter(
       List<Map<String, dynamic>> items) async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedPrinterIdFromPrefs = prefs.getString('saved_printer_id');
-
-    if (savedPrinterIdFromPrefs == null || savedPrinterIdFromPrefs.isEmpty) {
-      throw Exception('No saved printer found');
-    }
-
     try {
-      // Check if we're already connected to the correct printer
-      bool isCorrectPrinterConnected = _connectedDevice != null &&
-          _connectedDevice!.id.toString() == savedPrinterIdFromPrefs &&
-          isConnected.value;
-
-      if (isCorrectPrinterConnected) {
-        // Skip scanning and directly print if already connected
-        print('Using already connected printer: ${_connectedDevice!.name}');
-        await _printDirectWithConnectedPrinter(items);
-        return;
+      // If already connected to a printer, try to print directly first
+      if (isConnected.value && _connectedDevice != null) {
+        try {
+          print('Using already connected printer: ${_connectedDevice!.name}');
+          await _printDirectWithConnectedPrinter(items);
+          // Save this printer if not already saved
+          await saveSelectedPrinter(_connectedDevice!);
+          return;
+        } catch (e) {
+          print('Direct print failed, falling back to reconnection: $e');
+          isConnected(false);
+          _connectedDevice = null;
+        }
       }
 
-      // If not connected or connected to wrong device, proceed with scanning
-      print('Searching for saved printer...');
+      // Check for saved printer
+      final prefs = await SharedPreferences.getInstance();
+      final savedPrinterIdFromPrefs = prefs.getString('saved_printer_id');
 
-      // Generate PDF from items (for compatibility with existing code)
-      final pdfData = await generateReceiptPdf(items);
-
+      // Quick Bluetooth check
       if (!await FlutterBluePlus.isOn) {
-        await FlutterBluePlus.turnOn();
-        await Future.delayed(const Duration(milliseconds: 500));
+        throw Exception('Please turn on Bluetooth to print');
       }
 
-      BluetoothDevice? savedDevice;
+      // Start scanning for printers
+      print('Scanning for printers...');
+      BluetoothDevice? targetDevice;
       bool deviceFound = false;
-
       final completer = Completer<void>();
 
-      await startScanning();
+      // If we have a saved printer ID, look for it specifically
+      if (savedPrinterIdFromPrefs != null &&
+          savedPrinterIdFromPrefs.isNotEmpty) {
+        print('Looking for saved printer: $savedPrinterIdFromPrefs');
+        final subscription = FlutterBluePlus.scanResults.listen((results) {
+          targetDevice = results
+              .firstWhereOrNull((result) =>
+                  result.device.id.toString() == savedPrinterIdFromPrefs)
+              ?.device;
 
-      final subscription = FlutterBluePlus.scanResults.listen((results) {
-        savedDevice = results
-            .firstWhereOrNull((result) =>
-                result.device.id.toString() == savedPrinterIdFromPrefs)
-            ?.device;
+          if (targetDevice != null && !deviceFound) {
+            deviceFound = true;
+            completer.complete();
+          }
+        });
 
-        if (savedDevice != null && !deviceFound) {
-          deviceFound = true;
-          completer.complete();
+        await startScanning();
+
+        try {
+          await Future.any([
+            completer.future,
+            Future.delayed(const Duration(seconds: 10)).then((_) {
+              if (!deviceFound) {
+                print('Saved printer not found, will look for any printer');
+              }
+            })
+          ]);
+        } catch (e) {
+          print('Error looking for saved printer: $e');
         }
-      });
 
-      try {
-        await Future.any([
-          completer.future,
-          Future.delayed(const Duration(seconds: 30)).then((_) {
-            if (!deviceFound) {
-              throw Exception(
-                  'Scan timeout: Printer not found after 30 seconds');
-            }
-          })
-        ]);
-      } catch (e) {
-        print('Scan error or timeout: $e');
+        await subscription.cancel();
+        if (FlutterBluePlus.isScanningNow) {
+          await FlutterBluePlus.stopScan();
+        }
+      }
+
+      // If no saved printer found, look for any printer
+      if (!deviceFound) {
+        print('Looking for any available printer...');
+        deviceFound = false;
+        final newCompleter = Completer<void>();
+
+        final subscription = FlutterBluePlus.scanResults.listen((results) {
+          // Look for devices that might be printers (you might want to add more specific criteria)
+          targetDevice = results.firstWhereOrNull((result) {
+            final name = result.device.localName.toLowerCase();
+            return name.contains('printer') ||
+                name.contains('pos') ||
+                name.contains('thermal') ||
+                name.contains('bt');
+          })?.device;
+
+          if (targetDevice != null && !deviceFound) {
+            deviceFound = true;
+            newCompleter.complete();
+          }
+        });
+
+        await startScanning();
+
+        try {
+          await Future.any([
+            newCompleter.future,
+            Future.delayed(const Duration(seconds: 15)).then((_) {
+              if (!deviceFound) {
+                throw Exception(
+                    'No printers found. Please make sure your printer is turned on and nearby.');
+              }
+            })
+          ]);
+        } finally {
+          await subscription.cancel();
+          if (FlutterBluePlus.isScanningNow) {
+            await FlutterBluePlus.stopScan();
+          }
+        }
+      }
+
+      if (targetDevice == null) {
         throw Exception(
-            'Could not find saved printer. Please try again or select a new printer.');
+            'No printer found. Please make sure your printer is turned on and nearby.');
       }
 
-      await subscription.cancel();
+      // Try to connect and print
+      print('Attempting to connect to printer: ${targetDevice?.name}');
+      await _connectAndPrintDirect(targetDevice!, items);
 
-      if (FlutterBluePlus.isScanningNow) {
-        await FlutterBluePlus.stopScan();
-      }
-
-      if (savedDevice == null) {
-        await prefs.remove('saved_printer_id');
-        savedPrinterId.value = null;
-        throw Exception('Saved printer not found. Please scan for printers.');
-      }
-
-      if (savedDevice != null) {
-        // Instead of using the PDF data, generate receipt data directly
-        await _connectAndPrintDirect(savedDevice!, items);
-      }
+      // If we successfully printed, save this printer
+      await saveSelectedPrinter(targetDevice);
+      print('Successfully saved printer: ${targetDevice?.name}');
     } catch (e) {
-      print('Error printing with saved printer: $e');
+      print('Error in printPdfWithSavedPrinter: $e');
       rethrow;
     } finally {
       if (FlutterBluePlus.isScanningNow) {
@@ -518,17 +564,18 @@ class PrintController extends GetxController {
     }
   }
 
-  // Method to print with an already connected printer
+  // Optimize the direct print method
   Future<void> _printDirectWithConnectedPrinter(
       List<Map<String, dynamic>> items) async {
     try {
+      if (_connectedDevice == null) throw Exception('No printer connected');
+
       List<BluetoothService> services =
           await _connectedDevice!.discoverServices();
       BluetoothCharacteristic? writeCharacteristic;
 
       for (var service in services) {
-        var characteristics = service.characteristics;
-        for (var characteristic in characteristics) {
+        for (var characteristic in service.characteristics) {
           if (characteristic.properties.write ||
               characteristic.properties.writeWithoutResponse) {
             writeCharacteristic = characteristic;
@@ -542,45 +589,41 @@ class PrintController extends GetxController {
         throw Exception('Printer service not found');
       }
 
-      int mtuSize = 20;
-      try {
-        final negotiatedMtu = await _connectedDevice!.mtu.first;
-        mtuSize = negotiatedMtu - 3;
-      } catch (e) {
-        print('Could not get MTU size: $e');
-      }
-
-      // Generate receipt data directly from items
+      // Generate receipt data directly
       final bytes = await generateDirectReceiptData(items);
 
-      final chunkSize = mtuSize < 180 ? mtuSize : 180;
-      print('Using chunk size: $chunkSize bytes for direct print');
-
-      for (int i = 0; i < bytes.length; i += chunkSize) {
-        int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
-        await writeCharacteristic.write(bytes.sublist(i, end));
-        await Future.delayed(const Duration(milliseconds: 20));
+      // Use cached MTU size if available, or default to a safe value
+      int chunkSize = 180;
+      try {
+        final negotiatedMtu = await _connectedDevice!.mtu.first;
+        chunkSize = (negotiatedMtu - 3).clamp(20, 180);
+      } catch (e) {
+        print('Using default chunk size: $e');
       }
 
-      print('Successfully sent data to printer');
-    } catch (e) {
-      print('Error printing with connected printer: $e');
+      // Send data in chunks with minimal delay
+      for (int i = 0; i < bytes.length; i += chunkSize) {
+        int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+        await writeCharacteristic.write(bytes.sublist(i, end),
+            withoutResponse: true);
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
 
-      // If we get an error, the connection might be stale
-      // Set isConnected to false so we'll try a full reconnect next time
+      print('Print completed successfully');
+    } catch (e) {
+      print('Error in direct print: $e');
       isConnected(false);
       _connectedDevice = null;
-
       rethrow;
     }
   }
 
   // New method to connect and print directly without PDF intermediary
   Future<void> _connectAndPrintDirect(
-      BluetoothDevice device, List<Map<String, dynamic>> items) async {
+      BluetoothDevice? device, List<Map<String, dynamic>> items) async {
     try {
       // If already connected to a different device, disconnect first
-      if (_connectedDevice != null && _connectedDevice!.id != device.id) {
+      if (_connectedDevice != null && _connectedDevice!.id != device?.id) {
         print('Disconnecting from previous device: ${_connectedDevice!.name}');
         await _connectedDevice!.disconnect();
         await Future.delayed(const Duration(milliseconds: 500));
@@ -590,16 +633,16 @@ class PrintController extends GetxController {
 
       // If not connected to any device, connect now
       if (!isConnected.value || _connectedDevice == null) {
-        print('Connecting to device: ${device.name}');
-        await device.connect(timeout: const Duration(seconds: 5));
+        print('Connecting to device: ${device?.name}');
+        await device?.connect(timeout: const Duration(seconds: 5));
         _connectedDevice = device;
         isConnected(true);
-        print('Successfully connected to: ${device.name}');
+        print('Successfully connected to: ${device?.name}');
       }
 
       await Future.delayed(const Duration(seconds: 1));
 
-      List<BluetoothService> services = await device.discoverServices();
+      List<BluetoothService> services = await device!.discoverServices();
       BluetoothCharacteristic? writeCharacteristic;
 
       for (var service in services) {
@@ -803,7 +846,7 @@ class PrintController extends GetxController {
                 img.grayscale(decodedImage) as img.Image;
 
             // Resize image to fit receipt width while maintaining aspect ratio
-            final int targetWidth = 300; // Adjusted width for better fit
+            final int targetWidth = 310;
             final int targetHeight =
                 (targetWidth * processedImage.height / processedImage.width)
                     .round();
@@ -813,10 +856,10 @@ class PrintController extends GetxController {
               height: targetHeight,
             ) as img.Image;
 
-            // Create a new blank image
+            // Create a new blank image with minimal height
             final img.Image finalImage = img.Image.rgb(
               resizedImage.width,
-              resizedImage.height,
+              resizedImage.height + 10, // Reduced extra space
             );
 
             // Make background transparent/white
@@ -838,11 +881,11 @@ class PrintController extends GetxController {
               }
             }
 
-            // Print the details in a single row
+            // Print the combined row with image and text
             bytes += generator.row([
               PosColumn(
                 width: 6,
-                text: '',
+                text: '', // Space for image that we'll print right after
                 styles: PosStyles(align: PosAlign.left),
               ),
               PosColumn(
@@ -859,8 +902,12 @@ class PrintController extends GetxController {
                   styles: PosStyles(align: PosAlign.right)),
             ]);
 
-            // Print the image with left alignment and proper size
+            // Move up and print the image with minimal spacing
+            bytes += generator.feed(-1);
             bytes += generator.imageRaster(finalImage, align: PosAlign.left);
+
+            // Add minimal separator line with less spacing
+            bytes += generator.hr(ch: '-', linesAfter: 0);
           }
         }
       } catch (e) {
@@ -868,10 +915,10 @@ class PrintController extends GetxController {
         continue;
       }
 
-      bytes += generator.hr(ch: '-');
+      // Removed the extra hr here since we're adding it after the image
     }
 
-    // Add total
+    // Add total with minimal spacing
     final total = items.fold<int>(0, (sum, item) {
       final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
       final rate = int.tryParse(item['rate'].toString()) ?? 0;
@@ -891,13 +938,13 @@ class PrintController extends GetxController {
       ),
     ]);
 
-    // Add receipt footer
+    // Add receipt footer with reduced spacing
     bytes += generator.hr();
     bytes += generator.text('Thank you for your business!',
         styles: PosStyles(align: PosAlign.center));
     bytes += generator.text('Please visit again',
         styles: PosStyles(align: PosAlign.center));
-    bytes += generator.feed(2);
+    bytes += generator.feed(1); // Reduced from 2 to 1
     bytes += generator.cut();
 
     return bytes;

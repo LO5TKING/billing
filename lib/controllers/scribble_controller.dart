@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart' hide Ink;
 import 'package:get/get.dart';
@@ -30,8 +31,9 @@ class ScribbleController extends GetxController {
   String recognizedQuantity = '';
   RxBool showButtons = false.obs;
 
-  RxBool isModelLoading = true.obs;
-  RxString downloadStatus = 'Initializing...'.obs;
+  // Initialize as false to prevent flash
+  RxBool isModelLoading = false.obs;
+  RxString downloadStatus = ''.obs;
 
   // Inject the PrintController
   late PrintController printController;
@@ -65,20 +67,17 @@ class ScribbleController extends GetxController {
 
     try {
       clearPadAndSignature();
-      isModelLoading(true);
-      downloadStatus('Checking model status...');
 
       // Check if model is already downloaded (including local cache check)
       bool downloadedModel = await isModelDownloaded();
 
       if (downloadedModel) {
-        // If model is already downloaded, we can proceed
-        downloadStatus('Model ready');
-        isModelLoading(false);
+        // Model is already downloaded, do nothing
         return;
       }
 
-      // If model is not downloaded, try to download it
+      // Only show loading for new downloads
+      isModelLoading(true);
       downloadStatus('Downloading recognition model...');
 
       try {
@@ -87,19 +86,12 @@ class ScribbleController extends GetxController {
         if (success) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('model_downloaded_$language', true);
-
-          downloadStatus('Model ready');
-          isModelLoading(false);
         } else {
           throw 'Failed to download model';
         }
       } catch (e) {
-        // Handle download failure
         print('Model download error: $e');
-        isModelLoading(false);
-        downloadStatus('Error: $e');
-
-        // Show error dialog
+        // Show error dialog only for download failures
         Get.dialog(
           AlertDialog(
             title: const Text('Model Download Error'),
@@ -117,19 +109,18 @@ class ScribbleController extends GetxController {
                 child: const Text('Continue Anyway'),
                 onPressed: () {
                   Get.back();
-                  isModelLoading(false);
                 },
               ),
             ],
           ),
           barrierDismissible: false,
         );
+      } finally {
+        isModelLoading(false);
+        downloadStatus('');
       }
     } catch (e) {
-      isModelLoading(false);
-      downloadStatus('Error: $e');
-
-      // Show error dialog but don't force user to close app
+      // Show error dialog only for critical initialization errors
       Get.dialog(
         AlertDialog(
           title: const Text('Initialization Error'),
@@ -323,6 +314,10 @@ class ScribbleController extends GetxController {
   }
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
+    // Increase the size by 20% for better visibility
+    width = width * 1.2;
+    height = height * 1.2;
+
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(
       recorder,
@@ -336,33 +331,34 @@ class ScribbleController extends GetxController {
     // Draw the handwriting with thicker black strokes
     for (final stroke in descriptionInk.strokes) {
       final paint = Paint()
-        ..color = Colors.black
-        ..strokeWidth = 2.5
+        ..color = AppColors.stainedGlass
+        ..strokeWidth = 4.0 // Increased stroke width for bolder appearance
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..style = PaintingStyle.stroke;
 
       if (stroke.points.length == 1) {
-        // For single points, draw a small circle
         canvas.drawCircle(
-          Offset(stroke.points[0].x, stroke.points[0].y),
-          1.5,
+          Offset(stroke.points[0].x * 1.2,
+              stroke.points[0].y * 1.2), // Scale the points
+          2.0, // Increased circle size
           paint,
         );
       } else {
         // For multiple points, create a smooth path
         final path = Path();
-        path.moveTo(stroke.points[0].x, stroke.points[0].y);
+        path.moveTo(stroke.points[0].x * 1.2,
+            stroke.points[0].y * 1.2); // Scale the points
 
         for (int i = 0; i < stroke.points.length - 1; i++) {
           final p0 = stroke.points[i];
           final p1 = stroke.points[i + 1];
 
           path.quadraticBezierTo(
-            p0.x,
-            p0.y,
-            (p0.x + p1.x) / 2,
-            (p0.y + p1.y) / 2,
+            p0.x * 1.2, // Scale the points
+            p0.y * 1.2,
+            (p0.x + p1.x) / 2 * 1.2,
+            (p0.y + p1.y) / 2 * 1.2,
           );
         }
 
@@ -387,8 +383,8 @@ class ScribbleController extends GetxController {
     await recogniseQuantityText();
 
     Uint8List? particularImage = await convertToPngBytes(
-      Get.width * 0.8,
-      75,
+      Get.width * 0.8, // Keep the width proportional
+      100, // Increased height from 75 to 100
     );
     if (particularImage != null &&
         recognizedQuantity.isNotEmpty &&
@@ -425,7 +421,7 @@ class ScribbleController extends GetxController {
 
       // Paint configurations
       final textStyle = GoogleFonts.azeretMono(
-        color: Colors.black,
+        color: AppColors.stainedGlass,
         fontSize: 18, // Adjusted font size
       );
       final textPainter = TextPainter(
@@ -556,30 +552,41 @@ class ScribbleController extends GetxController {
     }
 
     try {
-      Get.dialog(
-        Dialog(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 20),
-                const Text('Generating PDF and sending to printer...'),
-              ],
+      bool showDialog = !printController.isConnected.value;
+
+      if (showDialog) {
+        Get.dialog(
+          Dialog(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 20),
+                  const Text('Connecting to printer...'),
+                ],
+              ),
             ),
           ),
-        ),
-        barrierDismissible: false,
-      );
+          barrierDismissible: false,
+        );
+      }
 
       // Pass the itemList to the PrintController to generate and print PDF
       await printController.printPdfWithSavedPrinter(itemList);
 
-      Get.back(); // Close the loading dialog
+      // Make sure to close the dialog if it was shown
+      if (showDialog && Get.isDialogOpen == true) {
+        Get.back();
+      }
+
       Get.snackbar('Success', 'Receipt sent to printer');
     } catch (e) {
-      Get.back(); // Close the loading dialog
+      // Make sure to close the dialog if it was shown
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
       Get.snackbar('Error', 'Failed to print: $e');
     }
   }
