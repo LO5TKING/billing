@@ -453,41 +453,6 @@ class Billing extends StatelessWidget {
                                                       .fontSize20),
                                             )),
                                       ),
-                                      ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                AppColors.stainedGlass,
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(5))),
-                                          ),
-                                          onPressed: () async {
-                                            ///PdfPageFormat.roll57 for pos printer
-                                            /// a4 is standard
-                                            // scribbleController.printDocument(pageFormat: PdfPageFormat.a4);
-
-                                            final List<Map<String, dynamic>>
-                                                data =
-                                                scribbleController.itemList;
-
-                                            await PrintDialog.show(
-                                                await scribbleController
-                                                    .generateReceiptImages(
-                                                        scribbleController
-                                                            .itemList,
-                                                        150));
-                                            // await PrintDialog.show(data);
-                                            // scribbleController.printDocument(
-                                            //     pageFormat: PdfPageFormat.a4);
-                                            // scribbleController.printPOSReceipt(pageFormat: PdfPageFormat.roll57);
-                                          },
-                                          child: const Text(
-                                            'Print',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize:
-                                                    DesignConstants.fontSize20),
-                                          )),
                                       Visibility(
                                         visible: false,
                                         child: ElevatedButton(
@@ -504,6 +469,32 @@ class Billing extends StatelessWidget {
                                             onPressed: () {},
                                             child: const Text(
                                               'Save',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: DesignConstants
+                                                      .fontSize20),
+                                            )),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        height: 50,
+                                        child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.stainedGlass,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  5))),
+                                            ),
+                                            onPressed: () {
+                                              scribbleController
+                                                  .printPdfReceipt();
+                                            },
+                                            child: const Text(
+                                              'Print PDF',
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: DesignConstants

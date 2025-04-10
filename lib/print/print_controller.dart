@@ -7,6 +7,11 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:image/image.dart' as img;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+// import 'package:printing/printing.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,21 +50,22 @@ class PrintController extends GetxController {
 
   Future<void> initBluetooth() async {
     try {
-      await FlutterBluePlus.turnOn();
-
+      // First try to check if Bluetooth is on without turning it on
+      // This avoids making network calls that require internet
       if (!await FlutterBluePlus.isSupported) {
         devicesMsg("Bluetooth is not supported on this device");
         return;
       }
 
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      // Check if Bluetooth is enabled instead of forcing it on
       final isOn = await FlutterBluePlus.isOn;
       if (!isOn) {
-        devicesMsg("Please enable Bluetooth");
+        // Just notify instead of trying to turn it on (which requires internet)
+        devicesMsg("Please enable Bluetooth manually");
         return;
       }
 
+      // Now we know Bluetooth is supported and enabled, proceed with scanning
       int retryCount = 0;
       while (retryCount < 3) {
         try {
@@ -74,15 +80,23 @@ class PrintController extends GetxController {
         } catch (e) {
           print('Scan attempt $retryCount failed: $e');
           retryCount++;
-          if (retryCount >= 3) rethrow;
+          if (retryCount >= 3) {
+            // Don't rethrow, just log the error
+            print('Failed to scan after 3 attempts: $e');
+            devicesMsg("Could not scan for devices. Please try again later.");
+            return;
+          }
           await Future.delayed(const Duration(seconds: 2));
         }
       }
     } catch (e) {
+      // Handle errors without requiring internet
       if (e.toString().contains('bluetooth_unavailable')) {
         devicesMsg("Please enable Bluetooth");
       } else {
-        devicesMsg("Error initializing Bluetooth: $e");
+        // Log the error but don't crash
+        print('Non-fatal Bluetooth init error: $e');
+        devicesMsg("Bluetooth initialization issue, but app can continue");
       }
     }
   }
@@ -96,7 +110,12 @@ class PrintController extends GetxController {
       devicesMsg("Scanning...");
 
       if (FlutterBluePlus.isScanningNow) {
-        await FlutterBluePlus.stopScan();
+        try {
+          await FlutterBluePlus.stopScan();
+        } catch (e) {
+          print('Error stopping scan: $e');
+          // Continue anyway, don't block the app
+        }
       }
 
       await _scanSubscription?.cancel();
@@ -127,15 +146,28 @@ class PrintController extends GetxController {
         },
       );
 
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 15),
-        androidUsesFineLocation: true,
-      );
+      try {
+        await FlutterBluePlus.startScan(
+          timeout: const Duration(seconds: 15),
+          androidUsesFineLocation: true,
+        );
+      } catch (e) {
+        print('Error starting scan: $e');
+        isScanning(false);
+        devicesMsg(
+            "Could not start scanning. ${e.toString().substring(0, 50)}...");
+        return;
+      }
 
       await Future.delayed(const Duration(seconds: 15));
       if (isScanning.value) {
         isScanning(false);
-        await FlutterBluePlus.stopScan();
+        try {
+          await FlutterBluePlus.stopScan();
+        } catch (e) {
+          print('Error stopping scan after delay: $e');
+          // Continue anyway
+        }
         if (devices.isEmpty) {
           devicesMsg("No devices found");
         }
@@ -143,7 +175,12 @@ class PrintController extends GetxController {
     } catch (e) {
       print('Scanning error: $e');
       isScanning(false);
-      devicesMsg("Error: ${e.toString()}");
+      // Truncate the error message if it's too long to avoid UI issues
+      String errorMsg = e.toString();
+      if (errorMsg.length > 100) {
+        errorMsg = "${errorMsg.substring(0, 100)}...";
+      }
+      devicesMsg("Error: $errorMsg");
     }
   }
 
@@ -223,7 +260,8 @@ class PrintController extends GetxController {
     }
   }
 
-  Future<void> connectAndPrint(BluetoothDevice device, List<Uint8List?> data) async {
+  Future<void> connectAndPrint(
+      BluetoothDevice device, List<Uint8List?> data) async {
     try {
       if (_connectedDevice != null) {
         await _connectedDevice!.disconnect();
@@ -321,11 +359,23 @@ class PrintController extends GetxController {
     bytes += generator.hr();
 
     bytes += generator.row([
-      PosColumn(text: '#', width: 1, styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
+          text: '#',
+          width: 1,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
       PosColumn(text: 'Particulars', width: 5, styles: PosStyles(bold: true)),
-      PosColumn(text: 'Qty', width: 2, styles: PosStyles(bold: true, align: PosAlign.center)),
-      PosColumn(text: 'Rate', width: 2, styles: PosStyles(bold: true, align: PosAlign.center)),
-      PosColumn(text: 'Amt', width: 2, styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
+          text: 'Qty',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
+          text: 'Rate',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
+          text: 'Amt',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
     ]);
     bytes += generator.hr();
 
@@ -345,7 +395,8 @@ class PrintController extends GetxController {
 
         bytes += generator.image(resizedImage, align: PosAlign.left);
       } else {
-        bytes += generator.text('(Image failed to load)', styles: PosStyles(align: PosAlign.left));
+        bytes += generator.text('(Image failed to load)',
+            styles: PosStyles(align: PosAlign.left));
       }
     }
 
@@ -362,46 +413,520 @@ class PrintController extends GetxController {
     ]);
     bytes += generator.hr();
 
-    bytes += generator.text('Thank you for your business!', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Please visit again', styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Thank you for your business!',
+        styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Please visit again',
+        styles: PosStyles(align: PosAlign.center));
     bytes += generator.feed(2);
     bytes += generator.cut();
 
     return bytes;
   }
 
+  // Update the printPdfWithSavedPrinter method to use the direct receipt generation
+  Future<void> printPdfWithSavedPrinter(
+      List<Map<String, dynamic>> items) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPrinterIdFromPrefs = prefs.getString('saved_printer_id');
 
-
-  String convertImageToAscii(img.Image image) {
-    int width = 8; // Reduce to small blocks
-    int height = 8; // Lower size for readability
-    img.Image smallImage = img.copyResize(image, width: width, height: height);
-
-    String ascii = '';
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        int pixel = smallImage.getPixel(x, y);
-        int brightness = img.getLuminance(pixel);
-        ascii += (brightness > 128) ? '⬜' : '⬛'; // White or black block
-      }
-      ascii += '\n'; // New row for ASCII image
+    if (savedPrinterIdFromPrefs == null || savedPrinterIdFromPrefs.isEmpty) {
+      throw Exception('No saved printer found');
     }
-    return ascii;
+
+    try {
+      // Check if we're already connected to the correct printer
+      bool isCorrectPrinterConnected = _connectedDevice != null &&
+          _connectedDevice!.id.toString() == savedPrinterIdFromPrefs &&
+          isConnected.value;
+
+      if (isCorrectPrinterConnected) {
+        // Skip scanning and directly print if already connected
+        print('Using already connected printer: ${_connectedDevice!.name}');
+        await _printDirectWithConnectedPrinter(items);
+        return;
+      }
+
+      // If not connected or connected to wrong device, proceed with scanning
+      print('Searching for saved printer...');
+
+      // Generate PDF from items (for compatibility with existing code)
+      final pdfData = await generateReceiptPdf(items);
+
+      if (!await FlutterBluePlus.isOn) {
+        await FlutterBluePlus.turnOn();
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      BluetoothDevice? savedDevice;
+      bool deviceFound = false;
+
+      final completer = Completer<void>();
+
+      await startScanning();
+
+      final subscription = FlutterBluePlus.scanResults.listen((results) {
+        savedDevice = results
+            .firstWhereOrNull((result) =>
+                result.device.id.toString() == savedPrinterIdFromPrefs)
+            ?.device;
+
+        if (savedDevice != null && !deviceFound) {
+          deviceFound = true;
+          completer.complete();
+        }
+      });
+
+      try {
+        await Future.any([
+          completer.future,
+          Future.delayed(const Duration(seconds: 30)).then((_) {
+            if (!deviceFound) {
+              throw Exception(
+                  'Scan timeout: Printer not found after 30 seconds');
+            }
+          })
+        ]);
+      } catch (e) {
+        print('Scan error or timeout: $e');
+        throw Exception(
+            'Could not find saved printer. Please try again or select a new printer.');
+      }
+
+      await subscription.cancel();
+
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+
+      if (savedDevice == null) {
+        await prefs.remove('saved_printer_id');
+        savedPrinterId.value = null;
+        throw Exception('Saved printer not found. Please scan for printers.');
+      }
+
+      if (savedDevice != null) {
+        // Instead of using the PDF data, generate receipt data directly
+        await _connectAndPrintDirect(savedDevice!, items);
+      }
+    } catch (e) {
+      print('Error printing with saved printer: $e');
+      rethrow;
+    } finally {
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+    }
+  }
+
+  // Method to print with an already connected printer
+  Future<void> _printDirectWithConnectedPrinter(
+      List<Map<String, dynamic>> items) async {
+    try {
+      List<BluetoothService> services =
+          await _connectedDevice!.discoverServices();
+      BluetoothCharacteristic? writeCharacteristic;
+
+      for (var service in services) {
+        var characteristics = service.characteristics;
+        for (var characteristic in characteristics) {
+          if (characteristic.properties.write ||
+              characteristic.properties.writeWithoutResponse) {
+            writeCharacteristic = characteristic;
+            break;
+          }
+        }
+        if (writeCharacteristic != null) break;
+      }
+
+      if (writeCharacteristic == null) {
+        throw Exception('Printer service not found');
+      }
+
+      int mtuSize = 20;
+      try {
+        final negotiatedMtu = await _connectedDevice!.mtu.first;
+        mtuSize = negotiatedMtu - 3;
+      } catch (e) {
+        print('Could not get MTU size: $e');
+      }
+
+      // Generate receipt data directly from items
+      final bytes = await generateDirectReceiptData(items);
+
+      final chunkSize = mtuSize < 180 ? mtuSize : 180;
+      print('Using chunk size: $chunkSize bytes for direct print');
+
+      for (int i = 0; i < bytes.length; i += chunkSize) {
+        int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+        await writeCharacteristic.write(bytes.sublist(i, end));
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+
+      print('Successfully sent data to printer');
+    } catch (e) {
+      print('Error printing with connected printer: $e');
+
+      // If we get an error, the connection might be stale
+      // Set isConnected to false so we'll try a full reconnect next time
+      isConnected(false);
+      _connectedDevice = null;
+
+      rethrow;
+    }
+  }
+
+  // New method to connect and print directly without PDF intermediary
+  Future<void> _connectAndPrintDirect(
+      BluetoothDevice device, List<Map<String, dynamic>> items) async {
+    try {
+      // If already connected to a different device, disconnect first
+      if (_connectedDevice != null && _connectedDevice!.id != device.id) {
+        print('Disconnecting from previous device: ${_connectedDevice!.name}');
+        await _connectedDevice!.disconnect();
+        await Future.delayed(const Duration(milliseconds: 500));
+        _connectedDevice = null;
+        isConnected(false);
+      }
+
+      // If not connected to any device, connect now
+      if (!isConnected.value || _connectedDevice == null) {
+        print('Connecting to device: ${device.name}');
+        await device.connect(timeout: const Duration(seconds: 5));
+        _connectedDevice = device;
+        isConnected(true);
+        print('Successfully connected to: ${device.name}');
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      List<BluetoothService> services = await device.discoverServices();
+      BluetoothCharacteristic? writeCharacteristic;
+
+      for (var service in services) {
+        var characteristics = service.characteristics;
+        for (var characteristic in characteristics) {
+          if (characteristic.properties.write ||
+              characteristic.properties.writeWithoutResponse) {
+            writeCharacteristic = characteristic;
+            break;
+          }
+        }
+        if (writeCharacteristic != null) break;
+      }
+
+      if (writeCharacteristic == null) {
+        throw Exception('Printer service not found');
+      }
+
+      int mtuSize = 20;
+      try {
+        final negotiatedMtu = await device.mtu.first;
+        mtuSize = negotiatedMtu - 3;
+      } catch (e) {
+        print('Could not get MTU size: $e');
+      }
+
+      // Generate receipt data directly from items
+      final bytes = await generateDirectReceiptData(items);
+
+      final chunkSize = mtuSize < 180 ? mtuSize : 180;
+      print('Using chunk size: $chunkSize bytes');
+
+      for (int i = 0; i < bytes.length; i += chunkSize) {
+        int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+        await writeCharacteristic.write(bytes.sublist(i, end));
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+
+      print('Successfully sent data to printer');
+
+      // IMPORTANT: We do NOT disconnect here to maintain the connection for future prints
+    } catch (e) {
+      print('Error connecting to printer: $e');
+      // If connection fails, reset the connection state
+      isConnected(false);
+      _connectedDevice = null;
+      rethrow;
+    }
+  }
+
+  // Generate PDF for receipt
+  Future<Uint8List> generateReceiptPdf(List<Map<String, dynamic>> items) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat:
+            PdfPageFormat(80 * PdfPageFormat.mm, 150 * PdfPageFormat.mm),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text('RECEIPT',
+                  style: pw.TextStyle(
+                      fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              pw.Text('Date: ${DateTime.now().toString().split(' ')[0]}'),
+              pw.Divider(),
+
+              // Header row
+              pw.Row(
+                children: [
+                  pw.Expanded(flex: 3, child: pw.Text('Item')),
+                  pw.Expanded(
+                      child: pw.Text('Qty', textAlign: pw.TextAlign.center)),
+                  pw.Expanded(
+                      child: pw.Text('Rate', textAlign: pw.TextAlign.center)),
+                  pw.Expanded(
+                      child: pw.Text('Amt', textAlign: pw.TextAlign.center)),
+                ],
+              ),
+              pw.Divider(),
+
+              // Item rows
+              pw.Column(
+                children: items.map((item) {
+                  final quantity =
+                      int.tryParse(item['quantity'].toString()) ?? 0;
+                  final rate = int.tryParse(item['rate'].toString()) ?? 0;
+                  final amount = quantity * rate;
+
+                  return pw.Row(
+                    children: [
+                      pw.Expanded(
+                          flex: 3,
+                          child: pw.Text(
+                              'Item')), // Cannot display images from particulars in this version
+                      pw.Expanded(
+                          child: pw.Text('$quantity',
+                              textAlign: pw.TextAlign.center)),
+                      pw.Expanded(
+                          child:
+                              pw.Text('$rate', textAlign: pw.TextAlign.center)),
+                      pw.Expanded(
+                          child: pw.Text('$amount',
+                              textAlign: pw.TextAlign.center)),
+                    ],
+                  );
+                }).toList(),
+              ),
+
+              pw.Divider(),
+              // Total row
+              pw.Row(
+                children: [
+                  pw.Expanded(flex: 3, child: pw.Text('')),
+                  pw.Expanded(
+                      flex: 2,
+                      child: pw.Text('TOTAL', textAlign: pw.TextAlign.center)),
+                  pw.Expanded(
+                      child: pw.Text(
+                          '${items.fold<int>(0, (sum, item) {
+                            final quantity =
+                                int.tryParse(item['quantity'].toString()) ?? 0;
+                            final rate =
+                                int.tryParse(item['rate'].toString()) ?? 0;
+                            return sum + (quantity * rate);
+                          })}',
+                          textAlign: pw.TextAlign.center)),
+                ],
+              ),
+
+              pw.SizedBox(height: 20),
+              pw.Text('Thank you for your business!',
+                  textAlign: pw.TextAlign.center),
+              pw.Text('Please visit again', textAlign: pw.TextAlign.center),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  // New method to directly generate receipt data without PDF intermediary
+  Future<List<int>> generateDirectReceiptData(
+      List<Map<String, dynamic>> items) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+    List<int> bytes = [];
+
+    // Add receipt header
+    bytes += generator.text(
+      'RECEIPT',
+      styles: PosStyles(
+          align: PosAlign.center, bold: true, height: PosTextSize.size2),
+    );
+    bytes += generator.text(
+      'Date: ${DateTime.now().toString().split(' ')[0]}',
+      styles: PosStyles(align: PosAlign.right),
+    );
+    bytes += generator.hr();
+
+    // Add headers with proper alignment
+    bytes += generator.row([
+      PosColumn(
+          text: 'Particulars',
+          width: 6,
+          styles: PosStyles(bold: true, align: PosAlign.left)),
+      PosColumn(
+          text: 'Qty',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.right)),
+      PosColumn(
+          text: 'Rate',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.right)),
+      PosColumn(
+          text: 'Amt',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.right)),
+    ]);
+    bytes += generator.hr();
+
+    // Process each item
+    for (var item in items) {
+      try {
+        if (item['particulars'] != null && item['particulars'] is Uint8List) {
+          final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
+          final rate = int.tryParse(item['rate'].toString()) ?? 0;
+          final amount = quantity * rate;
+
+          // Get the handwritten image
+          final Uint8List handwrittenBytes = item['particulars'];
+          final img.Image? decodedImage = img.decodeImage(handwrittenBytes);
+
+          if (decodedImage != null) {
+            // Convert to grayscale
+            final img.Image processedImage =
+                img.grayscale(decodedImage) as img.Image;
+
+            // Resize image to fit receipt width while maintaining aspect ratio
+            final int targetWidth = 300; // Adjusted width for better fit
+            final int targetHeight =
+                (targetWidth * processedImage.height / processedImage.width)
+                    .round();
+            final img.Image resizedImage = img.copyResize(
+              processedImage,
+              width: targetWidth,
+              height: targetHeight,
+            ) as img.Image;
+
+            // Create a new blank image
+            final img.Image finalImage = img.Image.rgb(
+              resizedImage.width,
+              resizedImage.height,
+            );
+
+            // Make background transparent/white
+            for (int y = 0; y < finalImage.height; y++) {
+              for (int x = 0; x < finalImage.width; x++) {
+                finalImage.setPixel(x, y, 0xFFFFFFFF);
+              }
+            }
+
+            // Copy the handwriting with proper thresholding
+            for (int y = 0; y < resizedImage.height; y++) {
+              for (int x = 0; x < resizedImage.width; x++) {
+                final pixel = resizedImage.getPixel(x, y);
+                final brightness = img.getLuminance(pixel);
+                if (brightness < 128) {
+                  // Dark pixels become black
+                  finalImage.setPixel(x, y, 0xFF000000);
+                }
+              }
+            }
+
+            // Print the details in a single row
+            bytes += generator.row([
+              PosColumn(
+                width: 6,
+                text: '',
+                styles: PosStyles(align: PosAlign.left),
+              ),
+              PosColumn(
+                  text: quantity.toString(),
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.right)),
+              PosColumn(
+                  text: rate.toString(),
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.right)),
+              PosColumn(
+                  text: amount.toString(),
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.right)),
+            ]);
+
+            // Print the image with left alignment and proper size
+            bytes += generator.imageRaster(finalImage, align: PosAlign.left);
+          }
+        }
+      } catch (e) {
+        print('Error processing item image: $e');
+        continue;
+      }
+
+      bytes += generator.hr(ch: '-');
+    }
+
+    // Add total
+    final total = items.fold<int>(0, (sum, item) {
+      final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
+      final rate = int.tryParse(item['rate'].toString()) ?? 0;
+      return sum + (quantity * rate);
+    });
+
+    bytes += generator.row([
+      PosColumn(text: '', width: 8),
+      PosColumn(
+          text: 'TOTAL',
+          width: 2,
+          styles: PosStyles(align: PosAlign.right, bold: true)),
+      PosColumn(
+        text: total.toString(),
+        width: 2,
+        styles: PosStyles(align: PosAlign.right, bold: true),
+      ),
+    ]);
+
+    // Add receipt footer
+    bytes += generator.hr();
+    bytes += generator.text('Thank you for your business!',
+        styles: PosStyles(align: PosAlign.center));
+    bytes += generator.text('Please visit again',
+        styles: PosStyles(align: PosAlign.center));
+    bytes += generator.feed(2);
+    bytes += generator.cut();
+
+    return bytes;
   }
 
   @override
   void onClose() {
     _scanSubscription?.cancel();
     if (_connectedDevice != null) {
-      _connectedDevice!.disconnect();
+      // Finally disconnect the device when the controller is closed (app closing)
+      print('Disconnecting printer on app close: ${_connectedDevice!.name}');
+      try {
+        _connectedDevice!.disconnect();
+      } catch (e) {
+        print('Error disconnecting printer: $e');
+      }
+      _connectedDevice = null;
+      isConnected(false);
     }
     if (FlutterBluePlus.isScanningNow) {
-      FlutterBluePlus.stopScan();
+      try {
+        FlutterBluePlus.stopScan();
+      } catch (e) {
+        print('Error stopping scan on close: $e');
+      }
     }
     super.onClose();
   }
 }
-
 
 /*
 Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
