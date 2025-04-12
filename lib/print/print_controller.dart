@@ -100,6 +100,23 @@ class PrintController extends GetxController {
           align: PosAlign.center, bold: true, height: PosTextSize.size2),
     );
 
+    bytes += generator.emptyLines(1);
+
+    bytes += generator.text(
+      'Shop No.5 Balaji Nagar, Near Kamraj School,',
+      styles: PosStyles(align: PosAlign.center),
+    );
+    bytes += generator.text(
+      '90 Feet Road, Dharavi, Mumbai - 40017',
+      styles: PosStyles(align: PosAlign.center),
+    );
+    bytes += generator.text(
+      'Mobile No: 9892814985 ',
+      styles: PosStyles(align: PosAlign.center),
+    );
+
+    bytes += generator.emptyLines(1);
+
     // Format date and time
     final now = DateTime.now();
     final formattedDate =
@@ -121,7 +138,7 @@ class PrintController extends GetxController {
     bytes += generator.row([
       PosColumn(
           text: 'Particulars',
-          width: 6,
+          width: 5,
           styles: PosStyles(bold: true, align: PosAlign.left)),
       PosColumn(
           text: 'Qty',

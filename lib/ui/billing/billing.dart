@@ -45,14 +45,15 @@ class Billing extends StatelessWidget {
                           children: [
                             Center(
                               child: Container(
-                                padding: const EdgeInsets.only(bottom: 30.0),
-                                child: const Text(
-                                  'Logo',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 24.0,
-                                  ),
-                                ),
+                                padding: const EdgeInsets.only(bottom: 20.0),
+                                child: Image.asset("assets/sai.png",height: 50,width: 50,)
+                                // const Text(
+                                //   'Logo',
+                                //   style: TextStyle(
+                                //     color: Colors.grey,
+                                //     fontSize: 24.0,
+                                //   ),
+                                // ),
                               ),
                             ),
                             Positioned(
@@ -495,7 +496,7 @@ class Billing extends StatelessWidget {
                                                   .printPdfReceipt();
                                             },
                                             child: const Text(
-                                              'Print PDF',
+                                              'Print Receipt',
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: DesignConstants

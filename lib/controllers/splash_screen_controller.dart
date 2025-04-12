@@ -199,6 +199,7 @@ class SplashScreenController extends GetxController {
       Get.snackbar("Connected","Successfully connected to printer: ${device.name}");
       print('Successfully connected to printer: ${device.name}');
     } catch (e) {
+      Get.snackbar("Error","Error connecting to printer");
       print('Error connecting to printer: $e');
       isConnected(false);
       _connectedDevice = null;
