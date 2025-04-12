@@ -137,8 +137,12 @@ class PrintController extends GetxController {
     // Add headers with proper alignment
     bytes += generator.row([
       PosColumn(
+          text: 'Sr.No',
+          width: 2,
+          styles: PosStyles(bold: true, align: PosAlign.center)),
+      PosColumn(
           text: 'Particulars',
-          width: 5,
+          width: 4,
           styles: PosStyles(bold: true, align: PosAlign.left)),
       PosColumn(
           text: 'Qty',
@@ -156,15 +160,16 @@ class PrintController extends GetxController {
     bytes += generator.hr();
 
     // Process each item
-    for (var item in items) {
+    for (var i = 0; i < items.length; i++) {
       try {
-        if (item['particulars'] != null && item['particulars'] is Uint8List) {
-          final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
-          final rate = int.tryParse(item['rate'].toString()) ?? 0;
+        if (items[i]['particulars'] != null &&
+            items[i]['particulars'] is Uint8List) {
+          final quantity = int.tryParse(items[i]['quantity'].toString()) ?? 0;
+          final rate = int.tryParse(items[i]['rate'].toString()) ?? 0;
           final amount = quantity * rate;
 
           // Get the handwritten image
-          final Uint8List handwrittenBytes = item['particulars'];
+          final Uint8List handwrittenBytes = items[i]['particulars'];
           final img.Image? decodedImage = img.decodeImage(handwrittenBytes);
 
           if (decodedImage != null) {
@@ -183,9 +188,9 @@ class PrintController extends GetxController {
               height: targetHeight,
             ) as img.Image;
 
-            // Create a new blank image with minimal height
+            // Create a new blank image with minimal height and proper width for Particulars column
             final img.Image finalImage = img.Image.rgb(
-              resizedImage.width,
+              targetWidth,
               resizedImage.height,
             );
 
@@ -196,14 +201,20 @@ class PrintController extends GetxController {
               }
             }
 
-            // Copy the handwriting with proper thresholding
+            // Calculate the offset for Particulars column (width of Sr.No column)
+            final int srNoColumnWidth =
+                (targetWidth * 0.30).round(); // Increased padding to 20%
+
+            // Copy the handwriting with proper thresholding, adding left padding
             for (int y = 0; y < resizedImage.height; y++) {
               for (int x = 0; x < resizedImage.width; x++) {
-                final pixel = resizedImage.getPixel(x, y);
-                final brightness = img.getLuminance(pixel);
-                if (brightness < 128) {
-                  // Dark pixels become black
-                  finalImage.setPixel(x, y, 0xFF000000);
+                if (x + srNoColumnWidth < finalImage.width) {
+                  final pixel = resizedImage.getPixel(x, y);
+                  final brightness = img.getLuminance(pixel);
+                  if (brightness < 128) {
+                    // Dark pixels become black, with offset
+                    finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
+                  }
                 }
               }
             }
@@ -211,7 +222,12 @@ class PrintController extends GetxController {
             // Print the combined row with image and text
             bytes += generator.row([
               PosColumn(
-                width: 6,
+                text: '${i + 1}',
+                width: 2,
+                styles: PosStyles(align: PosAlign.center),
+              ),
+              PosColumn(
+                width: 4,
                 text: '',
                 styles: PosStyles(align: PosAlign.left),
               ),
@@ -252,7 +268,9 @@ class PrintController extends GetxController {
     });
 
     bytes += generator.row([
-      PosColumn(text: '', width: 8),
+      PosColumn(text: '', width: 2),
+      PosColumn(text: '', width: 2),
+      PosColumn(text: '', width: 4),
       PosColumn(
           text: 'TOTAL',
           width: 2,
