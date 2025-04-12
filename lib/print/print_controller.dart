@@ -139,7 +139,7 @@ class PrintController extends GetxController {
       PosColumn(
           text: 'Sr.No',
           width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.center)),
+          styles: PosStyles(bold: true, align: PosAlign.left)),
       PosColumn(
           text: 'Particulars',
           width: 4,
@@ -203,7 +203,7 @@ class PrintController extends GetxController {
 
             // Calculate the offset for Particulars column (width of Sr.No column)
             final int srNoColumnWidth =
-                (targetWidth * 0.30).round(); // Increased padding to 20%
+                (targetWidth * 0.40).round(); // Increased padding to 20%
 
             // Copy the handwriting with proper thresholding, adding left padding
             for (int y = 0; y < resizedImage.height; y++) {
@@ -224,7 +224,7 @@ class PrintController extends GetxController {
               PosColumn(
                 text: '${i + 1}',
                 width: 2,
-                styles: PosStyles(align: PosAlign.center),
+                styles: PosStyles(align: PosAlign.left),
               ),
               PosColumn(
                 width: 4,
