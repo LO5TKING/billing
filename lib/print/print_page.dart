@@ -1,5 +1,3 @@
-
-
 import 'dart:typed_data';
 
 import 'package:billing/app/config/color_constants.dart';
@@ -8,18 +6,19 @@ import 'package:get/get.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'print_controller.dart';
+import '../controllers/splash_screen_controller.dart';
 
 class PrintDialog extends StatelessWidget {
-  final List<Uint8List?> data;
-  // final List<Map<String, dynamic>> data;
+  final List<Map<String, dynamic>> data;
 
   const PrintDialog({Key? key, required this.data}) : super(key: key);
 
-  static Future<void> show(List<Uint8List?> data) async {
-    final PrintController controller = Get.put(PrintController());
+  static Future<void> show(List<Map<String, dynamic>> data) async {
+    final printController = Get.put(PrintController());
+    final splashController = Get.find<SplashScreenController>();
 
     try {
-      // Show loading dialog while scanning
+      // Show loading dialog while connecting
       Get.dialog(
         Material(
           type: MaterialType.transparency,
@@ -35,7 +34,7 @@ class PrintDialog extends StatelessWidget {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Connecting to saved printer...'),
+                  Text('Connecting to printer...'),
                 ],
               ),
             ),
@@ -44,8 +43,13 @@ class PrintDialog extends StatelessWidget {
         barrierDismissible: false,
       );
 
-      // Try to print with saved printer
-      await controller.printWithSavedPrinter(data);
+      // Wait for printer connection
+      if (!splashController.isConnected.value) {
+        throw Exception('No printer connected');
+      }
+
+      // Print the data
+      await printController.printPdfReceipt(data);
 
       // Close loading dialog
       Get.back();
@@ -64,24 +68,15 @@ class PrintDialog extends StatelessWidget {
         Get.back();
       }
 
-      // If no saved printer or error, show the printer selection dialog
-      if (e.toString().contains('No saved printer found') ||
-          e.toString().contains('Saved printer not found')) {
-        await Get.dialog(
-          PrintDialog(data: data),
-          barrierDismissible: true,
-        );
-      } else {
-        // Show error for other types of errors
-        Get.snackbar(
-          'Error',
-          'Failed to print: ${e.toString()}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red[100],
-          colorText: Colors.red[900],
-          duration: const Duration(seconds: 5),
-        );
-      }
+      // Show error message
+      Get.snackbar(
+        'Error',
+        'Failed to print: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red[100],
+        colorText: Colors.red[900],
+        duration: const Duration(seconds: 5),
+      );
     }
   }
 
@@ -119,7 +114,7 @@ class PrintDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final PrintController controller = Get.put(PrintController());
+    final splashController = Get.find<SplashScreenController>();
 
     return Dialog(
       backgroundColor: AppColors.stainedGlass.withOpacity(0.8),
@@ -153,28 +148,30 @@ class PrintDialog extends StatelessWidget {
                     ),
                     Row(
                       children: [
-                        Obx(() => controller.isScanning.value
-                            ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                            : IconButton(
-                          icon: const Icon(Icons.refresh, color: Colors.white),
-                          onPressed: () async {
-                            if (await _checkPermissions()) {
-                              controller.startScanning();
-                            }
-                          },
-                        ),
+                        Obx(
+                          () => splashController.isScanning.value
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : IconButton(
+                                  icon: const Icon(Icons.refresh,
+                                      color: Colors.white),
+                                  onPressed: () async {
+                                    if (await _checkPermissions()) {
+                                      splashController.startScanning();
+                                    }
+                                  },
+                                ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close, color: Colors.white),
                           onPressed: () {
-                            controller.onClose();
                             Get.back();
                           },
                         ),
@@ -212,7 +209,7 @@ class PrintDialog extends StatelessWidget {
                     }
 
                     return Obx(() {
-                      if (controller.isScanning.value) {
+                      if (splashController.isScanning.value) {
                         return const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -225,13 +222,13 @@ class PrintDialog extends StatelessWidget {
                         );
                       }
 
-                      if (controller.devices.isEmpty) {
+                      if (splashController.devices.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                controller.devicesMsg.value,
+                                splashController.devicesMsg.value,
                                 style: const TextStyle(fontSize: 16),
                                 textAlign: TextAlign.center,
                               ),
@@ -239,7 +236,7 @@ class PrintDialog extends StatelessWidget {
                               ElevatedButton.icon(
                                 onPressed: () async {
                                   if (await _checkPermissions()) {
-                                    controller.startScanning();
+                                    splashController.startScanning();
                                   }
                                 },
                                 icon: const Icon(Icons.refresh),
@@ -251,28 +248,28 @@ class PrintDialog extends StatelessWidget {
                       }
 
                       return ListView.builder(
-                        itemCount: controller.devices.length,
+                        itemCount: splashController.devices.length,
                         padding: const EdgeInsets.all(8),
                         itemBuilder: (context, index) {
-                          final scanResult = controller.devices[index];
-                          final device = scanResult.device;
+                          final device = splashController.devices[index];
                           final name = device.localName.isNotEmpty
                               ? device.localName
-                              : scanResult.advertisementData.localName.isNotEmpty
-                              ? scanResult.advertisementData.localName
                               : 'Unknown Device';
 
-                          final isSelected = device.id.toString() == controller.savedPrinterId.value;
+                          final isSelected = device.id.toString() ==
+                              splashController.savedPrinterId.value;
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             child: ListTile(
                               leading: Radio<String>(
                                 value: device.id.toString(),
-                                groupValue: controller.savedPrinterId.value,
+                                groupValue:
+                                    splashController.savedPrinterId.value,
                                 onChanged: (String? value) async {
                                   if (value != null) {
-                                    await controller.saveSelectedPrinter(device);
+                                    await splashController
+                                        .saveSelectedPrinter(device);
                                   }
                                 },
                               ),
@@ -294,17 +291,19 @@ class PrintDialog extends StatelessWidget {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('${scanResult.rssi} dBm'),
+                                  Text('${device.remoteId}'),
                                   const SizedBox(width: 8),
-                                  Obx(() => controller.isConnected.value
-                                      ? const Icon(Icons.check_circle, color: Colors.green)
+                                  Obx(() => splashController.isConnected.value
+                                      ? const Icon(Icons.check_circle,
+                                          color: Colors.green)
                                       : const Icon(Icons.circle_outlined)),
                                 ],
                               ),
                               onTap: () async {
                                 try {
                                   // Save the selected printer
-                                  await controller.saveSelectedPrinter(device);
+                                  await splashController
+                                      .saveSelectedPrinter(device);
 
                                   // Show connecting dialog
                                   Get.dialog(
@@ -315,7 +314,8 @@ class PrintDialog extends StatelessWidget {
                                           padding: const EdgeInsets.all(20),
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: const Column(
                                             mainAxisSize: MainAxisSize.min,
@@ -331,8 +331,9 @@ class PrintDialog extends StatelessWidget {
                                     barrierDismissible: false,
                                   );
 
-                                  // Connect and print
-                                  await controller.connectAndPrint(device, data);
+                                  // Connect to printer
+                                  await splashController
+                                      .connectToPrinter(device);
 
                                   // Close all dialogs
                                   while (Get.isDialogOpen ?? false) {
@@ -342,7 +343,7 @@ class PrintDialog extends StatelessWidget {
                                   // Show success message
                                   Get.snackbar(
                                     'Success',
-                                    'Printing completed',
+                                    'Printer connected successfully',
                                     snackPosition: SnackPosition.TOP,
                                     backgroundColor: Colors.green[100],
                                     colorText: Colors.green[900],
@@ -355,7 +356,7 @@ class PrintDialog extends StatelessWidget {
 
                                   Get.snackbar(
                                     'Error',
-                                    'Failed to print: ${e.toString()}',
+                                    'Failed to connect: ${e.toString()}',
                                     snackPosition: SnackPosition.BOTTOM,
                                     backgroundColor: Colors.red[100],
                                     colorText: Colors.red[900],

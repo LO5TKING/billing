@@ -552,41 +552,11 @@ class ScribbleController extends GetxController {
     }
 
     try {
-      bool showDialog = !printController.isConnected.value;
-
-      if (showDialog) {
-        Get.dialog(
-          Dialog(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 20),
-                  const Text('Connecting to printer...'),
-                ],
-              ),
-            ),
-          ),
-          barrierDismissible: false,
-        );
-      }
-
       // Pass the itemList to the PrintController to generate and print PDF
-      await printController.printPdfWithSavedPrinter(itemList);
-
-      // Make sure to close the dialog if it was shown
-      if (showDialog && Get.isDialogOpen == true) {
-        Get.back();
-      }
+      await printController.printPdfReceipt(itemList);
 
       Get.snackbar('Success', 'Receipt sent to printer');
     } catch (e) {
-      // Make sure to close the dialog if it was shown
-      if (Get.isDialogOpen == true) {
-        Get.back();
-      }
       Get.snackbar('Error', 'Failed to print: $e');
     }
   }

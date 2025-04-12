@@ -2,13 +2,37 @@ import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/ui/clients/billing_options.dart';
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-// import 'package:get/get.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/scribble_controller.dart';
+import '../controllers/splash_screen_controller.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  final SplashScreenController _splashController =
+      Get.put(SplashScreenController());
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeBluetooth();
+  }
+
+  Future<void> _initializeBluetooth() async {
+    try {
+      await _splashController.initBluetooth();
+      // Continue with the app initialization even if no printer is connected
+      // Users can connect a printer later through the print dialog
+    } catch (e) {
+      print('Bluetooth initialization error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
