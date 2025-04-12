@@ -25,11 +25,6 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
       getPages: AppPages.routes,
       opaqueRoute: true,
-      // defaultTransition: Transition.native,
-      // getPages: AppPages.routes,
-      // home: SplashScreen(),
-      // smartManagement: SmartManagement.full,
-      // opaqueRoute: true,
       locale: const Locale('en', 'US'),
     );
   }

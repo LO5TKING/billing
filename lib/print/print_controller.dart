@@ -859,7 +859,7 @@ class PrintController extends GetxController {
             // Create a new blank image with minimal height
             final img.Image finalImage = img.Image.rgb(
               resizedImage.width,
-              resizedImage.height + 10, // Reduced extra space
+              resizedImage.height, // Removed extra space completely
             );
 
             // Make background transparent/white
@@ -902,11 +902,12 @@ class PrintController extends GetxController {
                   styles: PosStyles(align: PosAlign.right)),
             ]);
 
-            // Move up and print the image with minimal spacing
-            bytes += generator.feed(-1);
+            // Print the image with negative spacing
+            bytes += generator.feed(-5);
             bytes += generator.imageRaster(finalImage, align: PosAlign.left);
 
-            // Add minimal separator line with less spacing
+            // Add separator line with negative spacing
+            bytes += generator.feed(-5);
             bytes += generator.hr(ch: '-', linesAfter: 0);
           }
         }
@@ -914,8 +915,6 @@ class PrintController extends GetxController {
         print('Error processing item image: $e');
         continue;
       }
-
-      // Removed the extra hr here since we're adding it after the image
     }
 
     // Add total with minimal spacing

@@ -384,7 +384,7 @@ class ScribbleController extends GetxController {
 
     Uint8List? particularImage = await convertToPngBytes(
       Get.width * 0.8, // Keep the width proportional
-      100, // Increased height from 75 to 100
+      85, // Reduced height from 100 to 85 for less vertical space
     );
     if (particularImage != null &&
         recognizedQuantity.isNotEmpty &&
@@ -404,7 +404,7 @@ class ScribbleController extends GetxController {
   Future<List<Uint8List?>> generateReceiptImages(
       List<Map<String, dynamic>> itemList, double width) async {
     List<Uint8List?> images = [];
-    double rowHeight = 100; // Height for each row
+    double rowHeight = 85; // Reduced from 100 to 85 to match the new height
 
     for (var item in itemList) {
       final recorder = ui.PictureRecorder();
