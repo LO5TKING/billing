@@ -693,101 +693,6 @@ class PrintController extends GetxController {
     }
   }
 
-  // Generate PDF for receipt
-  Future<Uint8List> generateReceiptPdf(List<Map<String, dynamic>> items) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.Page(
-        pageFormat:
-            PdfPageFormat(80 * PdfPageFormat.mm, 150 * PdfPageFormat.mm),
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Text('RECEIPT',
-                  style: pw.TextStyle(
-                      fontSize: 14, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-              pw.Text('Date: ${DateTime.now().toString().split(' ')[0]}'),
-              pw.Divider(),
-
-              // Header row
-              pw.Row(
-                children: [
-                  pw.Expanded(flex: 3, child: pw.Text('Item')),
-                  pw.Expanded(
-                      child: pw.Text('Qty', textAlign: pw.TextAlign.center)),
-                  pw.Expanded(
-                      child: pw.Text('Rate', textAlign: pw.TextAlign.center)),
-                  pw.Expanded(
-                      child: pw.Text('Amt', textAlign: pw.TextAlign.center)),
-                ],
-              ),
-              pw.Divider(),
-
-              // Item rows
-              pw.Column(
-                children: items.map((item) {
-                  final quantity =
-                      int.tryParse(item['quantity'].toString()) ?? 0;
-                  final rate = int.tryParse(item['rate'].toString()) ?? 0;
-                  final amount = quantity * rate;
-
-                  return pw.Row(
-                    children: [
-                      pw.Expanded(
-                          flex: 3,
-                          child: pw.Text(
-                              'Item')), // Cannot display images from particulars in this version
-                      pw.Expanded(
-                          child: pw.Text('$quantity',
-                              textAlign: pw.TextAlign.center)),
-                      pw.Expanded(
-                          child:
-                              pw.Text('$rate', textAlign: pw.TextAlign.center)),
-                      pw.Expanded(
-                          child: pw.Text('$amount',
-                              textAlign: pw.TextAlign.center)),
-                    ],
-                  );
-                }).toList(),
-              ),
-
-              pw.Divider(),
-              // Total row
-              pw.Row(
-                children: [
-                  pw.Expanded(flex: 3, child: pw.Text('')),
-                  pw.Expanded(
-                      flex: 2,
-                      child: pw.Text('TOTAL', textAlign: pw.TextAlign.center)),
-                  pw.Expanded(
-                      child: pw.Text(
-                          '${items.fold<int>(0, (sum, item) {
-                            final quantity =
-                                int.tryParse(item['quantity'].toString()) ?? 0;
-                            final rate =
-                                int.tryParse(item['rate'].toString()) ?? 0;
-                            return sum + (quantity * rate);
-                          })}',
-                          textAlign: pw.TextAlign.center)),
-                ],
-              ),
-
-              pw.SizedBox(height: 20),
-              pw.Text('Thank you for your business!',
-                  textAlign: pw.TextAlign.center),
-              pw.Text('Please visit again', textAlign: pw.TextAlign.center),
-            ],
-          );
-        },
-      ),
-    );
-
-    return pdf.save();
-  }
-
   // New method to directly generate receipt data without PDF intermediary
   Future<List<int>> generateDirectReceiptData(
       List<Map<String, dynamic>> items) async {
@@ -795,14 +700,50 @@ class PrintController extends GetxController {
     final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];
 
+    // Load and add the logo image
+    try {
+      final ByteData imageData = await rootBundle.load('assets/sai.png');
+      final Uint8List logoBytes = imageData.buffer.asUint8List();
+      final img.Image logoImage = img.decodeImage(logoBytes)!;
+      final img.Image resizedLogo =
+          img.copyResize(logoImage, height: 100, width: 100);
+      bytes += generator.image(resizedLogo, align: PosAlign.center);
+    } catch (e) {
+      print('Error loading logo: $e');
+    }
+
     // Add receipt header
     bytes += generator.text(
-      'RECEIPT',
+      'Sri Sai Ram Farsan & Sweets'.toUpperCase(),
       styles: PosStyles(
           align: PosAlign.center, bold: true, height: PosTextSize.size2),
     );
+
+    bytes += generator.emptyLines(1);
+
     bytes += generator.text(
-      'Date: ${DateTime.now().toString().split(' ')[0]}',
+      'Shop No.5 Balaji Nagar, Near Kamraj School,',
+      styles: PosStyles(align: PosAlign.center),
+    );
+    bytes += generator.text(
+      '90 Feet Road, Dharavi, Mumbai - 40017',
+      styles: PosStyles(align: PosAlign.center),
+    );
+
+    bytes += generator.emptyLines(1);
+    // Format date and time
+    final now = DateTime.now();
+    final formattedDate =
+        '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
+    final formattedTime =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+
+    bytes += generator.text(
+      'Date: $formattedDate',
+      styles: PosStyles(align: PosAlign.right),
+    );
+    bytes += generator.text(
+      'Time: $formattedTime',
       styles: PosStyles(align: PosAlign.right),
     );
     bytes += generator.hr();
