@@ -38,7 +38,10 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body: SizedBox(
+        body: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(image: AssetImage("assets/bg_splash.png"),fit: BoxFit.fill),
+          ),
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
           child: Column(
@@ -48,27 +51,17 @@ class _SplashScreenState extends State<SplashScreen> {
               Container(
                 padding: const EdgeInsets.only(left: DesignConstants.padding50),
                 width: MediaQuery.of(context).size.width,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(1, -0.5),
-                    end: Alignment(0.9, 0.9),
-                    colors: [
-                      AppColors.lightBlueGradient,
-                      AppColors.blueGradient,
-                    ],
-                  ),
-                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 160),
+                    const SizedBox(height: 220),
                     Text(
                       'Welcome',
                       style: GoogleFonts.poppins(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -80,13 +73,6 @@ class _SplashScreenState extends State<SplashScreen> {
                       horizontal: DesignConstants.padding50),
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topRight,
-                        end: Alignment.topRight,
-                        colors: [AppColors.lightYelloGradient, Colors.white],
-                      ),
-                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -114,14 +100,12 @@ class _SplashScreenState extends State<SplashScreen> {
                         ),
                         Container(
                           margin: const EdgeInsets.symmetric(
-                              vertical: DesignConstants.padding10),
+                              vertical: DesignConstants.padding10,horizontal: DesignConstants.padding5),
                           height: DesignConstants.padding80,
-                          width: DesignConstants.padding80,
                           alignment: Alignment.center,
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               elevation: DesignConstants.padding20,
-                              padding: EdgeInsets.zero,
                               backgroundColor: Colors.white,
                               iconColor: Colors.black,
                               shape: RoundedRectangleBorder(
