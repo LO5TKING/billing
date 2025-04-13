@@ -261,7 +261,11 @@ class ScribbleController extends GetxController {
 
         // If no digits are found after cleaning, set as 'No'
         if (recognizedRate.isEmpty) {
-          recognizedRate = 'No';
+          rateInk.strokes.clear();
+          ratePoints.clear();
+          Get.snackbar("Error", "Rate Not Recognized");
+
+          // recognizedRate = 'No';
         }
       } else {
         recognizedRate = 'No candidates recognized';
@@ -301,7 +305,10 @@ class ScribbleController extends GetxController {
 
         // If no digits are found after cleaning, set as 'No'
         if (recognizedQuantity.isEmpty) {
-          recognizedQuantity = 'No';
+          // recognizedQuantity = 'No';
+          quantityInk.strokes.clear();
+          quantityPoints.clear();
+          Get.snackbar("Error", "Quantity Not Recognized");
         }
       } else {
         recognizedQuantity = 'No candidates recognized';

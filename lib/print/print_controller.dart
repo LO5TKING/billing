@@ -178,9 +178,9 @@ class PrintController extends GetxController {
                 img.grayscale(decodedImage) as img.Image;
 
             // Resize image to fit receipt width while maintaining aspect ratio
-            final int targetWidth = 310;
+            final int targetWidth = 320;
             final int targetHeight =
-                (targetWidth * processedImage.height / processedImage.width)
+                ((targetWidth * processedImage.height) / processedImage.width)
                     .round();
             final img.Image resizedImage = img.copyResize(
               processedImage,
@@ -191,7 +191,7 @@ class PrintController extends GetxController {
             // Create a new blank image with minimal height and proper width for Particulars column
             final img.Image finalImage = img.Image.rgb(
               targetWidth,
-              resizedImage.height,
+              resizedImage.height + (resizedImage.height * 0.10).round(),
             );
 
             // Make background transparent/white
@@ -202,8 +202,8 @@ class PrintController extends GetxController {
             }
 
             // Calculate the offset for Particulars column (width of Sr.No column)
-            final int srNoColumnWidth =
-                (targetWidth * 0.20).round(); // Increased padding to 20%
+            final int srNoColumnWidth = (targetWidth * 0.20).round();
+            final int bottomPadding = (resizedImage.height * 0.10).round();
 
             // Copy the handwriting with proper thresholding, adding left padding
             for (int y = 0; y < resizedImage.height; y++) {
@@ -213,7 +213,8 @@ class PrintController extends GetxController {
                   final brightness = img.getLuminance(pixel);
                   if (brightness < 128) {
                     // Dark pixels become black, with offset
-                    finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
+                    finalImage.setPixel(
+                        x + srNoColumnWidth, y + bottomPadding, 0xFF000000);
                   }
                 }
               }
