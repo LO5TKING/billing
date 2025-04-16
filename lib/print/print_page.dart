@@ -164,7 +164,7 @@ class PrintDialog extends StatelessWidget {
                                       color: Colors.white),
                                   onPressed: () async {
                                     if (await _checkPermissions()) {
-                                      splashController.startScanning();
+                                      await splashController.startScanning();
                                     }
                                   },
                                 ),
@@ -236,7 +236,7 @@ class PrintDialog extends StatelessWidget {
                               ElevatedButton.icon(
                                 onPressed: () async {
                                   if (await _checkPermissions()) {
-                                    splashController.startScanning();
+                                    await splashController.startScanning();
                                   }
                                 },
                                 icon: const Icon(Icons.refresh),

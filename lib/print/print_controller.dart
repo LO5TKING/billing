@@ -58,6 +58,7 @@ class PrintController extends GetxController {
         final negotiatedMtu = await device.mtu.first;
         chunkSize = (negotiatedMtu - 3).clamp(20, 180);
       } catch (e) {
+        Get.snackbar("Not Printed ", "Chunk Size Failed");
         print('Using default chunk size: $e');
       }
 
@@ -68,10 +69,11 @@ class PrintController extends GetxController {
             withoutResponse: true);
         await Future.delayed(const Duration(milliseconds: 10));
       }
-
+      Get.snackbar("Printed", "Successfully");
       print('Print completed successfully');
     } catch (e) {
-      throw Exception('Failed to print: $e');
+      Get.snackbar("Not Printed", "Unsuccessfull $e");
+      // throw Exception('Failed to print: $e');
     }
   }
 
@@ -95,23 +97,31 @@ class PrintController extends GetxController {
 
     // Add receipt header
     bytes += generator.text(
-      'Sri Sai Ram Farsan & Sweets'.toUpperCase(),
+      'Deepa Farsan'.toUpperCase(),
       styles: PosStyles(
           align: PosAlign.center, bold: true, height: PosTextSize.size2),
     );
 
     bytes += generator.emptyLines(1);
 
+    // bytes += generator.text(
+    //   'Shop No.5 Balaji Nagar, Near Kamraj School,',
+    //   styles: PosStyles(align: PosAlign.center),
+    // );
     bytes += generator.text(
-      'Shop No.5 Balaji Nagar, Near Kamraj School,',
+      'Shop No.86 Shell Colony,Chembur Mumbai-400017',
+      styles: PosStyles(align: PosAlign.center),
+    );
+    // bytes += generator.text(
+    //   '90 Feet Road, Dharavi, Mumbai - 40017',
+    //   styles: PosStyles(align: PosAlign.center),
+    // );
+    bytes += generator.text(
+      'Mail ID: deepafarsan@gamil.com',
       styles: PosStyles(align: PosAlign.center),
     );
     bytes += generator.text(
-      '90 Feet Road, Dharavi, Mumbai - 40017',
-      styles: PosStyles(align: PosAlign.center),
-    );
-    bytes += generator.text(
-      'Mobile No: 9892814985 ',
+      'Mobile No: 9833088124 ',
       styles: PosStyles(align: PosAlign.center),
     );
 
@@ -182,16 +192,25 @@ class PrintController extends GetxController {
             final int targetHeight =
                 ((targetWidth * processedImage.height) / processedImage.width)
                     .round();
-            final img.Image resizedImage = img.copyResize(
+
+            // Scale up the image first
+            final img.Image scaledImage = img.copyResize(
               processedImage,
+              width: (targetWidth * 1.2).round(), // Scale up by 20%
+              height: (targetHeight * 1.2).round(), // Scale up by 20%
+            ) as img.Image;
+
+            // Then resize to fit the receipt
+            final img.Image resizedImage = img.copyResize(
+              scaledImage,
               width: targetWidth,
               height: targetHeight,
             ) as img.Image;
 
-            // Create a new blank image with minimal height and proper width for Particulars column
+            // Create a new blank image with minimal height
             final img.Image finalImage = img.Image.rgb(
               targetWidth,
-              resizedImage.height + (resizedImage.height * 0.10).round(),
+              resizedImage.height,
             );
 
             // Make background transparent/white
@@ -202,8 +221,8 @@ class PrintController extends GetxController {
             }
 
             // Calculate the offset for Particulars column (width of Sr.No column)
-            final int srNoColumnWidth = (targetWidth * 0.20).round();
-            final int bottomPadding = (resizedImage.height * 0.10).round();
+            final int srNoColumnWidth =
+                (targetWidth * 0.20).round(); // 20% horizontal padding
 
             // Copy the handwriting with proper thresholding, adding left padding
             for (int y = 0; y < resizedImage.height; y++) {
@@ -213,8 +232,7 @@ class PrintController extends GetxController {
                   final brightness = img.getLuminance(pixel);
                   if (brightness < 128) {
                     // Dark pixels become black, with offset
-                    finalImage.setPixel(
-                        x + srNoColumnWidth, y + bottomPadding, 0xFF000000);
+                    finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
                   }
                 }
               }
@@ -256,6 +274,7 @@ class PrintController extends GetxController {
           }
         }
       } catch (e) {
+        Get.snackbar("INSIDE RECIPET", " Failed in Receipt UI ");
         print('Error processing item image: $e');
         continue;
       }

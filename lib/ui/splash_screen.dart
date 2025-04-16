@@ -40,7 +40,8 @@ class _SplashScreenState extends State<SplashScreen> {
       child: Scaffold(
         body: Container(
           decoration: const BoxDecoration(
-            image: DecorationImage(image: AssetImage("assets/bg_splash.png"),fit: BoxFit.fill),
+            image: DecorationImage(
+                image: AssetImage("assets/bg_splash.png"), fit: BoxFit.fill),
           ),
           height: MediaQuery.of(context).size.height,
           width: MediaQuery.of(context).size.width,
@@ -100,7 +101,8 @@ class _SplashScreenState extends State<SplashScreen> {
                         ),
                         Container(
                           margin: const EdgeInsets.symmetric(
-                              vertical: DesignConstants.padding10,horizontal: DesignConstants.padding5),
+                              vertical: DesignConstants.padding10,
+                              horizontal: DesignConstants.padding5),
                           height: DesignConstants.padding80,
                           alignment: Alignment.center,
                           child: ElevatedButton.icon(

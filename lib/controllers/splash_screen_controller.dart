@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ class SplashScreenController extends GetxController {
   BluetoothDevice? _connectedDevice;
   StreamSubscription? _scanSubscription;
   Rx<String?> savedPrinterId = Rx<String?>(null);
+  bool _isDialogShowing = false;
 
   @override
   void onInit() {
@@ -55,27 +57,25 @@ class SplashScreenController extends GetxController {
         return;
       }
 
-      int retryCount = 0;
-      while (retryCount < 3) {
+      // First try to connect to saved printer if exists
+      if (savedPrinterId.value != null) {
         try {
-          await startScanning();
-          if (_connectedDevice != null) {
-            break;
-          }
-          retryCount++;
-          if (retryCount < 3) {
-            await Future.delayed(const Duration(seconds: 2));
-          }
-        } catch (e) {
-          print('Scan attempt $retryCount failed: $e');
-          retryCount++;
-          if (retryCount >= 3) {
-            print('Failed to scan after 3 attempts: $e');
-            devicesMsg("Could not scan for devices. Please try again later.");
+          final savedDevice = await _findSavedPrinter();
+          if (savedDevice != null) {
+            await connectToPrinter(savedDevice);
             return;
           }
-          await Future.delayed(const Duration(seconds: 2));
+        } catch (e) {
+          print('Error connecting to saved printer: $e');
+          // If saved printer connection fails, continue to show dialog
         }
+      }
+
+      // If no active connection and no dialog showing, show device selection
+      if (!isConnected.value && !_isDialogShowing) {
+        _isDialogShowing = true;
+        await showDeviceSelectionDialog();
+        _isDialogShowing = false;
       }
     } catch (e) {
       if (e.toString().contains('bluetooth_unavailable')) {
@@ -87,58 +87,37 @@ class SplashScreenController extends GetxController {
     }
   }
 
-  Future<void> startScanning() async {
-    if (isScanning.value) return;
+  Future<BluetoothDevice?> _findSavedPrinter() async {
+    if (savedPrinterId.value == null) return null;
 
     try {
-      isScanning(true);
-      devicesMsg("Scanning...");
-
-      if (FlutterBluePlus.isScanningNow) {
-        try {
-          await FlutterBluePlus.stopScan();
-        } catch (e) {
-          print('Error stopping scan: $e');
+      await startScanning();
+      for (var device in devices) {
+        if (device.id.toString() == savedPrinterId.value) {
+          return device;
         }
       }
+      return null;
+    } catch (e) {
+      print('Error finding saved printer: $e');
+      return null;
+    }
+  }
 
+  Future<void> showDeviceSelectionDialog() async {
+    devices.clear();
+    isScanning(true);
+    devicesMsg("Scanning for Bluetooth devices...");
+
+    try {
       await _scanSubscription?.cancel();
-
       _scanSubscription = FlutterBluePlus.scanResults.listen(
-        (results) async {
-          // First try to find saved printer
-          if (savedPrinterId.value != null) {
-            final savedDevice = results
-                .firstWhereOrNull(
-                  (result) =>
-                      result.device.id.toString() == savedPrinterId.value,
-                )
-                ?.device;
-
-            if (savedDevice != null) {
-              try {
-                await connectToPrinter(savedDevice);
-                return;
-              } catch (e) {
-                print('Failed to connect to saved printer: $e');
-              }
-            }
-          }
-
-          // If no saved printer or connection failed, look for any printer
-          final printerDevice = results.firstWhereOrNull((result) {
-            final name = result.device.localName.toLowerCase();
-            return name.contains('printer') ||
-                name.contains('pos') ||
-                name.contains('thermal') ||
-                name.contains('bt');
-          })?.device;
-
-          if (printerDevice != null) {
-            try {
-              await connectToPrinter(printerDevice);
-            } catch (e) {
-              print('Failed to connect to found printer: $e');
+        (results) {
+          for (var result in results) {
+            if (!devices.contains(result.device)) {
+              devices.add(result.device);
+              print(
+                  'Found device: ${result.device.localName} (${result.device.id})');
             }
           }
         },
@@ -149,39 +128,172 @@ class SplashScreenController extends GetxController {
         },
       );
 
-      try {
-        await FlutterBluePlus.startScan(
-          timeout: const Duration(seconds: 15),
-          androidUsesFineLocation: true,
-        );
-      } catch (e) {
-        print('Error starting scan: $e');
-        isScanning(false);
-        devicesMsg(
-            "Could not start scanning. ${e.toString().substring(0, 50)}...");
-        return;
-      }
+      await FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 15),
+        androidUsesFineLocation: true,
+      );
+
+      // Show device selection dialog
+      Get.dialog(
+        AlertDialog(
+          title: const Text('Select Bluetooth Device'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Obx(() => Text(devicesMsg.value)),
+                const SizedBox(height: 10),
+                Obx(() => isScanning.value
+                    ? const CircularProgressIndicator()
+                    : const SizedBox.shrink()),
+                const SizedBox(height: 10),
+                Obx(() => devices.isEmpty && !isScanning.value
+                    ? const Text('No devices found. Please try rescanning.')
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: devices.length,
+                        itemBuilder: (context, index) {
+                          final device = devices[index];
+                          return ListTile(
+                            title: Text(device.localName.isEmpty
+                                ? 'Unknown Device'
+                                : device.localName),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('ID: ${device.id}'),
+                                Text('Type: ${_getDeviceType(device)}'),
+                              ],
+                            ),
+                            onTap: () async {
+                              try {
+                                await connectToPrinter(device);
+                                Get.back();
+                              } catch (e) {
+                                Get.snackbar(
+                                  'Error',
+                                  'Failed to connect to device: ${e.toString()}',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      )),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                isScanning(false);
+                await FlutterBluePlus.stopScan();
+                Get.back();
+              },
+              child: const Text('Close'),
+            ),
+            TextButton(
+              onPressed: () async {
+                devices.clear();
+                isScanning(true);
+                devicesMsg("Scanning for Bluetooth devices...");
+                await startScanning();
+              },
+              child: const Text('Rescan'),
+            ),
+          ],
+        ),
+      );
 
       await Future.delayed(const Duration(seconds: 15));
       if (isScanning.value) {
         isScanning(false);
-        try {
-          await FlutterBluePlus.stopScan();
-        } catch (e) {
-          print('Error stopping scan after delay: $e');
+        await FlutterBluePlus.stopScan();
+        if (devices.isEmpty) {
+          devicesMsg("No devices found");
         }
-        if (_connectedDevice == null) {
-          devicesMsg("No printers found");
+      }
+    } catch (e) {
+      print('Error showing device dialog: $e');
+      isScanning(false);
+      devicesMsg("Error: ${e.toString().substring(0, 100)}...");
+    }
+  }
+
+  String _getDeviceType(BluetoothDevice device) {
+    // This is a simple classification based on device name
+    // You can enhance this based on your needs
+    final name = device.localName.toLowerCase();
+    if (name.contains('printer')) return 'Printer';
+    if (name.contains('headphone') ||
+        name.contains('earbud') ||
+        name.contains('earphone')) return 'Audio Device';
+    if (name.contains('phone') || name.contains('mobile')) return 'Phone';
+    if (name.contains('watch') || name.contains('band')) return 'Wearable';
+    return 'Other Device';
+  }
+
+  Future<void> startScanning() async {
+    if (isScanning.value) {
+      // If already scanning, stop current scan first
+      await FlutterBluePlus.stopScan();
+      isScanning(false);
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    try {
+      isScanning(true);
+      devices.clear();
+      devicesMsg("Scanning for Bluetooth devices...");
+
+      await _scanSubscription?.cancel();
+      _scanSubscription = FlutterBluePlus.scanResults.listen(
+        (results) {
+          for (var result in results) {
+            if (!devices.contains(result.device)) {
+              devices.add(result.device);
+              print(
+                  'Found device: ${result.device.localName} (${result.device.id})');
+            }
+          }
+        },
+        onError: (e) {
+          print('Scan error: $e');
+          isScanning(false);
+          devicesMsg("Error scanning: $e");
+        },
+      );
+
+      // Start scan with timeout
+      await FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 10),
+        androidUsesFineLocation: true,
+      );
+
+      // Wait for scan to complete or timeout
+      await Future.delayed(const Duration(seconds: 10));
+
+      // Stop scanning and update UI
+      if (isScanning.value) {
+        isScanning(false);
+        await FlutterBluePlus.stopScan();
+        if (devices.isEmpty) {
+          devicesMsg("No devices found. Please try rescanning.");
+        } else {
+          devicesMsg("Scan complete. Found ${devices.length} devices.");
         }
       }
     } catch (e) {
       print('Scanning error: $e');
       isScanning(false);
-      String errorMsg = e.toString();
-      if (errorMsg.length > 100) {
-        errorMsg = "${errorMsg.substring(0, 100)}...";
+      devicesMsg("Error: ${e.toString().substring(0, 100)}...");
+      // Make sure to stop scanning on error
+      try {
+        await FlutterBluePlus.stopScan();
+      } catch (e) {
+        print('Error stopping scan: $e');
       }
-      devicesMsg("Error: $errorMsg");
     }
   }
 
@@ -192,15 +304,23 @@ class SplashScreenController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 500));
       }
 
-      await device.connect(timeout: const Duration(seconds: 5));
+      await device.connect(timeout: const Duration(seconds: 10));
       _connectedDevice = device;
       isConnected(true);
       await saveSelectedPrinter(device);
-      // Get.snackbar("Connected","Successfully connected to printer: ${device.name}");
-      print('Successfully connected to printer: ${device.name}');
+      Get.snackbar(
+        "Success",
+        "Connected to device: ${device.localName}",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      print('Successfully connected to device: ${device.localName}');
     } catch (e) {
-      // Get.snackbar("Error","Error connecting to printer");
-      print('Error connecting to printer: $e');
+      Get.snackbar(
+        "Error",
+        "Failed to connect to device: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      print('Error connecting to device: $e');
       isConnected(false);
       _connectedDevice = null;
       rethrow;
@@ -213,11 +333,11 @@ class SplashScreenController extends GetxController {
   void onClose() {
     _scanSubscription?.cancel();
     if (_connectedDevice != null) {
-      print('Disconnecting printer on app close: ${_connectedDevice!.name}');
+      print('Disconnecting device on app close: ${_connectedDevice!.name}');
       try {
         _connectedDevice!.disconnect();
       } catch (e) {
-        print('Error disconnecting printer: $e');
+        print('Error disconnecting device: $e');
       }
       _connectedDevice = null;
       isConnected(false);
