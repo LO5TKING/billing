@@ -34,46 +34,91 @@ class PrintController extends GetxController {
       List<BluetoothService> services = await device.discoverServices();
       BluetoothCharacteristic? writeCharacteristic;
 
+      // Look for the printer service (usually 0xFF00)
       for (var service in services) {
-        for (var characteristic in service.characteristics) {
-          if (characteristic.properties.write ||
-              characteristic.properties.writeWithoutResponse) {
-            writeCharacteristic = characteristic;
-            break;
+        if (service.uuid.toString().toUpperCase().contains('FF00')) {
+          for (var characteristic in service.characteristics) {
+            if (characteristic.properties.write ||
+                characteristic.properties.writeWithoutResponse) {
+              writeCharacteristic = characteristic;
+              break;
+            }
           }
         }
-        if (writeCharacteristic != null) break;
+      }
+
+      if (writeCharacteristic == null) {
+        // If FF00 not found, try finding any write characteristic
+        for (var service in services) {
+          for (var characteristic in service.characteristics) {
+            if (characteristic.properties.write ||
+                characteristic.properties.writeWithoutResponse) {
+              writeCharacteristic = characteristic;
+              break;
+            }
+          }
+          if (writeCharacteristic != null) break;
+        }
       }
 
       if (writeCharacteristic == null) {
         throw Exception('Printer service not found');
       }
 
-      // Generate receipt data directly
-      final bytes = await generateDirectReceiptData(items);
+      // Initialize printer
+      final initCommands = [
+        // Reset printer
+        Uint8List.fromList([0x1B, 0x40]),
+        // Set line spacing to 0
+        Uint8List.fromList([0x1B, 0x33, 0x00]),
+        // Set character code table
+        Uint8List.fromList([0x1B, 0x74, 0x00]),
+        // Set justification to left
+        Uint8List.fromList([0x1B, 0x61, 0x00]),
+        // Set character size to normal
+        Uint8List.fromList([0x1D, 0x21, 0x00]),
+      ];
 
-      // Use cached MTU size if available, or default to a safe value
-      int chunkSize = 180;
-      try {
-        final negotiatedMtu = await device.mtu.first;
-        chunkSize = (negotiatedMtu - 3).clamp(20, 180);
-      } catch (e) {
-        Get.snackbar("Not Printed ", "Chunk Size Failed");
-        print('Using default chunk size: $e');
+      for (var cmd in initCommands) {
+        await writeCharacteristic.write(cmd, withoutResponse: true);
+        await Future.delayed(const Duration(milliseconds: 50));
       }
 
-      // Send data in chunks with minimal delay
+      // Generate receipt data
+      final bytes = await generateDirectReceiptData(items);
+
+      // Use smaller chunk size for better reliability
+      int chunkSize = 20;
+      try {
+        final negotiatedMtu = await device.mtu.first;
+        chunkSize = (negotiatedMtu - 3).clamp(20, 100);
+      } catch (e) {
+        print('Using default chunk size: $chunkSize');
+      }
+
+      // Send data in chunks
       for (int i = 0; i < bytes.length; i += chunkSize) {
         int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
         await writeCharacteristic.write(bytes.sublist(i, end),
             withoutResponse: true);
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 50));
       }
+
+      // Final commands
+      final finalCommands = [
+        // Feed paper
+        Uint8List.fromList([0x1B, 0x64, 0x00]),
+      ];
+
+      for (var cmd in finalCommands) {
+        await writeCharacteristic.write(cmd, withoutResponse: true);
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
       Get.snackbar("Printed", "Successfully");
-      print('Print completed successfully');
     } catch (e) {
-      Get.snackbar("Not Printed", "Unsuccessfull $e");
-      // throw Exception('Failed to print: $e');
+      Get.snackbar("Not Printed", "Unsuccessful: $e");
+      print('Print error: $e');
     }
   }
 
@@ -193,21 +238,24 @@ class PrintController extends GetxController {
                 ((targetWidth * processedImage.height) / processedImage.width)
                     .round();
 
-            // Scale up the image first
+            // Scale up the image more significantly
             final img.Image scaledImage = img.copyResize(
               processedImage,
-              width: (targetWidth * 1.2).round(), // Scale up by 20%
-              height: (targetHeight * 1.2).round(), // Scale up by 20%
+              width: (targetWidth * 1.5)
+                  .round(), // Increased scale factor from 1.2 to 1.5
+              height: (targetHeight * 1.5)
+                  .round(), // Increased scale factor from 1.2 to 1.5
             ) as img.Image;
 
             // Then resize to fit the receipt
             final img.Image resizedImage = img.copyResize(
               scaledImage,
               width: targetWidth,
-              height: targetHeight,
+              height:
+                  (targetHeight * 1.2).round(), // Keep height slightly larger
             ) as img.Image;
 
-            // Create a new blank image with minimal height
+            // Create a new blank image with the adjusted height
             final img.Image finalImage = img.Image.rgb(
               targetWidth,
               resizedImage.height,
@@ -224,15 +272,26 @@ class PrintController extends GetxController {
             final int srNoColumnWidth =
                 (targetWidth * 0.20).round(); // 20% horizontal padding
 
-            // Copy the handwriting with proper thresholding, adding left padding
+            // Copy the handwriting with thicker strokes using pixel dilation
             for (int y = 0; y < resizedImage.height; y++) {
               for (int x = 0; x < resizedImage.width; x++) {
                 if (x + srNoColumnWidth < finalImage.width) {
                   final pixel = resizedImage.getPixel(x, y);
                   final brightness = img.getLuminance(pixel);
                   if (brightness < 128) {
-                    // Dark pixels become black, with offset
-                    finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
+                    // Make the stroke thicker by setting adjacent pixels
+                    for (int dy = -1; dy <= 1; dy++) {
+                      for (int dx = -1; dx <= 1; dx++) {
+                        final newX = x + dx + srNoColumnWidth;
+                        final newY = y + dy;
+                        if (newX >= 0 &&
+                            newX < finalImage.width &&
+                            newY >= 0 &&
+                            newY < finalImage.height) {
+                          finalImage.setPixel(newX, newY, 0xFF000000);
+                        }
+                      }
+                    }
                   }
                 }
               }
