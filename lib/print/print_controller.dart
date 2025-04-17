@@ -87,24 +87,26 @@ class PrintController extends GetxController {
       // Generate receipt data
       final bytes = await generateDirectReceiptData(items);
 
-      // Use smaller chunk size for better reliability
-      int chunkSize = 20;
+      // Use even larger chunk size for faster transfer
+      int chunkSize = 200; // Increased from 100 to 200
       try {
         final negotiatedMtu = await device.mtu.first;
-        chunkSize = (negotiatedMtu - 3).clamp(20, 100);
+        chunkSize = (negotiatedMtu - 3)
+            .clamp(200, 400); // Increased minimum and maximum
       } catch (e) {
         print('Using default chunk size: $chunkSize');
       }
 
-      // Send data in chunks
+      // Send data in chunks with minimal delay
       for (int i = 0; i < bytes.length; i += chunkSize) {
         int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
         await writeCharacteristic.write(bytes.sublist(i, end),
             withoutResponse: true);
-        await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(
+            const Duration(milliseconds: 10)); // Reduced from 20ms to 10ms
       }
 
-      // Final commands
+      // Final commands with minimal delay
       final finalCommands = [
         // Feed paper
         Uint8List.fromList([0x1B, 0x64, 0x00]),
@@ -112,7 +114,8 @@ class PrintController extends GetxController {
 
       for (var cmd in finalCommands) {
         await writeCharacteristic.write(cmd, withoutResponse: true);
-        await Future.delayed(const Duration(milliseconds: 100));
+        await Future.delayed(
+            const Duration(milliseconds: 20)); // Reduced from 50ms to 20ms
       }
 
       Get.snackbar("Printed", "Successfully");
@@ -214,123 +217,114 @@ class PrintController extends GetxController {
     ]);
     bytes += generator.hr();
 
-    // Process each item
-    for (var i = 0; i < items.length; i++) {
-      try {
-        if (items[i]['particulars'] != null &&
-            items[i]['particulars'] is Uint8List) {
-          final quantity = int.tryParse(items[i]['quantity'].toString()) ?? 0;
-          final rate = int.tryParse(items[i]['rate'].toString()) ?? 0;
-          final amount = quantity * rate;
-
-          // Get the handwritten image
-          final Uint8List handwrittenBytes = items[i]['particulars'];
-          final img.Image? decodedImage = img.decodeImage(handwrittenBytes);
-
-          if (decodedImage != null) {
-            // Resize image to fit receipt width while maintaining aspect ratio
-            final int targetWidth = 320;
-            final int targetHeight =
-                ((targetWidth * decodedImage.height) / decodedImage.width)
-                    .round();
-
-            // Scale up the image more significantly
-            final img.Image scaledImage = img.copyResize(
-              decodedImage,
-              width: (targetWidth * 1.5)
-                  .round(), // Increased scale factor from 1.2 to 1.5
-              height: (targetHeight * 1.5)
-                  .round(), // Increased scale factor from 1.2 to 1.5
-            ) as img.Image;
-
-            // Then resize to fit the receipt
-            final img.Image resizedImage = img.copyResize(
-              scaledImage,
-              width: targetWidth,
-              height:
-                  (targetHeight * 1.2).round(), // Keep height slightly larger
-            ) as img.Image;
-
-            // Create a new blank image with the adjusted height
-            final img.Image finalImage = img.Image.rgb(
-              targetWidth,
-              resizedImage.height,
-            );
-
-            // Make background transparent/white
-            for (int y = 0; y < finalImage.height; y++) {
-              for (int x = 0; x < finalImage.width; x++) {
-                finalImage.setPixel(x, y, 0xFFFFFFFF);
-              }
-            }
-
-            // Calculate the offset for Particulars column (width of Sr.No column)
-            final int srNoColumnWidth =
-                (targetWidth * 0.20).round(); // 20% horizontal padding
-
-            // Copy the handwriting without any pixel dilation
-            for (int y = 0; y < resizedImage.height; y++) {
-              for (int x = 0; x < resizedImage.width; x++) {
-                if (x + srNoColumnWidth < finalImage.width) {
-                  final pixel = resizedImage.getPixel(x, y);
-                  final brightness = img.getLuminance(pixel);
-                  if (brightness < 200) {
-                    // Set only the exact pixel without any dilation
-                    finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
-                  }
-                }
-              }
-            }
-
-            // Print the combined row with image and text
-            bytes += generator.row([
-              PosColumn(
-                text: '${i + 1}',
-                width: 2,
-                styles: PosStyles(align: PosAlign.left, bold: true),
-              ),
-              PosColumn(
-                width: 4,
-                text: '',
-                styles: PosStyles(align: PosAlign.left),
-              ),
-              PosColumn(
-                  text: quantity.toString(),
-                  width: 2,
-                  styles: PosStyles(align: PosAlign.right, bold: true)),
-              PosColumn(
-                  text: rate.toString(),
-                  width: 2,
-                  styles: PosStyles(align: PosAlign.right, bold: true)),
-              PosColumn(
-                  text: amount.toString(),
-                  width: 2,
-                  styles: PosStyles(align: PosAlign.right, bold: true)),
-            ]);
-
-            // Print the image with negative spacing
-            bytes += generator.feed(-5);
-            bytes += generator.imageRaster(finalImage, align: PosAlign.left);
-
-            // Add separator line with negative spacing
-            bytes += generator.feed(-5);
-            bytes += generator.hr(ch: '-', linesAfter: 0);
-          }
-        }
-      } catch (e) {
-        Get.snackbar("INSIDE RECIPET", " Failed in Receipt UI ");
-        print('Error processing item image: $e');
-        continue;
-      }
-    }
-
-    // Add total with minimal spacing
+    // Pre-calculate total for efficiency
     final total = items.fold<int>(0, (sum, item) {
       final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
       final rate = int.tryParse(item['rate'].toString()) ?? 0;
       return sum + (quantity * rate);
     });
 
+    // Process items in batches for better performance
+    final int batchSize = 3; // Process 3 items at a time
+    for (var i = 0; i < items.length; i += batchSize) {
+      final end = (i + batchSize < items.length) ? i + batchSize : items.length;
+      final batch = items.sublist(i, end);
+
+      for (var item in batch) {
+        try {
+          if (item['particulars'] != null && item['particulars'] is Uint8List) {
+            final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
+            final rate = int.tryParse(item['rate'].toString()) ?? 0;
+            final amount = quantity * rate;
+
+            // Get the handwritten image
+            final Uint8List handwrittenBytes = item['particulars'];
+            final img.Image? decodedImage = img.decodeImage(handwrittenBytes);
+
+            if (decodedImage != null) {
+              // Optimized image processing with reduced size
+              final int targetWidth = 280; // Reduced from 320
+              final int targetHeight =
+                  ((targetWidth * decodedImage.height) / decodedImage.width)
+                      .round();
+
+              // Single resize operation with optimized parameters
+              final img.Image resizedImage = img.copyResize(
+                decodedImage,
+                width: targetWidth,
+                height: targetHeight,
+                interpolation: img.Interpolation.linear, // Faster interpolation
+              );
+
+              // Create a new blank image with the adjusted height
+              final img.Image finalImage = img.Image.rgb(
+                targetWidth,
+                resizedImage.height,
+              );
+
+              // Make background white in a single operation
+              finalImage.fill(0xFFFFFFFF);
+
+              // Calculate the offset for Particulars column
+              final int srNoColumnWidth = (targetWidth * 0.20).round();
+
+              // Optimized pixel copying
+              for (int y = 0; y < resizedImage.height; y++) {
+                for (int x = 0; x < resizedImage.width; x++) {
+                  if (x + srNoColumnWidth < finalImage.width) {
+                    final pixel = resizedImage.getPixel(x, y);
+                    final brightness = img.getLuminance(pixel);
+                    if (brightness < 200) {
+                      finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
+                    }
+                  }
+                }
+              }
+
+              // Print the combined row with image and text
+              bytes += generator.row([
+                PosColumn(
+                  text: '${items.indexOf(item) + 1}',
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.left, bold: true),
+                ),
+                PosColumn(
+                  width: 4,
+                  text: '',
+                  styles: PosStyles(align: PosAlign.left),
+                ),
+                PosColumn(
+                    text: quantity.toString(),
+                    width: 2,
+                    styles: PosStyles(align: PosAlign.right, bold: true)),
+                PosColumn(
+                    text: rate.toString(),
+                    width: 2,
+                    styles: PosStyles(align: PosAlign.right, bold: true)),
+                PosColumn(
+                    text: amount.toString(),
+                    width: 2,
+                    styles: PosStyles(align: PosAlign.right, bold: true)),
+              ]);
+
+              // Print the image with negative spacing
+              bytes += generator.feed(-5);
+              bytes += generator.imageRaster(finalImage, align: PosAlign.left);
+
+              // Add separator line with negative spacing
+              bytes += generator.feed(-5);
+              bytes += generator.hr(ch: '-', linesAfter: 0);
+            }
+          }
+        } catch (e) {
+          Get.snackbar("INSIDE RECIPET", " Failed in Receipt UI ");
+          print('Error processing item image: $e');
+          continue;
+        }
+      }
+    }
+
+    // Add total with minimal spacing
     bytes += generator.row([
       PosColumn(text: '', width: 2),
       PosColumn(text: '', width: 2),
