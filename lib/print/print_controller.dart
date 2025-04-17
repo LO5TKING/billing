@@ -272,27 +272,32 @@ class PrintController extends GetxController {
             final int srNoColumnWidth =
                 (targetWidth * 0.20).round(); // 20% horizontal padding
 
-            // Copy the handwriting with thicker strokes using pixel dilation
+            // Copy the handwriting with 1x1 pixel grid (only directly adjacent pixels)
             for (int y = 0; y < resizedImage.height; y++) {
               for (int x = 0; x < resizedImage.width; x++) {
                 if (x + srNoColumnWidth < finalImage.width) {
                   final pixel = resizedImage.getPixel(x, y);
                   final brightness = img.getLuminance(pixel);
-                  if (brightness < 128) {
-                    // Make the stroke slightly thicker by setting adjacent pixels
-                    for (int dy = -1; dy <= 1; dy++) {
-                      for (int dx = -1; dx <= 1; dx++) {
-                        // Only set pixels within 1.5x1.5 grid
-                        if (dx.abs() + dy.abs() <= 1) {
-                          final newX = x + dx + srNoColumnWidth;
-                          final newY = y + dy;
-                          if (newX >= 0 &&
-                              newX < finalImage.width &&
-                              newY >= 0 &&
-                              newY < finalImage.height) {
-                            finalImage.setPixel(newX, newY, 0xFF000000);
-                          }
-                        }
+                  if (brightness < 200) {
+                    // Set the center pixel
+                    finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
+
+                    // Set only directly adjacent pixels (up, down, left, right)
+                    final adjacentOffsets = [
+                      [0, -1], // up
+                      [0, 1], // down
+                      [-1, 0], // left
+                      [1, 0] // right
+                    ];
+
+                    for (var offset in adjacentOffsets) {
+                      final newX = x + offset[0] + srNoColumnWidth;
+                      final newY = y + offset[1];
+                      if (newX >= 0 &&
+                          newX < finalImage.width &&
+                          newY >= 0 &&
+                          newY < finalImage.height) {
+                        finalImage.setPixel(newX, newY, 0xFF404040);
                       }
                     }
                   }
