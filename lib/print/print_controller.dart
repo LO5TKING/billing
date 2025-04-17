@@ -228,19 +228,15 @@ class PrintController extends GetxController {
           final img.Image? decodedImage = img.decodeImage(handwrittenBytes);
 
           if (decodedImage != null) {
-            // Convert to grayscale
-            final img.Image processedImage =
-                img.grayscale(decodedImage) as img.Image;
-
             // Resize image to fit receipt width while maintaining aspect ratio
             final int targetWidth = 320;
             final int targetHeight =
-                ((targetWidth * processedImage.height) / processedImage.width)
+                ((targetWidth * decodedImage.height) / decodedImage.width)
                     .round();
 
             // Scale up the image more significantly
             final img.Image scaledImage = img.copyResize(
-              processedImage,
+              decodedImage,
               width: (targetWidth * 1.5)
                   .round(), // Increased scale factor from 1.2 to 1.5
               height: (targetHeight * 1.5)
@@ -272,34 +268,15 @@ class PrintController extends GetxController {
             final int srNoColumnWidth =
                 (targetWidth * 0.20).round(); // 20% horizontal padding
 
-            // Copy the handwriting with 1x1 pixel grid (only directly adjacent pixels)
+            // Copy the handwriting without any pixel dilation
             for (int y = 0; y < resizedImage.height; y++) {
               for (int x = 0; x < resizedImage.width; x++) {
                 if (x + srNoColumnWidth < finalImage.width) {
                   final pixel = resizedImage.getPixel(x, y);
                   final brightness = img.getLuminance(pixel);
                   if (brightness < 200) {
-                    // Set the center pixel
+                    // Set only the exact pixel without any dilation
                     finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
-
-                    // Set only directly adjacent pixels (up, down, left, right)
-                    final adjacentOffsets = [
-                      [0, -1], // up
-                      [0, 1], // down
-                      [-1, 0], // left
-                      [1, 0] // right
-                    ];
-
-                    for (var offset in adjacentOffsets) {
-                      final newX = x + offset[0] + srNoColumnWidth;
-                      final newY = y + offset[1];
-                      if (newX >= 0 &&
-                          newX < finalImage.width &&
-                          newY >= 0 &&
-                          newY < finalImage.height) {
-                        finalImage.setPixel(newX, newY, 0xFF404040);
-                      }
-                    }
                   }
                 }
               }
