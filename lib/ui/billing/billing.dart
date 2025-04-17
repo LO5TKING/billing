@@ -31,11 +31,8 @@ class Billing extends StatelessWidget {
                   width: Get.width,
                   height: Get.height * 0.97,
                   margin: const EdgeInsets.only(left: 5.0, right: 5, top: 20),
-                  // Replace your DesignConstants
                   decoration: BoxDecoration(
-                    border: Border.all(
-                        color:
-                            AppColors.stainedGlass), // Replace with your color
+                    border: Border.all(color: AppColors.stainedGlass),
                   ),
                   child: Column(
                     children: [
@@ -45,32 +42,27 @@ class Billing extends StatelessWidget {
                           children: [
                             Center(
                               child: Container(
-                                padding: const EdgeInsets.only(bottom: 20.0),
-                                child: Image.asset("assets/sai.png",height: 50,width: 50,)
-                                // const Text(
-                                //   'Logo',
-                                //   style: TextStyle(
-                                //     color: Colors.grey,
-                                //     fontSize: 24.0,
-                                //   ),
-                                // ),
-                              ),
+                                  padding: const EdgeInsets.only(bottom: 20.0),
+                                  child: Image.asset(
+                                    "assets/sai.png",
+                                    height: 50,
+                                    width: 50,
+                                  )),
                             ),
                             Positioned(
                               right: 0,
-                              child: Obx(
-                                () => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: DesignConstants.padding5),
-                                  child: Text(
-                                    getCurrentDateTime(),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.stainedGlass,
-                                    ),
-                                  ),
-                                ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: DesignConstants.padding5),
+                                child: Obx(() => Text(
+                                      scribbleController
+                                          .formattedDateTime.value,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.stainedGlass,
+                                      ),
+                                    )),
                               ),
                             ),
                           ],
@@ -480,6 +472,47 @@ class Billing extends StatelessWidget {
                                       const SizedBox(width: 10),
                                       Container(
                                         height: 40,
+                                        child: Obx(() => ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.stainedGlass,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  5))),
+                                            ),
+                                            onPressed: scribbleController
+                                                    .isPrinting.value
+                                                ? null
+                                                : () {
+                                                    scribbleController
+                                                        .printPdfReceipt();
+                                                  },
+                                            child: scribbleController
+                                                    .isPrinting.value
+                                                ? const SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : const Text(
+                                                    'Print Receipt',
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize:
+                                                            DesignConstants
+                                                                .fontSize16),
+                                                  ))),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        height: 40,
                                         child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
@@ -492,34 +525,8 @@ class Billing extends StatelessWidget {
                                                                   5))),
                                             ),
                                             onPressed: () {
-                                              scribbleController
-                                                  .printPdfReceipt();
-                                            },
-                                            child: const Text(
-                                              'Print Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        height: 40,
-                                        child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                              AppColors.stainedGlass,
-                                              shape:
-                                              const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(
-                                                          5))),
-                                            ),
-                                            onPressed: () {
-                                              scribbleController
-                                                  .itemList.clear();
+                                              scribbleController.itemList
+                                                  .clear();
                                             },
                                             child: const Text(
                                               'Clear Receipt',

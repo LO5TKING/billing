@@ -38,6 +38,11 @@ class ScribbleController extends GetxController {
   // Inject the PrintController
   late PrintController printController;
 
+  final RxBool isPrinting = false.obs;
+
+  final RxString formattedDateTime = ''.obs;
+  Timer? _dateTimeTimer;
+
   Future<bool> _downloadModelWithTimeout() async {
     try {
       // Create a timeout future
@@ -64,6 +69,11 @@ class ScribbleController extends GetxController {
 
     // Initialize PrintController
     printController = Get.put(PrintController());
+
+    // Start the date time update timer
+    _updateDateTime();
+    _dateTimeTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) => _updateDateTime());
 
     try {
       clearPadAndSignature();
@@ -154,6 +164,7 @@ class ScribbleController extends GetxController {
 
   @override
   void onClose() {
+    _dateTimeTimer?.cancel();
     digitalInkRecognizer.close();
     super.onClose();
   }
@@ -553,18 +564,29 @@ class ScribbleController extends GetxController {
 
   // Add a method to print PDF receipts
   Future<void> printPdfReceipt() async {
+    if (isPrinting.value) return; // Prevent multiple prints
+
     if (itemList.isEmpty) {
       Get.snackbar('Error', 'No items to print');
       return;
     }
 
     try {
-      // Pass the itemList to the PrintController to generate and print PDF
+      isPrinting.value = true;
       await printController.printPdfReceipt(itemList);
 
       Get.snackbar('Success', 'Receipt sent to printer');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to print: $e');
+      Get.snackbar("Error", "Failed to print: $e");
+    } finally {
+      isPrinting.value = false;
     }
+  }
+
+  void _updateDateTime() {
+    final now = DateTime.now();
+    formattedDateTime.value =
+        "Date:- ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} "
+        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
   }
 }

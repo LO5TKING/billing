@@ -19,11 +19,11 @@ Widget shadowText({required String text, double? fontsize, Color? textcolor, Fon
   );
 }
 
-String getCurrentDateTime() {
+RxString getCurrentDateTime() {
   final DateTime now = DateTime.now();
   final RxString formattedDateTime = "Date:- ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} "
       "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}".obs;
-  return formattedDateTime.value;
+  return formattedDateTime;
 }
 
 Widget noShadowText({required String text, double? fontsize, Color? textcolor, FontWeight? fontWeight}) {

@@ -142,31 +142,31 @@ class PrintController extends GetxController {
 
     // Add receipt header
     bytes += generator.text(
-      'Deepa Farsan'.toUpperCase(),
+      'Sri Sai Ram Farsan & Sweets'.toUpperCase(),
       styles: PosStyles(
           align: PosAlign.center, bold: true, height: PosTextSize.size2),
     );
 
     bytes += generator.emptyLines(1);
 
-    // bytes += generator.text(
-    //   'Shop No.5 Balaji Nagar, Near Kamraj School,',
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
     bytes += generator.text(
-      'Shop No.86 Shell Colony,Chembur Mumbai-400017',
+      'Shop No.5 Balaji Nagar, Near Kamraj School,',
       styles: PosStyles(align: PosAlign.center),
     );
     // bytes += generator.text(
-    //   '90 Feet Road, Dharavi, Mumbai - 40017',
+    //   'Shop No.86 Shell Colony,Chembur Mumbai-400017',
     //   styles: PosStyles(align: PosAlign.center),
     // );
     bytes += generator.text(
-      'Mail ID: deepafarsan@gamil.com',
+      '90 Feet Road, Dharavi, Mumbai - 400017',
       styles: PosStyles(align: PosAlign.center),
     );
+    // bytes += generator.text(
+    //   'Mail ID: deepafarsan@gamil.com',
+    //   styles: PosStyles(align: PosAlign.center),
+    // );
     bytes += generator.text(
-      'Mobile No: 9833088124 ',
+      'Mobile No: 9892814985 ',
       styles: PosStyles(align: PosAlign.center),
     );
 
@@ -302,7 +302,7 @@ class PrintController extends GetxController {
               PosColumn(
                 text: '${i + 1}',
                 width: 2,
-                styles: PosStyles(align: PosAlign.left),
+                styles: PosStyles(align: PosAlign.left,bold: true),
               ),
               PosColumn(
                 width: 4,
@@ -312,15 +312,15 @@ class PrintController extends GetxController {
               PosColumn(
                   text: quantity.toString(),
                   width: 2,
-                  styles: PosStyles(align: PosAlign.right)),
+                  styles: PosStyles(align: PosAlign.right,bold: true)),
               PosColumn(
                   text: rate.toString(),
                   width: 2,
-                  styles: PosStyles(align: PosAlign.right)),
+                  styles: PosStyles(align: PosAlign.right,bold: true)),
               PosColumn(
                   text: amount.toString(),
                   width: 2,
-                  styles: PosStyles(align: PosAlign.right)),
+                  styles: PosStyles(align: PosAlign.right,bold: true)),
             ]);
 
             // Print the image with negative spacing
