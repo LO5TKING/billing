@@ -279,16 +279,19 @@ class PrintController extends GetxController {
                   final pixel = resizedImage.getPixel(x, y);
                   final brightness = img.getLuminance(pixel);
                   if (brightness < 128) {
-                    // Make the stroke thicker by setting adjacent pixels
+                    // Make the stroke slightly thicker by setting adjacent pixels
                     for (int dy = -1; dy <= 1; dy++) {
                       for (int dx = -1; dx <= 1; dx++) {
-                        final newX = x + dx + srNoColumnWidth;
-                        final newY = y + dy;
-                        if (newX >= 0 &&
-                            newX < finalImage.width &&
-                            newY >= 0 &&
-                            newY < finalImage.height) {
-                          finalImage.setPixel(newX, newY, 0xFF000000);
+                        // Only set pixels within 1.5x1.5 grid
+                        if (dx.abs() + dy.abs() <= 1) {
+                          final newX = x + dx + srNoColumnWidth;
+                          final newY = y + dy;
+                          if (newX >= 0 &&
+                              newX < finalImage.width &&
+                              newY >= 0 &&
+                              newY < finalImage.height) {
+                            finalImage.setPixel(newX, newY, 0xFF000000);
+                          }
                         }
                       }
                     }
@@ -302,7 +305,7 @@ class PrintController extends GetxController {
               PosColumn(
                 text: '${i + 1}',
                 width: 2,
-                styles: PosStyles(align: PosAlign.left,bold: true),
+                styles: PosStyles(align: PosAlign.left, bold: true),
               ),
               PosColumn(
                 width: 4,
@@ -312,15 +315,15 @@ class PrintController extends GetxController {
               PosColumn(
                   text: quantity.toString(),
                   width: 2,
-                  styles: PosStyles(align: PosAlign.right,bold: true)),
+                  styles: PosStyles(align: PosAlign.right, bold: true)),
               PosColumn(
                   text: rate.toString(),
                   width: 2,
-                  styles: PosStyles(align: PosAlign.right,bold: true)),
+                  styles: PosStyles(align: PosAlign.right, bold: true)),
               PosColumn(
                   text: amount.toString(),
                   width: 2,
-                  styles: PosStyles(align: PosAlign.right,bold: true)),
+                  styles: PosStyles(align: PosAlign.right, bold: true)),
             ]);
 
             // Print the image with negative spacing
