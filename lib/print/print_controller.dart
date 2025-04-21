@@ -102,20 +102,24 @@ class PrintController extends GetxController {
         int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
         await writeCharacteristic.write(bytes.sublist(i, end),
             withoutResponse: true);
-        await Future.delayed(
-            const Duration(milliseconds: 10)); // Reduced from 20ms to 10ms
+        await Future.delayed(const Duration(milliseconds: 10));
       }
 
-      // Final commands with minimal delay
+      // Final commands with proper sequencing
       final finalCommands = [
         // Feed paper
-        Uint8List.fromList([0x1B, 0x64, 0x00]),
+        Uint8List.fromList([0x1B, 0x64, 0x03]), // Feed 3 lines
+        // Ensure all data is printed
+        Uint8List.fromList([0x1B, 0x40]), // Initialize printer
+        // Cut paper
+        // Uint8List.fromList([0x1B, 0x69]), // Full cut
       ];
 
+      // Send final commands with proper delays
       for (var cmd in finalCommands) {
         await writeCharacteristic.write(cmd, withoutResponse: true);
-        await Future.delayed(
-            const Duration(milliseconds: 20)); // Reduced from 50ms to 20ms
+        await Future.delayed(const Duration(
+            milliseconds: 100)); // Increased delay for final commands
       }
 
       Get.snackbar("Printed", "Successfully");
@@ -131,7 +135,12 @@ class PrintController extends GetxController {
     final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];
 
-    // Load and add the logo image
+    // Initialize printer with consistent settings
+    bytes += generator.reset();
+    bytes += generator.setGlobalCodeTable('CP437');
+    bytes += generator.setGlobalFont(PosFontType.fontA);
+
+    // Load and add the logo image with minimal top spacing
     try {
       final ByteData imageData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = imageData.buffer.asUint8List();
@@ -143,50 +152,27 @@ class PrintController extends GetxController {
       print('Error loading logo: $e');
     }
 
-    // Add receipt header
+    // Add receipt header with consistent spacing
     bytes += generator.text(
-      'Sabri Vilas'.toUpperCase(),
+      'Shri Ganesh Farsan'.toUpperCase(),
       styles: PosStyles(
-          align: PosAlign.center, bold: true, height: PosTextSize.size2),
+          align: PosAlign.center, bold: true, height: PosTextSize.size1),
     );
+    bytes += generator.feed(1);
 
-    bytes += generator.emptyLines(1);
-
-    // bytes += generator.text(
-    //   'Shop No.5 Balaji Nagar, Near Kamraj School,',
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
-    // bytes += generator.text(
-    //   'Shop No.86 Shell Colony,Chembur Mumbai-400017',
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
     bytes += generator.text(
-      'Labour Camp Dharavi Mumbai-400017',
+      '95/96, Floor-0,Balaji Nagar kk krishnana Menan Marg',
       styles: PosStyles(align: PosAlign.center),
     );
-    // bytes += generator.text(
-    //   '90 Feet Road, Dharavi, Mumbai - 400017',
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
-    // bytes += generator.text(
-    //   'Mail ID: deepafarsan@gamil.com',
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
-    // bytes += generator.text(
-    //   'Mobile No: 9892814985 ', // sai ram farsan mobile number
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
-
-    // bytes += generator.text(
-    //   'Mobile No: 9833088124 ', // deepa farsan mobile number
-    //   styles: PosStyles(align: PosAlign.center),
-    // );
     bytes += generator.text(
-      'Mobile No: 7400377884 ', // sabri vilas  mobile number
+      '90 Feet Road,Dharavi, Mumbai-400017',
       styles: PosStyles(align: PosAlign.center),
     );
-
-    bytes += generator.emptyLines(1);
+    bytes += generator.text(
+      'Mobile No: 9324755451',
+      styles: PosStyles(align: PosAlign.center),
+    );
+    bytes += generator.feed(1);
 
     // Format date and time
     final now = DateTime.now();
@@ -230,7 +216,7 @@ class PrintController extends GetxController {
     ]);
     bytes += generator.hr();
 
-    // Pre-calculate total for efficiency
+    // Calculate total
     final total = items.fold<int>(0, (sum, item) {
       final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
       final rate = int.tryParse(item['rate'].toString()) ?? 0;
@@ -256,7 +242,8 @@ class PrintController extends GetxController {
 
             if (decodedImage != null) {
               // Optimized image processing with reduced size
-              final int targetWidth = 280; // Reduced from 320
+              final int targetWidth =
+                  320; // Increased from 280 for larger handwriting
               final int targetHeight =
                   ((targetWidth * decodedImage.height) / decodedImage.width)
                       .round();
@@ -269,28 +256,27 @@ class PrintController extends GetxController {
                 interpolation: img.Interpolation.linear, // Faster interpolation
               );
 
-              // Create a new blank image with the adjusted height
-              final img.Image finalImage = img.Image.rgb(
-                targetWidth,
-                resizedImage.height,
+              // Create padded image with optimized dimensions
+              final img.Image paddedImage = img.Image.rgb(
+                targetWidth + (targetWidth * 0.3).round(),
+                targetHeight,
               );
 
               // Make background white in a single operation
-              finalImage.fill(0xFFFFFFFF);
+              paddedImage.fill(0xFFFFFFFF);
 
-              // Calculate the offset for Particulars column
-              final int srNoColumnWidth = (targetWidth * 0.20).round();
+              // Optimized pixel copying with padding
+              final int paddingOffset = (targetWidth * 0.3).round();
+              final int maxY = resizedImage.height;
+              final int maxX = resizedImage.width;
 
-              // Optimized pixel copying
-              for (int y = 0; y < resizedImage.height; y++) {
-                for (int x = 0; x < resizedImage.width; x++) {
-                  if (x + srNoColumnWidth < finalImage.width) {
-                    final pixel = resizedImage.getPixel(x, y);
-                    final brightness = img.getLuminance(pixel);
-                    if (brightness < 200) {
-                      finalImage.setPixel(x + srNoColumnWidth, y, 0xFF000000);
-                    }
-                  }
+              // Use row-based copying for better performance
+              for (int y = 0; y < maxY; y++) {
+                final int yOffset = y * paddedImage.width;
+                final int srcYOffset = y * resizedImage.width;
+                for (int x = 0; x < maxX; x++) {
+                  paddedImage.data[yOffset + x + paddingOffset] =
+                      resizedImage.data[srcYOffset + x];
                 }
               }
 
@@ -320,28 +306,20 @@ class PrintController extends GetxController {
                     styles: PosStyles(align: PosAlign.right, bold: true)),
               ]);
 
-              // Print the image with negative spacing
-              bytes += generator.feed(-5);
-              bytes += generator.imageRaster(finalImage, align: PosAlign.left);
-
-              // Add separator line with negative spacing
-              bytes += generator.feed(-5);
+              // Print the image with optimized spacing
+              bytes += generator.imageRaster(paddedImage, align: PosAlign.left);
               bytes += generator.hr(ch: '-', linesAfter: 0);
             }
           }
         } catch (e) {
-          Get.snackbar("INSIDE RECIPET", " Failed in Receipt UI ");
           print('Error processing item image: $e');
           continue;
         }
       }
     }
 
-    // Add total with minimal spacing
     bytes += generator.row([
-      PosColumn(text: '', width: 2),
-      PosColumn(text: '', width: 2),
-      PosColumn(text: '', width: 4),
+      PosColumn(text: '', width: 8),
       PosColumn(
           text: 'TOTAL',
           width: 2,
@@ -353,13 +331,12 @@ class PrintController extends GetxController {
       ),
     ]);
 
-    // Add receipt footer with reduced spacing
     bytes += generator.hr();
     bytes += generator.text('Thank you for your business!',
         styles: PosStyles(align: PosAlign.center));
     bytes += generator.text('Please visit again',
         styles: PosStyles(align: PosAlign.center));
-    bytes += generator.feed(1);
+    // bytes += generator.feed(1);
     bytes += generator.cut();
 
     return bytes;

@@ -44,7 +44,7 @@ class Billing extends StatelessWidget {
                               child: Container(
                                   padding: const EdgeInsets.only(bottom: 20.0),
                                   child: Image.asset(
-                                    "assets/ganpati.jpg",
+                                    "assets/ganpati.png",
                                     height: 50,
                                     width: 50,
                                   )),
