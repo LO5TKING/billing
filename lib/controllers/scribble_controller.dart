@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
+import 'package:image/image.dart' as img;
 
 class ScribbleController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
@@ -419,96 +420,30 @@ class ScribbleController extends GetxController {
     }
   }
 
-  Future<List<Uint8List?>> generateReceiptImages(
-      List<Map<String, dynamic>> itemList, double width) async {
-    List<Uint8List?> images = [];
-    double rowHeight = 85; // Reduced from 100 to 85 to match the new height
-
+  Future<List<ui.Image>> generateReceiptImages(
+      List<Map<String, dynamic>> itemList) async {
+    List<ui.Image> images = [];
     for (var item in itemList) {
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width, rowHeight));
+      final canvas = Canvas(recorder);
 
-      // Background
-      final Paint backgroundPaint = Paint()..color = Colors.white;
-      canvas.drawRect(Rect.fromLTWH(0, 0, width, rowHeight), backgroundPaint);
+      // Convert Uint8List to ui.Image
+      if (item['particulars'] is Uint8List) {
+        final codec =
+            await ui.instantiateImageCodec(item['particulars'] as Uint8List);
+        final frameInfo = await codec.getNextFrame();
+        final handwrittenImage = frameInfo.image;
 
-      // Column width calculations
-      double particularsWidth = width * 0.52; // 55% for Particulars
-      double columnWidth = (width - particularsWidth) /
-          3; // Remaining split equally among Qty, Rate, Amt
-
-      // Paint configurations
-      final textStyle = GoogleFonts.azeretMono(
-        color: AppColors.stainedGlass,
-        fontSize: 18, // Adjusted font size
-      );
-      final textPainter = TextPainter(
-        textDirection: TextDirection.ltr,
-        textAlign: TextAlign.center,
-      );
-
-      // Draw Particulars (Image and Text)
-      Uint8List imageBytes = item['particulars'];
-      final ui.Codec codec = await ui.instantiateImageCodec(imageBytes,
-          targetWidth: (particularsWidth)
-              .toInt(), // Match the column width for sharper scaling
-          targetHeight: 100);
-      final ui.FrameInfo frameInfo = await codec.getNextFrame();
-      final ui.Image img = frameInfo.image;
-
-      // Calculate the image scaling factor to fit within the column
-      double scale = particularsWidth / img.width;
-      double imageHeight = img.height * scale;
-
-      canvas.drawImageRect(
-        img,
-        Rect.fromLTWH(0, 0, img.width.toDouble(),
-            img.height.toDouble()), // Source rectangle (entire image)
-        Rect.fromLTWH(
-          10, // Padding from the left
-          (rowHeight - imageHeight) / 2, // Center vertically
-          particularsWidth - 20, // Fit within column width with padding
-          imageHeight, // Scaled height
-        ),
-        Paint(),
-      );
-
-      // Draw Quantity
-      textPainter.text = TextSpan(text: item['quantity'], style: textStyle);
-      textPainter.layout(minWidth: columnWidth, maxWidth: columnWidth);
-      textPainter.paint(
-        canvas,
-        Offset(particularsWidth, (rowHeight - textPainter.height) / 2),
-      );
-
-      // Draw Rate
-      textPainter.text = TextSpan(text: item['rate'], style: textStyle);
-      textPainter.layout(minWidth: columnWidth, maxWidth: columnWidth);
-      textPainter.paint(
-        canvas,
-        Offset(particularsWidth + columnWidth,
-            (rowHeight - textPainter.height) / 2),
-      );
-
-      // Draw Amount (calculated as integer)
-      int amount = int.parse(item['quantity']) * int.parse(item['rate']);
-      textPainter.text = TextSpan(text: amount.toString(), style: textStyle);
-      textPainter.layout(minWidth: columnWidth, maxWidth: columnWidth);
-      textPainter.paint(
-        canvas,
-        Offset(particularsWidth + 2 * columnWidth,
-            (rowHeight - textPainter.height) / 2),
-      );
-
-      // Convert to Image
-      final ui.Image finalImage = await recorder
-          .endRecording()
-          .toImage(width.toInt(), rowHeight.toInt());
-      final ByteData? byteData =
-          await finalImage.toByteData(format: ui.ImageByteFormat.png);
-      images.add(byteData?.buffer.asUint8List());
+        final completeRowImage = await createCompleteRowImage(
+            (itemList.indexOf(item) + 1).toString(),
+            handwrittenImage,
+            item['quantity'].toString(),
+            item['rate'].toString(),
+            (double.parse(item['quantity']) * double.parse(item['rate']))
+                .toString());
+        images.add(completeRowImage);
+      }
     }
-
     return images;
   }
 

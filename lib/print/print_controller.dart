@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -7,11 +7,14 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:image/image.dart' as img;
+import 'package:image/image.dart' show dilate;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 // import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:flutter/material.dart' hide Image;
+import 'dart:math' as math;
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/splash_screen_controller.dart';
@@ -108,7 +111,7 @@ class PrintController extends GetxController {
       // Final commands with proper sequencing
       final finalCommands = [
         // Feed paper
-        Uint8List.fromList([0x1B, 0x64, 0x03]), // Feed 3 lines
+        Uint8List.fromList([0x1B, 0x64, 0x00]), // Feed 3 lines
         // Ensure all data is printed
         Uint8List.fromList([0x1B, 0x40]), // Initialize printer
         // Cut paper
@@ -135,7 +138,7 @@ class PrintController extends GetxController {
     final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];
 
-    // Initialize printer with consistent settings
+    // Initialize printer with optimized settings
     bytes += generator.reset();
     bytes += generator.setGlobalCodeTable('CP437');
     bytes += generator.setGlobalFont(PosFontType.fontA);
@@ -152,25 +155,27 @@ class PrintController extends GetxController {
       print('Error loading logo: $e');
     }
 
-    // Add receipt header with consistent spacing
+    // Add receipt header with minimal spacing
     bytes += generator.text(
       'Shri Ganesh Farsan'.toUpperCase(),
       styles: PosStyles(
-          align: PosAlign.center, bold: true, height: PosTextSize.size1),
+          align: PosAlign.center,
+          bold: true,
+          height: PosTextSize.size1,
+          fontType: PosFontType.fontA),
     );
-    bytes += generator.feed(1);
 
     bytes += generator.text(
       '95/96, Floor-0,Balaji Nagar kk krishnana Menan Marg',
-      styles: PosStyles(align: PosAlign.center),
+      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
     );
     bytes += generator.text(
       '90 Feet Road,Dharavi, Mumbai-400017',
-      styles: PosStyles(align: PosAlign.center),
+      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
     );
     bytes += generator.text(
       'Mobile No: 9324755451',
-      styles: PosStyles(align: PosAlign.center),
+      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
     );
     bytes += generator.feed(1);
 
@@ -183,11 +188,11 @@ class PrintController extends GetxController {
 
     bytes += generator.text(
       'Date: $formattedDate',
-      styles: PosStyles(align: PosAlign.right),
+      styles: PosStyles(align: PosAlign.right, fontType: PosFontType.fontA),
     );
     bytes += generator.text(
       'Time: $formattedTime',
-      styles: PosStyles(align: PosAlign.right),
+      styles: PosStyles(align: PosAlign.right, fontType: PosFontType.fontA),
     );
     bytes += generator.hr();
 
@@ -196,23 +201,28 @@ class PrintController extends GetxController {
       PosColumn(
           text: 'Sr.No',
           width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.left)),
+          styles: PosStyles(
+              bold: true, align: PosAlign.left, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Particulars',
           width: 4,
-          styles: PosStyles(bold: true, align: PosAlign.left)),
+          styles: PosStyles(
+              bold: true, align: PosAlign.left, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Qty',
           width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.right)),
+          styles: PosStyles(
+              bold: true, align: PosAlign.right, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Rate',
           width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.right)),
+          styles: PosStyles(
+              bold: true, align: PosAlign.right, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Amt',
           width: 2,
-          styles: PosStyles(bold: true, align: PosAlign.right)),
+          styles: PosStyles(
+              bold: true, align: PosAlign.center, fontType: PosFontType.fontA)),
     ]);
     bytes += generator.hr();
 
@@ -223,8 +233,8 @@ class PrintController extends GetxController {
       return sum + (quantity * rate);
     });
 
-    // Process items in batches for better performance
-    final int batchSize = 3; // Process 3 items at a time
+    // Process items in optimized batches
+    final int batchSize = 5; // Increased batch size for faster processing
     for (var i = 0; i < items.length; i += batchSize) {
       final end = (i + batchSize < items.length) ? i + batchSize : items.length;
       final batch = items.sublist(i, end);
@@ -236,107 +246,194 @@ class PrintController extends GetxController {
             final rate = int.tryParse(item['rate'].toString()) ?? 0;
             final amount = quantity * rate;
 
-            // Get the handwritten image
-            final Uint8List handwrittenBytes = item['particulars'];
-            final img.Image? decodedImage = img.decodeImage(handwrittenBytes);
+            // Create a canvas for the complete row
+            final recorder = ui.PictureRecorder();
+            final width = 580;
+            final height = 85;
+            final canvas = Canvas(recorder,
+                Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()));
 
-            if (decodedImage != null) {
-              // Optimized image processing with reduced size
-              final int targetWidth =
-                  320; // Increased from 280 for larger handwriting
-              final int targetHeight =
-                  ((targetWidth * decodedImage.height) / decodedImage.width)
-                      .round();
+            // Set white background
+            final Paint bgPaint = Paint()..color = Colors.white;
+            canvas.drawRect(
+                Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+                bgPaint);
 
-              // Single resize operation with optimized parameters
-              final img.Image resizedImage = img.copyResize(
-                decodedImage,
-                width: targetWidth,
-                height: targetHeight,
-                interpolation: img.Interpolation.linear, // Faster interpolation
+            // Define column widths and positions
+            final srNoWidth =
+                width * 0.20; // Increased from 0.08 to 0.12 for Sr.No
+            final particularsWidth = width * 0.35; // Reduced from 0.42 to 0.38
+            final qtyWidth = width * 0.15; // 15%
+            final rateWidth = width * 0.15; // 15%
+            final amtWidth = width * 0.15; // 20%
+
+            // Calculate column start positions
+            final qtyStartX = srNoWidth + particularsWidth;
+            final rateStartX = qtyStartX + qtyWidth;
+            final amtStartX = rateStartX + rateWidth;
+
+            // Draw Sr.No
+            final textStyle = TextStyle(
+              color: Colors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            );
+            final textPainter = TextPainter(
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+            );
+
+            textPainter.text = TextSpan(
+              text: '${items.indexOf(item) + 1}',
+              style: textStyle,
+            );
+            textPainter.layout();
+            textPainter.paint(
+              canvas,
+              Offset(
+                (srNoWidth - textPainter.width) / 2,
+                (height - textPainter.height) / 2,
+              ),
+            );
+
+            // Draw handwritten particulars with increased darkness
+            final Uint8List particularBytes = item['particulars'];
+            final img.Image? decodedParticulars =
+                img.decodeImage(particularBytes);
+            if (decodedParticulars != null) {
+              final dilatedImage = img.copyResize(
+                decodedParticulars,
+                width: (decodedParticulars.width * 1.1).toInt(),
               );
 
-              // Create padded image with optimized dimensions
-              final img.Image paddedImage = img.Image.rgb(
-                targetWidth + (targetWidth * 0.3).round(),
-                targetHeight,
+              // Single pass with stronger darkness
+              var darkenedImage =
+                  img.brightness(dilatedImage, -50) ?? dilatedImage;
+              darkenedImage = img.contrast(darkenedImage, 150) ?? darkenedImage;
+
+              final scaleWidth = particularsWidth / darkenedImage.width;
+              final scaleHeight = height / darkenedImage.height;
+              final scale = math.min(scaleWidth, scaleHeight);
+
+              final scaledWidth = darkenedImage.width * scale;
+              final scaledHeight = darkenedImage.height * scale;
+              final xOffset = srNoWidth +
+                  15; // Increased from 10 to 15 for better alignment with Particulars header
+              final yOffset = (height - scaledHeight) / 2;
+
+              final resizedParticulars = img.copyResize(
+                darkenedImage,
+                width: scaledWidth.toInt(),
+                height: scaledHeight.toInt(),
               );
 
-              // Make background white in a single operation
-              paddedImage.fill(0xFFFFFFFF);
+              final particularsPngBytes = img.encodePng(resizedParticulars);
+              final codec = await ui.instantiateImageCodec(
+                  Uint8List.fromList(particularsPngBytes));
+              final frame = await codec.getNextFrame();
 
-              // Optimized pixel copying with padding
-              final int paddingOffset = (targetWidth * 0.3).round();
-              final int maxY = resizedImage.height;
-              final int maxX = resizedImage.width;
+              // Single draw with optimized paint settings
+              final paint = Paint()
+                ..color = Colors.black
+                ..strokeWidth = 2.5
+                ..style = PaintingStyle.fill;
 
-              // Use row-based copying for better performance
-              for (int y = 0; y < maxY; y++) {
-                final int yOffset = y * paddedImage.width;
-                final int srcYOffset = y * resizedImage.width;
-                for (int x = 0; x < maxX; x++) {
-                  paddedImage.data[yOffset + x + paddingOffset] =
-                      resizedImage.data[srcYOffset + x];
-                }
+              canvas.drawImage(frame.image, Offset(xOffset, yOffset), paint);
+            }
+
+            // Draw numbers with optimized text painting
+            final centerY = (height - textPainter.height) / 2;
+
+            // Draw Sr.No with proper alignment
+            textPainter.text =
+                TextSpan(text: '${items.indexOf(item) + 1}', style: textStyle);
+            textPainter.layout();
+            textPainter.paint(canvas,
+                Offset(srNoWidth * 0.3, centerY)); // Adjusted Sr.No position
+
+            // Draw all numbers in one batch
+            textPainter.text =
+                TextSpan(text: quantity.toString(), style: textStyle);
+            textPainter.layout();
+            textPainter.paint(
+                canvas,
+                Offset(
+                    qtyStartX + (qtyWidth - textPainter.width) / 2, centerY));
+
+            textPainter.text =
+                TextSpan(text: rate.toString(), style: textStyle);
+            textPainter.layout();
+            textPainter.paint(
+                canvas,
+                Offset(
+                    rateStartX + (rateWidth - textPainter.width) / 2, centerY));
+
+            textPainter.text =
+                TextSpan(text: amount.toString(), style: textStyle);
+            textPainter.layout();
+            textPainter.paint(
+                canvas,
+                Offset(
+                    amtStartX + (amtWidth - textPainter.width) / 2, centerY));
+
+            // Convert to image
+            final ui.Image rowImage = await recorder
+                .endRecording()
+                .toImage(width.toInt(), height.toInt());
+            final ByteData? rowImageData =
+                await rowImage.toByteData(format: ui.ImageByteFormat.png);
+
+            if (rowImageData != null) {
+              final img.Image? decodedRowImage =
+                  img.decodeImage(rowImageData.buffer.asUint8List());
+              if (decodedRowImage != null) {
+                // Ensure the image is properly encoded for printing
+                final printImage = img.copyResize(
+                  decodedRowImage,
+                  width: decodedRowImage.width,
+                  height: decodedRowImage.height,
+                );
+                bytes +=
+                    generator.imageRaster(printImage, align: PosAlign.left);
+                bytes += generator.hr(ch: '-', linesAfter: 0);
               }
-
-              // Print the combined row with image and text
-              bytes += generator.row([
-                PosColumn(
-                  text: '${items.indexOf(item) + 1}',
-                  width: 2,
-                  styles: PosStyles(align: PosAlign.left, bold: true),
-                ),
-                PosColumn(
-                  width: 4,
-                  text: '',
-                  styles: PosStyles(align: PosAlign.left),
-                ),
-                PosColumn(
-                    text: quantity.toString(),
-                    width: 2,
-                    styles: PosStyles(align: PosAlign.right, bold: true)),
-                PosColumn(
-                    text: rate.toString(),
-                    width: 2,
-                    styles: PosStyles(align: PosAlign.right, bold: true)),
-                PosColumn(
-                    text: amount.toString(),
-                    width: 2,
-                    styles: PosStyles(align: PosAlign.right, bold: true)),
-              ]);
-
-              // Print the image with optimized spacing
-              bytes += generator.imageRaster(paddedImage, align: PosAlign.left);
-              bytes += generator.hr(ch: '-', linesAfter: 0);
             }
           }
         } catch (e) {
-          print('Error processing item image: $e');
+          print('Error processing row image: $e');
           continue;
         }
       }
     }
 
+    // Add total with proper right alignment
     bytes += generator.row([
-      PosColumn(text: '', width: 8),
+      PosColumn(text: '', width: 7),
       PosColumn(
           text: 'TOTAL',
           width: 2,
-          styles: PosStyles(align: PosAlign.right, bold: true)),
+          styles: PosStyles(
+            align: PosAlign.right,
+            bold: true,
+            fontType: PosFontType.fontA,
+          )),
       PosColumn(
         text: total.toString(),
-        width: 2,
-        styles: PosStyles(align: PosAlign.right, bold: true),
+        width: 3,
+        styles: PosStyles(
+          align: PosAlign.center,
+          bold: true,
+          fontType: PosFontType.fontA,
+        ),
       ),
     ]);
 
     bytes += generator.hr();
     bytes += generator.text('Thank you for your business!',
-        styles: PosStyles(align: PosAlign.center));
+        styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA));
     bytes += generator.text('Please visit again',
-        styles: PosStyles(align: PosAlign.center));
-    // bytes += generator.feed(1);
+        styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA));
+    bytes += generator.feed(2);
     bytes += generator.cut();
 
     return bytes;
@@ -490,3 +587,90 @@ Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
 
   return bytes;
 }*/
+
+Future<ui.Image> createCompleteRowImage(String srNo, ui.Image handwrittenImage,
+    String qty, String rate, String amt) async {
+  final recorder = ui.PictureRecorder();
+  final width = 580;
+  final height = 85;
+  final canvas = Canvas(
+      recorder, Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()));
+
+  // Set white background
+  final Paint bgPaint = Paint()..color = Colors.white;
+  canvas.drawRect(
+      Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), bgPaint);
+
+  // Define column widths
+  final srNoWidth = width * 0.08;
+  final particularsWidth = width * 0.52;
+  final otherColumnWidth = (width - srNoWidth - particularsWidth) / 3;
+
+  // Draw Sr.No
+  final textStyle = TextStyle(
+    color: Colors.black,
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+  );
+  final textPainter = TextPainter(
+    textDirection: TextDirection.ltr,
+    textAlign: TextAlign.center,
+  );
+
+  textPainter.text = TextSpan(text: srNo, style: textStyle);
+  textPainter.layout();
+  textPainter.paint(
+    canvas,
+    Offset(
+      (srNoWidth - textPainter.width) / 2,
+      (height - textPainter.height) / 2,
+    ),
+  );
+
+  // Draw Particulars (handwritten)
+  canvas.drawImage(handwrittenImage, Offset(srNoWidth, 0), Paint());
+
+  // Draw Quantity
+  textPainter.text = TextSpan(text: qty, style: textStyle);
+  textPainter.layout();
+  textPainter.paint(
+    canvas,
+    Offset(
+      srNoWidth + particularsWidth + (otherColumnWidth - textPainter.width) / 2,
+      (height - textPainter.height) / 2,
+    ),
+  );
+
+  // Draw Rate
+  textPainter.text = TextSpan(text: rate, style: textStyle);
+  textPainter.layout();
+  textPainter.paint(
+    canvas,
+    Offset(
+      srNoWidth +
+          particularsWidth +
+          otherColumnWidth +
+          (otherColumnWidth - textPainter.width) / 2,
+      (height - textPainter.height) / 2,
+    ),
+  );
+
+  // Draw Amount
+  textPainter.text = TextSpan(text: amt, style: textStyle);
+  textPainter.layout();
+  textPainter.paint(
+    canvas,
+    Offset(
+      srNoWidth +
+          particularsWidth +
+          2 * otherColumnWidth +
+          (otherColumnWidth - textPainter.width) / 2,
+      (height - textPainter.height) / 2,
+    ),
+  );
+
+  // Convert to image
+  final ui.Image image =
+      await recorder.endRecording().toImage(width.toInt(), height.toInt());
+  return image;
+}
