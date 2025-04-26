@@ -13,7 +13,8 @@ import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_re
 import '../../utils/utility.dart';
 
 class Billing extends StatelessWidget {
-  ScribbleController scribbleController = Get.put(ScribbleController());
+  ScribbleController scribbleController = Get.find<ScribbleController>();
+  // ScribbleController scribbleController = Get.put(ScribbleController());
   final ScrollController scrollController = ScrollController();
 
   Map<int, List<Offset>> fingerPaths = {};

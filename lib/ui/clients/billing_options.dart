@@ -7,12 +7,17 @@ import 'package:billing/ui/reports/search_and_reports.dart';
 import 'package:billing/ui/return/return_items.dart';
 import 'package:billing/ui/settings/setting_options.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 
+import '../../controllers/scribble_controller.dart';
 import '../../utils/utility.dart';
 
 class BillingOptions extends StatelessWidget {
-  const BillingOptions({super.key});
+
+  ScribbleController scribbleController = Get.put(ScribbleController());
+
+  BillingOptions({super.key});
 
   @override
   Widget build(BuildContext context) {

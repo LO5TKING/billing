@@ -166,23 +166,23 @@ class SettingOptions extends StatelessWidget {
           case 0:
             Get.to(() => ProfileSettings());
           case 1:
-            Get.to(() =>  PrinterSettings());
+            Get.to(() =>  const PrinterSettings());
           case 2:
-            Get.to(() =>  BackupSettings());
+            Get.to(() =>  const BackupSettings());
           case 3:
-            Get.to(() =>  NotificationSettings());
+            Get.to(() =>  const NotificationSettings());
           case 4:
-            Get.to(() =>  PurchaseSettings());
+            Get.to(() =>  const PurchaseSettings());
           case 5:
-            Get.to(() =>  SubscriptionDetailSettings());
+            Get.to(() =>  const SubscriptionDetailSettings());
           case 6:
-            Get.to(() =>  AboutUsSettings());
+            Get.to(() =>  const AboutUsSettings());
           case 7:
-            Get.to(() =>  ContactUsSettings());
+            Get.to(() =>  const ContactUsSettings());
           case 8:
-            Get.to(() =>  TermsAndConditionSettings());
+            Get.to(() =>  const TermsAndConditionSettings());
           default:
-            Get.to(() => const BillingOptions());
+            Get.to(() =>   BillingOptions());
         }
       },
       child: ListTile(
