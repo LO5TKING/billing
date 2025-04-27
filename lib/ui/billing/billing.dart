@@ -570,35 +570,6 @@ class Billing extends StatelessWidget {
 
               // Add loading overlay
               // Improved loading overlay
-              Obx(() => scribbleController.isModelLoading.value
-                  ? Container(
-                      color: Colors.black54,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(height: 20),
-                              Obx(() => Text(
-                                    scribbleController.downloadStatus.value,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  )),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink()),
             ],
           ),
         );

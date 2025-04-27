@@ -9,12 +9,13 @@ import 'package:billing/ui/settings/setting_options.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 
 import '../../controllers/scribble_controller.dart';
 import '../../utils/utility.dart';
 
 class BillingOptions extends StatelessWidget {
-
   ScribbleController scribbleController = Get.put(ScribbleController());
 
   BillingOptions({super.key});
@@ -23,94 +24,160 @@ class BillingOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body: SizedBox(
-          height: Get.height,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Spacer(),
-              const Spacer(),
-              Center(
-                child: Container(
-                  height: Get.height * 0.75,
-                  width: Get.width * 0.95,
-                  decoration: BoxDecoration(
-                    borderRadius:
-                        BorderRadius.circular(DesignConstants.padding20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 5,
-                        blurRadius: 7,
-                        offset: const Offset(1.5, 7),
-                      ),
-                    ],
-                  ),
-                  child: Card(
-                    elevation: 5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.only(
-                              left: DesignConstants.padding20,
-                              top: DesignConstants.padding30),
-                          child: shadowText(
-                            text: 'Billing Options',
-                            fontsize: DesignConstants.fontSize24,
+        body: Stack(
+          children: [
+            SizedBox(
+              height: Get.height,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  const Spacer(),
+                  Center(
+                    child: Container(
+                      height: Get.height * 0.75,
+                      width: Get.width * 0.95,
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(DesignConstants.padding20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 5,
+                            blurRadius: 7,
+                            offset: const Offset(1.5, 7),
                           ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        ],
+                      ),
+                      child: Card(
+                        elevation: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            billingOptionsBlock(text: 'My Clients', icon: Icons.people_alt_sharp,onItemTap: (){
-                             Get.to(() => SearchAddClientDetails());
-                            }),
-                            billingOptionsBlock(text: 'Guest',icon:  Icons.person,onItemTap: (){
-                              Get.to(() => const AddGuest());
-                            }),
+                            Container(
+                              padding: const EdgeInsets.only(
+                                  left: DesignConstants.padding20,
+                                  top: DesignConstants.padding30),
+                              child: shadowText(
+                                text: 'Billing Options',
+                                fontsize: DesignConstants.fontSize24,
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                billingOptionsBlock(
+                                    text: 'My Clients',
+                                    icon: Icons.people_alt_sharp,
+                                    onItemTap: () {
+                                      Get.to(() => SearchAddClientDetails());
+                                    }),
+                                billingOptionsBlock(
+                                    text: 'Guest',
+                                    icon: Icons.person,
+                                    onItemTap: () {
+                                      Get.to(() => const AddGuest());
+                                    }),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                billingOptionsBlock(
+                                    text: 'Bills',
+                                    icon: Icons.file_copy_outlined,
+                                    onItemTap: () {
+                                      Get.to(() => Billing());
+                                    }),
+                                billingOptionsBlock(
+                                    text: 'Reports',
+                                    icon: Icons.folder_copy_outlined,
+                                    onItemTap: () {
+                                      Get.to(() => SearchAndReports());
+                                    }),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                billingOptionsBlock(
+                                    text: 'Return',
+                                    icon: Icons.shopping_cart,
+                                    onItemTap: () {
+                                      Get.to(() => const ReturnItems());
+                                    }),
+                                billingOptionsBlock(
+                                    text: 'Settings',
+                                    icon: Icons.settings_suggest_rounded,
+                                    onItemTap: () {
+                                      Get.to(() => const SettingOptions());
+                                    }),
+                              ],
+                            ),
                           ],
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            billingOptionsBlock(text: 'Bills',icon:  Icons.file_copy_outlined,onItemTap: (){
-                              Get.to(() => Billing());
-                            }),
-                            billingOptionsBlock(text: 'Reports',icon:  Icons.folder_copy_outlined,onItemTap: (){
-                              Get.to(() => SearchAndReports());
-                            }),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            billingOptionsBlock(text: 'Return',icon: Icons.shopping_cart,onItemTap: (){
-                              Get.to(() => const ReturnItems());
-                            }),
-                            billingOptionsBlock(text: 'Settings',icon: Icons.settings_suggest_rounded,onItemTap: (){
-                              Get.to(() => const SettingOptions());
-                            }),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                  const Spacer(),
+                ],
               ),
-              const Spacer(),
-            ],
-          ),
+            ),
+            Obx(() => scribbleController.isModelLoading.value
+                ? BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: Center(
+                        child: Container(
+                          width: Get.width * 0.8,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.3)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 20),
+                              Obx(() => Text(
+                                    scribbleController.downloadStatus.value,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink()),
+          ],
         ),
       ),
     );
   }
 
-
   Widget billingOptionsBlock(
-      {required String text, required IconData icon,required void Function() onItemTap}){
+      {required String text,
+      required IconData icon,
+      required void Function() onItemTap}) {
     return InkWell(
       onTap: onItemTap,
       child: Column(
