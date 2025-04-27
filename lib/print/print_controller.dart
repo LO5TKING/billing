@@ -285,7 +285,7 @@ class PrintController extends GetxController {
             );
 
             // Format Sr.No to ensure single digit
-            final srNo = (items.indexOf(item) + 1).toString();
+            final srNo = "${(items.indexOf(item) + 1).toString()}.";
             textPainter.text = TextSpan(
               text: srNo,
               style: textStyle,
@@ -329,7 +329,7 @@ class PrintController extends GetxController {
 
               // Adjust the x-offset to add left padding (align with Particulars header)
               final xOffset = srNoWidth +
-                  10; // Reduced from 30 to 15 for more left alignment
+                  0; // Reduced from 30 to 15 for more left alignment
 
               // Center vertically but with slight upward adjustment
               final yOffset =
