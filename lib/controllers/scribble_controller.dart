@@ -1,6 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart' hide Ink;
@@ -64,9 +69,19 @@ class ScribbleController extends GetxController {
     }
   }
 
+  Future<void> requestStoragePermissionOnStart() async {
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      await Permission.storage.request();
+    }
+  }
+
   @override
   void onInit() async {
     super.onInit();
+
+    // Request storage permission at app start
+    await requestStoragePermissionOnStart();
 
     // Initialize PrintController
     printController = Get.put(PrintController());
@@ -523,5 +538,168 @@ class ScribbleController extends GetxController {
     formattedDateTime.value =
         "Date:- ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} "
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+  }
+
+  Future<void> saveReceiptAsPdf() async {
+    try {
+      final pdf = pw.Document();
+
+      // Load Ganesh logo as Uint8List
+      final ByteData logoData = await rootBundle.load('assets/ganpati.png');
+      final Uint8List logoBytes = logoData.buffer.asUint8List();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                // Ganesh logo
+                pw.Image(pw.MemoryImage(logoBytes), width: 50, height: 50),
+                pw.SizedBox(height: 8),
+                // Business details
+                pw.Text('SHRI GANESH FARSAN',
+                    style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold, fontSize: 18)),
+                pw.Text('95/96, Floor-0, Balaji Nagar kk krishnana Menan Marg'),
+                pw.Text('90 Feet Road, Dharavi, Mumbai-400017'),
+                pw.Text('Mobile No: 9324755451'),
+                pw.SizedBox(height: 8),
+                // Date and Time
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Date: ${DateTime.now().toString().split(' ')[0]}'),
+                    pw.Text(
+                        'Time: ${DateTime.now().toString().split(' ')[1].split('.').first}'),
+                  ],
+                ),
+                pw.Divider(),
+                // Table Header
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  children: [
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(4),
+                          child: pw.Text('Sr',
+                              textAlign: pw.TextAlign.center,
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(4),
+                          child: pw.Text('Particulars',
+                              textAlign: pw.TextAlign.center,
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(4),
+                          child: pw.Text('Qty',
+                              textAlign: pw.TextAlign.center,
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(4),
+                          child: pw.Text('Rate',
+                              textAlign: pw.TextAlign.center,
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: pw.EdgeInsets.all(4),
+                          child: pw.Text('Amt',
+                              textAlign: pw.TextAlign.center,
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    // Table Rows
+                    ...itemList.asMap().entries.map((entry) {
+                      int idx = entry.key;
+                      var item = entry.value;
+                      return pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(4),
+                            child: pw.Text('${idx + 1}',
+                                textAlign: pw.TextAlign.center),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(4),
+                            child: item['particulars'] != null
+                                ? pw.Image(pw.MemoryImage(item['particulars']),
+                                    height: 30)
+                                : pw.Text(''),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(4),
+                            child: pw.Text(item['quantity'] ?? '',
+                                textAlign: pw.TextAlign.center),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(4),
+                            child: pw.Text(item['rate'] ?? '',
+                                textAlign: pw.TextAlign.center),
+                          ),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.all(4),
+                            child: pw.Text(
+                              ((double.tryParse(item['quantity'] ?? '0') ?? 0) *
+                                      (double.tryParse(item['rate'] ?? '0') ??
+                                          0))
+                                  .toStringAsFixed(0),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ],
+                ),
+                pw.Divider(),
+                // Total
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    pw.Text('TOTAL: ${totalAmount.toStringAsFixed(0)}',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  ],
+                ),
+                pw.SizedBox(height: 16),
+                // Footer
+                pw.Text('Thank you for your business!'),
+                pw.Text('Please visit again'),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Request manage external storage permission for Android 14
+      var status = await Permission.manageExternalStorage.request();
+
+      if (status.isGranted) {
+        // Get the Downloads directory
+        final downloadsDir = Directory('/storage/emulated/0/Download');
+        if (!await downloadsDir.exists()) {
+          await downloadsDir.create(recursive: true);
+        }
+
+        final file = File(
+            '${downloadsDir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.pdf');
+        await file.writeAsBytes(await pdf.save());
+        Get.snackbar('Success', 'Receipt saved to Downloads folder');
+      } else if (status.isPermanentlyDenied) {
+        await openAppSettings();
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to save receipt: $e');
+    }
   }
 }

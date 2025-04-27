@@ -537,6 +537,31 @@ class Billing extends StatelessWidget {
                                                       .fontSize16),
                                             )),
                                       ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        height: 40,
+                                        child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                              AppColors.stainedGlass,
+                                              shape:
+                                              const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(
+                                                          5))),
+                                            ),
+                                            onPressed: () async {
+                                              await scribbleController.saveReceiptAsPdf();
+                                            },
+                                            child: const Text(
+                                              'Save Receipt',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: DesignConstants
+                                                      .fontSize16),
+                                            )),
+                                      ),
                                     ],
                                   ),
                                 ),

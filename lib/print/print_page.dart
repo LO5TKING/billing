@@ -87,6 +87,8 @@ class PrintDialog extends StatelessWidget {
         Permission.bluetoothScan,
         Permission.bluetoothConnect,
         Permission.location,
+        Permission.manageExternalStorage,
+        Permission.storage
       ].request();
 
       bool allGranted = true;
