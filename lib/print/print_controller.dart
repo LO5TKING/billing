@@ -207,17 +207,17 @@ class PrintController extends GetxController {
           text: 'Particulars',
           width: 4,
           styles: PosStyles(
-              bold: true, align: PosAlign.left, fontType: PosFontType.fontA)),
+              bold: true, align: PosAlign.center, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Qty',
           width: 2,
           styles: PosStyles(
-              bold: true, align: PosAlign.right, fontType: PosFontType.fontA)),
+              bold: true, align: PosAlign.center, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Rate',
           width: 2,
           styles: PosStyles(
-              bold: true, align: PosAlign.right, fontType: PosFontType.fontA)),
+              bold: true, align: PosAlign.center, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Amt',
           width: 2,
@@ -234,7 +234,7 @@ class PrintController extends GetxController {
     });
 
     // Process items in optimized batches
-    final int batchSize = 5; // Increased batch size for faster processing
+    final int batchSize = 5;
     for (var i = 0; i < items.length; i += batchSize) {
       final end = (i + batchSize < items.length) ? i + batchSize : items.length;
       final batch = items.sublist(i, end);
@@ -261,55 +261,60 @@ class PrintController extends GetxController {
 
             // Define column widths and positions
             final srNoWidth =
-                width * 0.20; // Increased from 0.08 to 0.12 for Sr.No
-            final particularsWidth = width * 0.35; // Reduced from 0.42 to 0.38
-            final qtyWidth = width * 0.15; // 15%
-            final rateWidth = width * 0.15; // 15%
-            final amtWidth = width * 0.15; // 20%
+                width * 0.10; // Slightly reduced for better alignment
+            final particularsWidth =
+                width * 0.40; // Increased for larger handwriting
+            final qtyWidth = width * 0.15;
+            final rateWidth = width * 0.15;
+            final amtWidth = width * 0.20;
 
             // Calculate column start positions
             final qtyStartX = srNoWidth + particularsWidth;
             final rateStartX = qtyStartX + qtyWidth;
             final amtStartX = rateStartX + rateWidth;
 
-            // Draw Sr.No
+            // Draw Sr.No with proper formatting
             final textStyle = TextStyle(
               color: Colors.black,
-              fontSize: 24,
+              fontSize: 24, // Increased font size
               fontWeight: FontWeight.bold,
             );
             final textPainter = TextPainter(
               textDirection: TextDirection.ltr,
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.center, // Changed to center
             );
 
+            // Format Sr.No to ensure single digit
+            final srNo = (items.indexOf(item) + 1).toString();
             textPainter.text = TextSpan(
-              text: '${items.indexOf(item) + 1}',
+              text: srNo,
               style: textStyle,
             );
             textPainter.layout();
             textPainter.paint(
               canvas,
               Offset(
-                (srNoWidth - textPainter.width) / 2,
+                (srNoWidth - textPainter.width) / 2, // Center align Sr.No
                 (height - textPainter.height) / 2,
               ),
             );
 
-            // Draw handwritten particulars with increased darkness
+            // Draw handwritten particulars with increased size
             final Uint8List particularBytes = item['particulars'];
             final img.Image? decodedParticulars =
                 img.decodeImage(particularBytes);
             if (decodedParticulars != null) {
               final dilatedImage = img.copyResize(
                 decodedParticulars,
-                width: (decodedParticulars.width * 1.1).toInt(),
+                width: (decodedParticulars.width * 1.4)
+                    .toInt(), // Increased scaling factor
               );
 
-              // Single pass with stronger darkness
-              var darkenedImage =
-                  img.brightness(dilatedImage, -50) ?? dilatedImage;
-              darkenedImage = img.contrast(darkenedImage, 150) ?? darkenedImage;
+              // Enhanced contrast and darkness
+              var darkenedImage = img.brightness(dilatedImage, -60) ??
+                  dilatedImage; // Increased darkness
+              darkenedImage = img.contrast(darkenedImage, 160) ??
+                  darkenedImage; // Increased contrast
 
               final scaleWidth = particularsWidth / darkenedImage.width;
               final scaleHeight = height / darkenedImage.height;
@@ -318,7 +323,8 @@ class PrintController extends GetxController {
               final scaledWidth = darkenedImage.width * scale;
               final scaledHeight = darkenedImage.height * scale;
               final xOffset = srNoWidth +
-                  15; // Increased from 10 to 15 for better alignment with Particulars header
+                  (particularsWidth - scaledWidth) /
+                      2; // Center align particulars
               final yOffset = (height - scaledHeight) / 2;
 
               final resizedParticulars = img.copyResize(
@@ -332,26 +338,13 @@ class PrintController extends GetxController {
                   Uint8List.fromList(particularsPngBytes));
               final frame = await codec.getNextFrame();
 
-              // Single draw with optimized paint settings
-              final paint = Paint()
-                ..color = Colors.black
-                ..strokeWidth = 2.5
-                ..style = PaintingStyle.fill;
-
-              canvas.drawImage(frame.image, Offset(xOffset, yOffset), paint);
+              canvas.drawImage(frame.image, Offset(xOffset, yOffset), Paint());
             }
 
-            // Draw numbers with optimized text painting
+            // Draw numbers with optimized text painting and center alignment
             final centerY = (height - textPainter.height) / 2;
 
-            // Draw Sr.No with proper alignment
-            textPainter.text =
-                TextSpan(text: '${items.indexOf(item) + 1}', style: textStyle);
-            textPainter.layout();
-            textPainter.paint(canvas,
-                Offset(srNoWidth * 0.3, centerY)); // Adjusted Sr.No position
-
-            // Draw all numbers in one batch
+            // Draw quantity, rate, and amount (all center-aligned)
             textPainter.text =
                 TextSpan(text: quantity.toString(), style: textStyle);
             textPainter.layout();
@@ -387,14 +380,13 @@ class PrintController extends GetxController {
               final img.Image? decodedRowImage =
                   img.decodeImage(rowImageData.buffer.asUint8List());
               if (decodedRowImage != null) {
-                // Ensure the image is properly encoded for printing
                 final printImage = img.copyResize(
                   decodedRowImage,
                   width: decodedRowImage.width,
                   height: decodedRowImage.height,
                 );
-                bytes +=
-                    generator.imageRaster(printImage, align: PosAlign.left);
+                bytes += generator.imageRaster(printImage,
+                    align: PosAlign.center); // Changed to center alignment
                 bytes += generator.hr(ch: '-', linesAfter: 0);
               }
             }

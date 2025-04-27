@@ -333,9 +333,9 @@ class ScribbleController extends GetxController {
   }
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
-    // Increase the size by 20% for better visibility
-    width = width * 1.2;
-    height = height * 1.2;
+    // Increase the size by 50% for better visibility
+    width = width * 1.5;
+    height = height * 1.5;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(
@@ -351,33 +351,33 @@ class ScribbleController extends GetxController {
     for (final stroke in descriptionInk.strokes) {
       final paint = Paint()
         ..color = AppColors.stainedGlass
-        ..strokeWidth = 4.0 // Increased stroke width for bolder appearance
+        ..strokeWidth = 6.0 // Increased stroke width for bolder appearance
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..style = PaintingStyle.stroke;
 
       if (stroke.points.length == 1) {
         canvas.drawCircle(
-          Offset(stroke.points[0].x * 1.2,
-              stroke.points[0].y * 1.2), // Scale the points
-          2.0, // Increased circle size
+          Offset(stroke.points[0].x * 1.5,
+              stroke.points[0].y * 1.5), // Scale the points
+          3.0, // Increased circle size
           paint,
         );
       } else {
         // For multiple points, create a smooth path
         final path = Path();
-        path.moveTo(stroke.points[0].x * 1.2,
-            stroke.points[0].y * 1.2); // Scale the points
+        path.moveTo(stroke.points[0].x * 1.5,
+            stroke.points[0].y * 1.5); // Scale the points
 
         for (int i = 0; i < stroke.points.length - 1; i++) {
           final p0 = stroke.points[i];
           final p1 = stroke.points[i + 1];
 
           path.quadraticBezierTo(
-            p0.x * 1.2, // Scale the points
-            p0.y * 1.2,
-            (p0.x + p1.x) / 2 * 1.2,
-            (p0.y + p1.y) / 2 * 1.2,
+            p0.x * 1.5, // Scale the points
+            p0.y * 1.5,
+            (p0.x + p1.x) / 2 * 1.5,
+            (p0.y + p1.y) / 2 * 1.5,
           );
         }
 
