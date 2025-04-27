@@ -307,10 +307,10 @@ class PrintController extends GetxController {
               // Increase size more significantly
               final dilatedImage = img.copyResize(
                 decodedParticulars,
-                width: (decodedParticulars.width * 1.8)
-                    .toInt(), // Increased from 1.4 to 1.8
-                height: (decodedParticulars.height * 1.6)
-                    .toInt(), // Added height scaling
+                width: (decodedParticulars.width * 2.4)
+                    .toInt(), // Increased from 1.8 to 2.2
+                height: (decodedParticulars.height * 2.8)
+                    .toInt(), // Increased from 1.6 to 2.0
               );
 
               // Enhanced contrast and darkness
@@ -322,7 +322,7 @@ class PrintController extends GetxController {
               final scaleWidth = particularsWidth / darkenedImage.width;
               final scaleHeight = height / darkenedImage.height;
               final scale = math.min(scaleWidth, scaleHeight) *
-                  1.2; // Additional scaling factor
+                  1.8; // Increased from 1.2 to 1.5
 
               final scaledWidth = darkenedImage.width * scale;
               final scaledHeight = darkenedImage.height * scale;
