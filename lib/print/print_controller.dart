@@ -199,7 +199,7 @@ class PrintController extends GetxController {
     // Add headers with proper alignment
     bytes += generator.row([
       PosColumn(
-          text: 'Sr.No',
+          text: 'Sr',
           width: 2,
           styles: PosStyles(
               bold: true, align: PosAlign.left, fontType: PosFontType.fontA)),
@@ -207,7 +207,7 @@ class PrintController extends GetxController {
           text: 'Particulars',
           width: 4,
           styles: PosStyles(
-              bold: true, align: PosAlign.center, fontType: PosFontType.fontA)),
+              bold: true, align: PosAlign.left, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Qty',
           width: 2,
@@ -217,7 +217,7 @@ class PrintController extends GetxController {
           text: 'Rate',
           width: 2,
           styles: PosStyles(
-              bold: true, align: PosAlign.center, fontType: PosFontType.fontA)),
+              bold: true, align: PosAlign.left, fontType: PosFontType.fontA)),
       PosColumn(
           text: 'Amt',
           width: 2,
@@ -304,28 +304,35 @@ class PrintController extends GetxController {
             final img.Image? decodedParticulars =
                 img.decodeImage(particularBytes);
             if (decodedParticulars != null) {
+              // Increase size more significantly
               final dilatedImage = img.copyResize(
                 decodedParticulars,
-                width: (decodedParticulars.width * 1.4)
-                    .toInt(), // Increased scaling factor
+                width: (decodedParticulars.width * 1.8)
+                    .toInt(), // Increased from 1.4 to 1.8
+                height: (decodedParticulars.height * 1.6)
+                    .toInt(), // Added height scaling
               );
 
               // Enhanced contrast and darkness
-              var darkenedImage = img.brightness(dilatedImage, -60) ??
-                  dilatedImage; // Increased darkness
-              darkenedImage = img.contrast(darkenedImage, 160) ??
+              var darkenedImage = img.brightness(dilatedImage, -65) ??
+                  dilatedImage; // Slightly increased darkness
+              darkenedImage = img.contrast(darkenedImage, 170) ??
                   darkenedImage; // Increased contrast
 
               final scaleWidth = particularsWidth / darkenedImage.width;
               final scaleHeight = height / darkenedImage.height;
-              final scale = math.min(scaleWidth, scaleHeight);
+              final scale = math.min(scaleWidth, scaleHeight) *
+                  1.2; // Additional scaling factor
 
               final scaledWidth = darkenedImage.width * scale;
               final scaledHeight = darkenedImage.height * scale;
-              final xOffset = srNoWidth +
-                  (particularsWidth - scaledWidth) /
-                      2; // Center align particulars
-              final yOffset = (height - scaledHeight) / 2;
+
+              // Adjust the x-offset to add left padding (align with Particulars header)
+              final xOffset = srNoWidth + 30; // Added fixed left padding
+
+              // Center vertically but with slight upward adjustment
+              final yOffset =
+                  (height - scaledHeight) / 2 - 5; // Slight upward adjustment
 
               final resizedParticulars = img.copyResize(
                 darkenedImage,
@@ -338,6 +345,7 @@ class PrintController extends GetxController {
                   Uint8List.fromList(particularsPngBytes));
               final frame = await codec.getNextFrame();
 
+              // Draw with adjusted position
               canvas.drawImage(frame.image, Offset(xOffset, yOffset), Paint());
             }
 
