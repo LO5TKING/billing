@@ -69,22 +69,15 @@ class PrintController extends GetxController {
       }
 
       // Optimized printer initialization with minimal commands
-      final initCommands = [
-        // Reset printer (includes default line spacing and justification)
-        Uint8List.fromList([0x1B, 0x40]),
-        // Set character code table
-        Uint8List.fromList([0x1B, 0x74, 0x00])
-      ];
-
-      for (var cmd in initCommands) {
-        await writeCharacteristic.write(cmd, withoutResponse: true);
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
+      final initCommands = Uint8List.fromList([
+        0x1B, 0x40,  // Reset printer
+        0x1B, 0x74, 0x00  // Set character code table
+      ]);
+      
+      await writeCharacteristic.write(initCommands, withoutResponse: true);
 
       // Generate receipt data
       final bytes = await generateDirectReceiptData(items);
-
-      print("total bytes size is $bytes");
       // Fixed chunk size for printer compatibility
       const int chunkSize = 200; // Fixed size for printer capability
       int finalChunkSize = chunkSize;
@@ -93,35 +86,34 @@ class PrintController extends GetxController {
         if (bytes.length < chunkSize) {
           finalChunkSize = bytes.length;
         }
-        print("total bytes size is $finalChunkSize");
       } catch (e) {
         print('Using default chunk size: $chunkSize');
       }
 
-      // Send data in chunks with minimal delay
-      for (int i = 0; i < bytes.length; i += chunkSize) {
-        int end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
-        await writeCharacteristic.write(bytes.sublist(i, end),
-            withoutResponse: true);
-        await Future.delayed(const Duration(milliseconds: 10));
+      // Send data in optimized chunks with parallel processing
+      final int numChunks = (bytes.length / chunkSize).ceil();
+      List<Future<void>> writeFutures = [];
+      
+      for (int i = 0; i < numChunks; i++) {
+        int start = i * chunkSize;
+        int end = (start + chunkSize < bytes.length) ? start + chunkSize : bytes.length;
+        writeFutures.add(writeCharacteristic.write(bytes.sublist(start, end), withoutResponse: true));
+        
+        // Process in batches of 5 to avoid overwhelming the printer
+        if (writeFutures.length >= 5 || i == numChunks - 1) {
+          await Future.wait(writeFutures);
+          writeFutures.clear();
+        }
       }
 
-      // Final commands with proper sequencing
-      final finalCommands = [
-        // Feed paper
-        Uint8List.fromList([0x1B, 0x64, 0x00]), // Feed 3 lines
-        // Ensure all data is printed
-        Uint8List.fromList([0x1B, 0x40]), // Initialize printer
-        // Cut paper
-        // Uint8List.fromList([0x1B, 0x69]), // Full cut
-      ];
+      print("total bytes size is $numChunks");
 
-      // Send final commands with proper delays
-      for (var cmd in finalCommands) {
-        await writeCharacteristic.write(cmd, withoutResponse: true);
-        await Future.delayed(const Duration(
-            milliseconds: 100)); // Increased delay for final commands
-      }
+      // Send final commands in a single batch
+      final finalCommands = Uint8List.fromList([
+        0x1B, 0x64, 0x00,  // Feed paper
+        0x1B, 0x40,  // Initialize printer
+      ]);
+      await writeCharacteristic.write(finalCommands, withoutResponse: true);
 
       Get.snackbar("Printed", "Successfully");
     } catch (e) {
@@ -141,21 +133,23 @@ class PrintController extends GetxController {
     bytes += generator.setGlobalCodeTable('CP437');
     bytes += generator.setGlobalFont(PosFontType.fontA);
 
-    // Load and add the logo image with minimal top spacing
+    // Load and add the logo image with optimized processing
     try {
       final ByteData imageData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = imageData.buffer.asUint8List();
       final img.Image logoImage = img.decodeImage(logoBytes)!;
-      // Optimize logo size and processing
+      // Aggressive optimization for logo
       final img.Image optimizedLogo = img.copyResize(
         logoImage,
-        height: 80,  // Reduced height
-        width: 80,   // Reduced width
-        interpolation: img.Interpolation.average  // Better quality-to-size ratio
+        height: 60,  // Further reduced height
+        width: 60,   // Further reduced width
+        interpolation: img.Interpolation.nearest  // Fastest interpolation
       );
-      // Convert to grayscale and reduce color depth for smaller size
-      final img.Image grayscaleLogo = img.grayscale(optimizedLogo);
-      bytes += generator.image(grayscaleLogo, align: PosAlign.center);
+      // Optimize image for thermal printing
+      var processedLogo = img.grayscale(optimizedLogo);
+      // processedLogo = img.brightness(processedLogo, 20);
+      // processedLogo = img.contrast(processedLogo, 150);
+      bytes += generator.imageRaster(processedLogo, align: PosAlign.center);
     } catch (e) {
       print('Error loading logo: $e');
     }
@@ -293,19 +287,18 @@ class PrintController extends GetxController {
             final img.Image? decodedParticulars =
                 img.decodeImage(particularBytes);
             if (decodedParticulars != null) {
-              // Increase size more significantly
-              // Optimize handwriting image size and quality
+              // Optimize handwriting image with minimal processing
               final optimizedImage = img.copyResize(
                 decodedParticulars,
-                width: (decodedParticulars.width * 1.8).toInt(),
-                height: (decodedParticulars.height * 2.0).toInt(),
-                interpolation: img.Interpolation.average
+                width: (decodedParticulars.width * 1.5).toInt(),
+                height: (decodedParticulars.height * 1.5).toInt(),
+                interpolation: img.Interpolation.nearest
               );
               
-              // Optimize image processing for better print quality and smaller size
+              // Fast image processing optimized for thermal printing
               var processedImage = img.grayscale(optimizedImage);
-              processedImage = img.contrast(processedImage, 150) ?? processedImage;
-              processedImage = img.brightness(processedImage, -40) ?? processedImage;
+              // processedImage = img.threshold(processedImage, 128);
+              processedImage = img.contrast(processedImage, 200) ?? processedImage;
 
               final scaleWidth = particularsWidth / processedImage.width;
               final scaleHeight = height / processedImage.height;
