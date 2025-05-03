@@ -68,18 +68,12 @@ class PrintController extends GetxController {
         throw Exception('Printer service not found');
       }
 
-      // Initialize printer
+      // Optimized printer initialization with minimal commands
       final initCommands = [
-        // Reset printer
+        // Reset printer (includes default line spacing and justification)
         Uint8List.fromList([0x1B, 0x40]),
-        // Set line spacing to 0
-        Uint8List.fromList([0x1B, 0x33, 0x00]),
         // Set character code table
-        Uint8List.fromList([0x1B, 0x74, 0x00]),
-        // Set justification to left
-        Uint8List.fromList([0x1B, 0x61, 0x00]),
-        // Set character size to normal
-        Uint8List.fromList([0x1D, 0x21, 0x00]),
+        Uint8List.fromList([0x1B, 0x74, 0x00])
       ];
 
       for (var cmd in initCommands) {
@@ -90,12 +84,16 @@ class PrintController extends GetxController {
       // Generate receipt data
       final bytes = await generateDirectReceiptData(items);
 
-      // Use even larger chunk size for faster transfer
-      int chunkSize = 200; // Increased from 100 to 200
+      print("total bytes size is $bytes");
+      // Fixed chunk size for printer compatibility
+      const int chunkSize = 200; // Fixed size for printer capability
+      int finalChunkSize = chunkSize;
       try {
-        final negotiatedMtu = await device.mtu.first;
-        chunkSize = (negotiatedMtu - 3)
-            .clamp(200, 400); // Increased minimum and maximum
+        // Validate chunk size
+        if (bytes.length < chunkSize) {
+          finalChunkSize = bytes.length;
+        }
+        print("total bytes size is $finalChunkSize");
       } catch (e) {
         print('Using default chunk size: $chunkSize');
       }
@@ -148,35 +146,26 @@ class PrintController extends GetxController {
       final ByteData imageData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = imageData.buffer.asUint8List();
       final img.Image logoImage = img.decodeImage(logoBytes)!;
-      final img.Image resizedLogo =
-          img.copyResize(logoImage, height: 100, width: 100);
-      bytes += generator.image(resizedLogo, align: PosAlign.center);
+      // Optimize logo size and processing
+      final img.Image optimizedLogo = img.copyResize(
+        logoImage,
+        height: 80,  // Reduced height
+        width: 80,   // Reduced width
+        interpolation: img.Interpolation.average  // Better quality-to-size ratio
+      );
+      // Convert to grayscale and reduce color depth for smaller size
+      final img.Image grayscaleLogo = img.grayscale(optimizedLogo);
+      bytes += generator.image(grayscaleLogo, align: PosAlign.center);
     } catch (e) {
       print('Error loading logo: $e');
     }
 
-    // Add receipt header with minimal spacing
-    bytes += generator.text(
-      'Shri Ganesh Farsan'.toUpperCase(),
-      styles: PosStyles(
-          align: PosAlign.center,
-          bold: true,
-          height: PosTextSize.size1,
-          fontType: PosFontType.fontA),
-    );
-
-    bytes += generator.text(
-      '95/96, Floor-0,Balaji Nagar kk krishnana Menan Marg',
-      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
-    );
-    bytes += generator.text(
-      '90 Feet Road,Dharavi, Mumbai-400017',
-      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
-    );
-    bytes += generator.text(
-      'Mobile No: 9324755451',
-      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
-    );
+    // Optimize header text formatting by combining text
+    final headerStyle = PosStyles(align: PosAlign.center, fontType: PosFontType.fontA);
+    final headerBoldStyle = PosStyles(align: PosAlign.center, bold: true, fontType: PosFontType.fontA);
+    
+    bytes += generator.text('Shri Ganesh Farsan'.toUpperCase(), styles: headerBoldStyle);
+    bytes += generator.text('Shop No:- 95/96,Balaji Nagar\n90 Feet Road,Dharavi, Mumbai-400017\nMobile No: 9324755451', styles: headerStyle);
     bytes += generator.feed(1);
 
     // Format date and time
@@ -305,40 +294,35 @@ class PrintController extends GetxController {
                 img.decodeImage(particularBytes);
             if (decodedParticulars != null) {
               // Increase size more significantly
-              final dilatedImage = img.copyResize(
+              // Optimize handwriting image size and quality
+              final optimizedImage = img.copyResize(
                 decodedParticulars,
-                width: (decodedParticulars.width * 2.4)
-                    .toInt(), // Increased from 1.8 to 2.2
-                height: (decodedParticulars.height * 2.8)
-                    .toInt(), // Increased from 1.6 to 2.0
+                width: (decodedParticulars.width * 1.8).toInt(),
+                height: (decodedParticulars.height * 2.0).toInt(),
+                interpolation: img.Interpolation.average
               );
+              
+              // Optimize image processing for better print quality and smaller size
+              var processedImage = img.grayscale(optimizedImage);
+              processedImage = img.contrast(processedImage, 150) ?? processedImage;
+              processedImage = img.brightness(processedImage, -40) ?? processedImage;
 
-              // Enhanced contrast and darkness
-              var darkenedImage = img.brightness(dilatedImage, -65) ??
-                  dilatedImage; // Slightly increased darkness
-              darkenedImage = img.contrast(darkenedImage, 170) ??
-                  darkenedImage; // Increased contrast
+              final scaleWidth = particularsWidth / processedImage.width;
+              final scaleHeight = height / processedImage.height;
+              final scale = math.min(scaleWidth, scaleHeight) * 1.5;
 
-              final scaleWidth = particularsWidth / darkenedImage.width;
-              final scaleHeight = height / darkenedImage.height;
-              final scale = math.min(scaleWidth, scaleHeight) *
-                  1.8; // Increased from 1.2 to 1.5
+              final scaledWidth = processedImage.width * scale;
+              final scaledHeight = processedImage.height * scale;
 
-              final scaledWidth = darkenedImage.width * scale;
-              final scaledHeight = darkenedImage.height * scale;
+              final xOffset = srNoWidth;
+              final yOffset = (height - scaledHeight) / 2;
 
-              // Adjust the x-offset to add left padding (align with Particulars header)
-              final xOffset = srNoWidth +
-                  0; // Reduced from 30 to 15 for more left alignment
-
-              // Center vertically but with slight upward adjustment
-              final yOffset =
-                  (height - scaledHeight) / 2 - 5; // Slight upward adjustment
-
+              // Optimize final resize operation
               final resizedParticulars = img.copyResize(
-                darkenedImage,
+                processedImage,
                 width: scaledWidth.toInt(),
                 height: scaledHeight.toInt(),
+                interpolation: img.Interpolation.average
               );
 
               final particularsPngBytes = img.encodePng(resizedParticulars);
