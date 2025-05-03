@@ -7,16 +7,16 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:image/image.dart' as img;
-import 'package:image/image.dart' show dilate;
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-// import 'package:printing/printing.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+// Removed unused import: import 'package:image/image.dart' show dilate;
+// Removed unused import: import 'package:pdf/pdf.dart';
+// Removed unused import: import 'package:pdf/widgets.dart' as pw;
+// import 'package:printing/printing.dart'; // Keep commented if not used
+// Removed unused import: import 'package:path_provider/path_provider.dart';
+// Removed unused import: import 'dart:io';
 import 'package:flutter/material.dart' hide Image;
 import 'dart:math' as math;
 
-import 'package:shared_preferences/shared_preferences.dart';
+// Removed unused import: import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/splash_screen_controller.dart';
 
 class PrintController extends GetxController {
@@ -147,8 +147,8 @@ class PrintController extends GetxController {
       );
       // Optimize image for thermal printing
       var processedLogo = img.grayscale(optimizedLogo);
-      // processedLogo = img.brightness(processedLogo, 20);
-      // processedLogo = img.contrast(processedLogo, 150);
+      // Removed commented out processing: processedLogo = img.brightness(processedLogo, 20);
+      // Removed commented out processing: processedLogo = img.contrast(processedLogo, 150);
       bytes += generator.imageRaster(processedLogo, align: PosAlign.center);
     } catch (e) {
       print('Error loading logo: $e');
@@ -216,171 +216,92 @@ class PrintController extends GetxController {
       return sum + (quantity * rate);
     });
 
-    // Process items in optimized batches
-    final int batchSize = 5;
-    for (var i = 0; i < items.length; i += batchSize) {
-      final end = (i + batchSize < items.length) ? i + batchSize : items.length;
-      final batch = items.sublist(i, end);
+    // Process items - Refactored for performance
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      try {
+        final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
+        final rate = int.tryParse(item['rate'].toString()) ?? 0;
+        final amount = quantity * rate;
+        final srNo = "${(i + 1).toString()}.";
 
-      for (var item in batch) {
-        try {
-          if (item['particulars'] != null && item['particulars'] is Uint8List) {
-            final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
-            final rate = int.tryParse(item['rate'].toString()) ?? 0;
-            final amount = quantity * rate;
+        if (item['particulars'] != null && item['particulars'] is Uint8List) {
+          final Uint8List particularBytes = item['particulars'];
+          final img.Image? decodedParticulars = img.decodeImage(particularBytes);
 
-            // Create a canvas for the complete row
-            final recorder = ui.PictureRecorder();
-            final width = 580;
-            final height = 85;
-            final canvas = Canvas(recorder,
-                Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()));
+          if (decodedParticulars != null) {
+            // --- Start: Optimized Handwritten Image Processing ---
+            // Resize based on target height for consistency, maintain aspect ratio
+            const int targetHeight = 50; // Adjust as needed for clarity vs size
+            final double aspectRatio = decodedParticulars.width / decodedParticulars.height;
+            final int targetWidth = (targetHeight * aspectRatio).round();
 
-            // Set white background
-            final Paint bgPaint = Paint()..color = Colors.white;
-            canvas.drawRect(
-                Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
-                bgPaint);
-
-            // Define column widths and positions
-            final srNoWidth =
-                width * 0.10; // Slightly reduced for better alignment
-            final particularsWidth =
-                width * 0.40; // Increased for larger handwriting
-            final qtyWidth = width * 0.15;
-            final rateWidth = width * 0.15;
-            final amtWidth = width * 0.20;
-
-            // Calculate column start positions
-            final qtyStartX = srNoWidth + particularsWidth;
-            final rateStartX = qtyStartX + qtyWidth;
-            final amtStartX = rateStartX + rateWidth;
-
-            // Draw Sr.No with proper formatting
-            final textStyle = TextStyle(
-              color: Colors.black,
-              fontSize: 24, // Increased font size
-              fontWeight: FontWeight.bold,
-            );
-            final textPainter = TextPainter(
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.right, // Changed to center
+            final optimizedImage = img.copyResize(
+              decodedParticulars,
+              width: targetWidth,
+              height: targetHeight,
+              interpolation: img.Interpolation.average // Average might give better results for handwriting
             );
 
-            // Format Sr.No to ensure single digit
-            final srNo = "${(items.indexOf(item) + 1).toString()}.";
-            textPainter.text = TextSpan(
-              text: srNo,
-              style: textStyle,
-            );
-            textPainter.layout();
-            textPainter.paint(
-              canvas,
-              Offset(
-                (srNoWidth - textPainter.width) / 2, // Center align Sr.No
-                (height - textPainter.height) / 2,
-              ),
-            );
+            var processedImage = img.grayscale(optimizedImage);
+            // processedImage = img.contrast(processedImage, 150); // Optional: Test contrast if needed
+            // --- End: Optimized Handwritten Image Processing ---
 
-            // Draw handwritten particulars with increased size
-            final Uint8List particularBytes = item['particulars'];
-            final img.Image? decodedParticulars =
-                img.decodeImage(particularBytes);
-            if (decodedParticulars != null) {
-              // Optimize handwriting image with minimal processing
-              final optimizedImage = img.copyResize(
-                decodedParticulars,
-                width: (decodedParticulars.width * 1.5).toInt(),
-                height: (decodedParticulars.height * 1.5).toInt(),
-                interpolation: img.Interpolation.nearest
-              );
-              
-              // Fast image processing optimized for thermal printing
-              var processedImage = img.grayscale(optimizedImage);
-              // processedImage = img.threshold(processedImage, 128);
-              processedImage = img.contrast(processedImage, 200) ?? processedImage;
+            // Print Sr.No, Qty, Rate, Amt first (leaving space for image)
+            bytes += generator.row([
+              PosColumn(
+                  text: srNo,
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+              PosColumn(
+                  text: '', // Placeholder for image
+                  width: 4,
+                  styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+              PosColumn(
+                  text: quantity.toString(),
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA)),
+              PosColumn(
+                  text: rate.toString(),
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)), // Keep left align like header
+              PosColumn(
+                  text: amount.toString(),
+                  width: 2,
+                  styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA)),
+            ]);
 
-              final scaleWidth = particularsWidth / processedImage.width;
-              final scaleHeight = height / processedImage.height;
-              final scale = math.min(scaleWidth, scaleHeight) * 1.5;
+            // Print the processed image below the Sr.No, aligned left within the 'Particulars' column space
+            // Add slight indentation if needed
+            bytes += generator.imageRaster(processedImage, align: PosAlign.left);
+            // bytes += generator.feed(1); // Remove this line feed to keep image on the same conceptual line
 
-              final scaledWidth = processedImage.width * scale;
-              final scaledHeight = processedImage.height * scale;
-
-              final xOffset = srNoWidth;
-              final yOffset = (height - scaledHeight) / 2;
-
-              // Optimize final resize operation
-              final resizedParticulars = img.copyResize(
-                processedImage,
-                width: scaledWidth.toInt(),
-                height: scaledHeight.toInt(),
-                interpolation: img.Interpolation.average
-              );
-
-              final particularsPngBytes = img.encodePng(resizedParticulars);
-              final codec = await ui.instantiateImageCodec(
-                  Uint8List.fromList(particularsPngBytes));
-              final frame = await codec.getNextFrame();
-
-              // Draw with adjusted position
-              canvas.drawImage(frame.image, Offset(xOffset, yOffset), Paint());
-            }
-
-            // Draw numbers with optimized text painting and center alignment
-            final centerY = (height - textPainter.height) / 2;
-
-            // Draw quantity, rate, and amount (all center-aligned)
-            textPainter.text =
-                TextSpan(text: quantity.toString(), style: textStyle);
-            textPainter.layout();
-            textPainter.paint(
-                canvas,
-                Offset(
-                    qtyStartX + (qtyWidth - textPainter.width) / 2, centerY));
-
-            textPainter.text =
-                TextSpan(text: rate.toString(), style: textStyle);
-            textPainter.layout();
-            textPainter.paint(
-                canvas,
-                Offset(
-                    rateStartX + (rateWidth - textPainter.width) / 2, centerY));
-
-            textPainter.text =
-                TextSpan(text: amount.toString(), style: textStyle);
-            textPainter.layout();
-            textPainter.paint(
-                canvas,
-                Offset(
-                    amtStartX + (amtWidth - textPainter.width) / 2, centerY));
-
-            // Convert to image
-            final ui.Image rowImage = await recorder
-                .endRecording()
-                .toImage(width.toInt(), height.toInt());
-            final ByteData? rowImageData =
-                await rowImage.toByteData(format: ui.ImageByteFormat.png);
-
-            if (rowImageData != null) {
-              final img.Image? decodedRowImage =
-                  img.decodeImage(rowImageData.buffer.asUint8List());
-              if (decodedRowImage != null) {
-                final printImage = img.copyResize(
-                  decodedRowImage,
-                  width: decodedRowImage.width,
-                  height: decodedRowImage.height,
-                );
-                bytes += generator.imageRaster(printImage,
-                    align: PosAlign.center); // Changed to center alignment
-                bytes += generator.hr(ch: '-', linesAfter: 0);
-              }
-            }
+          } else {
+            // Handle case where image decoding fails but data is Uint8List
+            bytes += generator.row([
+              PosColumn(text: srNo, width: 2, styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+              PosColumn(text: '(Image Error)', width: 4, styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+              PosColumn(text: quantity.toString(), width: 2, styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA)),
+              PosColumn(text: rate.toString(), width: 2, styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+              PosColumn(text: amount.toString(), width: 2, styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA)),
+            ]);
           }
-        } catch (e) {
-          print('Error processing row image: $e');
-          continue;
+        } else {
+          // Handle case where 'particulars' is text or null
+          bytes += generator.row([
+            PosColumn(text: srNo, width: 2, styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+            PosColumn(text: item['particulars']?.toString() ?? '', width: 4, styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+            PosColumn(text: quantity.toString(), width: 2, styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA)),
+            PosColumn(text: rate.toString(), width: 2, styles: PosStyles(align: PosAlign.left, fontType: PosFontType.fontA)),
+            PosColumn(text: amount.toString(), width: 2, styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA)),
+          ]);
         }
+        bytes += generator.hr(ch: '-', linesAfter: 0); // Separator after each item
+      } catch (e) {
+        print('Error processing item row: $e');
+        // Optionally add a placeholder row in case of error
+        bytes += generator.text('Error processing item ${i + 1}', styles: PosStyles(align: PosAlign.left));
+        continue;
       }
     }
 
@@ -418,7 +339,7 @@ class PrintController extends GetxController {
   }
 }
 
-/*
+/* // Removed large commented out block
 Future<List<int>> _generatePrintData(List<Map<String, dynamic>> data) async {
   final profile = await CapabilityProfile.load();
   final generator = Generator(PaperSize.mm80, profile);

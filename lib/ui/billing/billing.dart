@@ -103,7 +103,7 @@ class Billing extends StatelessWidget {
                               IconButton(
                                   onPressed: () async {
                                     await scribbleController.addItem();
-                                    scribbleController.clearPadAndSignature();
+                                    // scribbleController.clearPadAndSignature();
                                   },
                                   icon: const Icon(Icons.add)),
                             ],
