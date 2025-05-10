@@ -12,11 +12,14 @@ import 'package:get/route_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 
+import '../../controllers/order_controller.dart';
 import '../../controllers/scribble_controller.dart';
 import '../../utils/utility.dart';
+import '../order/order.dart';
 
 class BillingOptions extends StatelessWidget {
   ScribbleController scribbleController = Get.put(ScribbleController());
+  OrderController orderController = Get.put(OrderController());
 
   BillingOptions({super.key});
 
@@ -98,7 +101,7 @@ class BillingOptions extends StatelessWidget {
                                   text: 'Orders',
                                   icon: Icons.edit,
                                   onItemTap: () {
-                                    Get.to(() => SearchAndReports());
+                                    Get.to(() => Order());
                                   }),
                             ],
                           ),
