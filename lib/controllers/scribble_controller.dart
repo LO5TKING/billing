@@ -470,6 +470,13 @@ class ScribbleController extends GetxController {
     });
   }
 
+  double get totalQty {
+    return itemList.fold(0, (sum, item) {
+      final quantity = double.tryParse(item['quantity'] ?? '0') ?? 0;
+      return sum + (quantity).ceil();
+    });
+  }
+
   void clearPadAndSignature() {
     clearPad();
   }
