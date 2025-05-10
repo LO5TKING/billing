@@ -359,7 +359,7 @@ class ScribbleController extends GetxController {
     );
 
     // Set white background
-    final Paint bgPaint = Paint()..color = Colors.white;
+    final Paint bgPaint = Paint()..color = AppColors.peachColor;
     canvas.drawRect(Rect.fromLTWH(0, 0, width, height), bgPaint);
 
     // Draw the handwriting with thicker black strokes

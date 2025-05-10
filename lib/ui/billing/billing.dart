@@ -26,11 +26,11 @@ class Billing extends StatelessWidget {
           child: Stack(
             children: [
               Scaffold(
-                backgroundColor: Colors.white,
+                backgroundColor:AppColors.peachColor,
                 body: Container(
                   width: Get.width,
                   height: Get.height * 0.97,
-                  margin: const EdgeInsets.only(left: 5.0, right: 5, top: 20),
+                  margin: const EdgeInsets.only(left: 5.0, right: 5, top: 5),
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.blueGradient),
                   ),
@@ -139,7 +139,7 @@ class Billing extends StatelessWidget {
                           const SizedBox(
                             width: 5,
                           ),
-                          rateTextBox(0.26),
+                          rateTextBox(0.27),
                           const Spacer(),
                           Column(
                             mainAxisAlignment: MainAxisAlignment.center,

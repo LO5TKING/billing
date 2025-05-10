@@ -33,6 +33,7 @@ class AppColors {
 
   //app bg color
   static const appBgColor  = Color(0xffffffff);
+  static const peachColor  = Color(0xfffff8ec);
 
   //loading color
   static const baseLoadColor = Color(0xfffbfbfb);

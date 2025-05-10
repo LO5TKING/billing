@@ -24,9 +24,13 @@ class BillingOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        backgroundColor: AppColors.peachColor,
         body: Stack(
           children: [
-            SizedBox(
+            Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(image: AssetImage("assets/bg_splash.png")),
+              ),
               height: Get.height,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -41,83 +45,98 @@ class BillingOptions extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius:
                             BorderRadius.circular(DesignConstants.padding20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 5,
-                            blurRadius: 7,
-                            offset: const Offset(1.5, 7),
+                        // boxShadow: [
+                        //   BoxShadow(
+                        //     color: Colors.grey.withOpacity(0.5),
+                        //     spreadRadius: 5,
+                        //     blurRadius: 7,
+                        //     offset: const Offset(1.5, 7),
+                        //   ),
+                        // ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.only(
+                                left: DesignConstants.padding20,
+                                top: DesignConstants.padding30),
+                            child: shadowText(
+                              text: 'Billing Options',
+                              fontsize: DesignConstants.fontSize24,
+                              textcolor: Colors.white
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              billingOptionsBlock(
+                                  text: 'My Clients',
+                                  icon: Icons.people_alt_sharp,
+                                  onItemTap: () {
+                                    Get.to(() => SearchAddClientDetails());
+                                  }),
+                              billingOptionsBlock(
+                                  text: 'Guest',
+                                  icon: Icons.person,
+                                  onItemTap: () {
+                                    Get.to(() => const AddGuest());
+                                  }),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              billingOptionsBlock(
+                                  text: 'Bills',
+                                  icon: Icons.file_copy_outlined,
+                                  onItemTap: () {
+                                    Get.to(() => Billing());
+                                  }),
+                              billingOptionsBlock(
+                                  text: 'Orders',
+                                  icon: Icons.edit,
+                                  onItemTap: () {
+                                    Get.to(() => SearchAndReports());
+                                  }),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              billingOptionsBlock(
+                                  text: 'Purchase',
+                                  icon: Icons.book,
+                                  onItemTap: () {
+                                    Get.to(() => Billing());
+                                  }),
+                              billingOptionsBlock(
+                                  text: 'Reports',
+                                  icon: Icons.folder_copy_outlined,
+                                  onItemTap: () {
+                                    Get.to(() => SearchAndReports());
+                                  }),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              billingOptionsBlock(
+                                  text: 'Return',
+                                  icon: Icons.shopping_cart,
+                                  onItemTap: () {
+                                    Get.to(() => const ReturnItems());
+                                  }),
+                              billingOptionsBlock(
+                                  text: 'Settings',
+                                  icon: Icons.settings_suggest_rounded,
+                                  onItemTap: () {
+                                    Get.to(() => const SettingOptions());
+                                  }),
+                            ],
                           ),
                         ],
-                      ),
-                      child: Card(
-                        elevation: 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.only(
-                                  left: DesignConstants.padding20,
-                                  top: DesignConstants.padding30),
-                              child: shadowText(
-                                text: 'Billing Options',
-                                fontsize: DesignConstants.fontSize24,
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                billingOptionsBlock(
-                                    text: 'My Clients',
-                                    icon: Icons.people_alt_sharp,
-                                    onItemTap: () {
-                                      Get.to(() => SearchAddClientDetails());
-                                    }),
-                                billingOptionsBlock(
-                                    text: 'Guest',
-                                    icon: Icons.person,
-                                    onItemTap: () {
-                                      Get.to(() => const AddGuest());
-                                    }),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                billingOptionsBlock(
-                                    text: 'Bills',
-                                    icon: Icons.file_copy_outlined,
-                                    onItemTap: () {
-                                      Get.to(() => Billing());
-                                    }),
-                                billingOptionsBlock(
-                                    text: 'Reports',
-                                    icon: Icons.folder_copy_outlined,
-                                    onItemTap: () {
-                                      Get.to(() => SearchAndReports());
-                                    }),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                billingOptionsBlock(
-                                    text: 'Return',
-                                    icon: Icons.shopping_cart,
-                                    onItemTap: () {
-                                      Get.to(() => const ReturnItems());
-                                    }),
-                                billingOptionsBlock(
-                                    text: 'Settings',
-                                    icon: Icons.settings_suggest_rounded,
-                                    onItemTap: () {
-                                      Get.to(() => const SettingOptions());
-                                    }),
-                              ],
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
