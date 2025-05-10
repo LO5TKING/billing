@@ -91,12 +91,12 @@ class Billing extends StatelessWidget {
                                   scribbleController.clearPadAndSignature();
                                 },
                                 child: Container(
-                                  height: 25,
-                                  width: 25,
-                                  alignment: Alignment.topLeft,
+                                  height: 35,
+                                  width: 35,
+                                  alignment: Alignment.center,
                                   child: const Icon(
-                                    Icons.close,
-                                    color: AppColors.stainedGlass,
+                                    Icons.cancel,
+                                    color: AppColors.redHot,
                                   ),
                                 ),
                               ),
@@ -105,7 +105,8 @@ class Billing extends StatelessWidget {
                                     await scribbleController.addItem();
                                     scribbleController.clearPadAndSignature();
                                   },
-                                  icon: const Icon(Icons.local_hospital_outlined,color: AppColors.stainedGlass,size: 30,)),
+                                  padding: const EdgeInsets.only(right: 3),
+                                  icon: const Icon(Icons.add_box_rounded,color: Colors.blueAccent,size: 30,)),
                             ],
                           )
                         ],
@@ -686,7 +687,7 @@ class Billing extends StatelessWidget {
                 // color: Colors.white, // Background color to make the button stand out
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, color: Colors.black),
+              child: const Icon(Icons.cancel_outlined, color: AppColors.redHot),
             ),
           ),
         ),
@@ -756,7 +757,7 @@ class Billing extends StatelessWidget {
                 // color: Colors.white, // Background color to make the button stand out
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, color: Colors.black),
+              child: const Icon(Icons.cancel_outlined, color: AppColors.redHot),
             ),
           ),
         ),
@@ -827,13 +828,10 @@ class Billing extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               // padding: const EdgeInsets.all(8.0),
-              child: const Icon(
-                Icons.close,
-                color: Colors.black,
+                child: const Icon(Icons.cancel_outlined, color: AppColors.redHot),
               ),
             ),
           ),
-        ),
       ],
     );
   }
