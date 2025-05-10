@@ -284,7 +284,7 @@ class ScribbleController extends GetxController {
             .replaceAll('Z', '2')
             .replaceAll('T', '7');
 
-        recognizedRate = text.replaceAll(RegExp(r'[^0-9]'), '');
+        recognizedRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
 
         // If no digits are found after cleaning, set as 'No'
         if (recognizedRate.isEmpty) {
@@ -328,7 +328,7 @@ class ScribbleController extends GetxController {
             .replaceAll('Z', '2')
             .replaceAll('T', '7');
 
-        recognizedQuantity = text.replaceAll(RegExp(r'[^0-9]'), '');
+        recognizedQuantity = text.replaceAll(RegExp(r'[^0-9.]'), '');
 
         // If no digits are found after cleaning, set as 'No'
         if (recognizedQuantity.isEmpty) {
@@ -545,7 +545,7 @@ class ScribbleController extends GetxController {
       final pdf = pw.Document();
 
       // Load Ganesh logo as Uint8List
-      final ByteData logoData = await rootBundle.load('assets/ganpati.png');
+      final ByteData logoData = await rootBundle.load('assets/sai.png');
       final Uint8List logoBytes = logoData.buffer.asUint8List();
 
       pdf.addPage(

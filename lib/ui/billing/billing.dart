@@ -73,15 +73,15 @@ class Billing extends StatelessWidget {
                       Row(
                         children: [
                           descBox(0.44),
-                          SizedBox(
+                          const SizedBox(
                             width: 5,
                           ),
                           quantityTextBox(0.20),
-                          SizedBox(
+                          const SizedBox(
                             width: 5,
                           ),
-                          rateTextBox(0.27),
-                          Spacer(),
+                          rateTextBox(0.26),
+                          const Spacer(),
                           Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
@@ -91,10 +91,10 @@ class Billing extends StatelessWidget {
                                   scribbleController.clearPadAndSignature();
                                 },
                                 child: Container(
-                                  height: 20,
-                                  width: 20,
+                                  height: 25,
+                                  width: 25,
                                   alignment: Alignment.topLeft,
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.close,
                                     color: AppColors.stainedGlass,
                                   ),
@@ -105,7 +105,7 @@ class Billing extends StatelessWidget {
                                     await scribbleController.addItem();
                                     scribbleController.clearPadAndSignature();
                                   },
-                                  icon: const Icon(Icons.add)),
+                                  icon: const Icon(Icons.local_hospital_outlined,color: AppColors.stainedGlass,size: 30,)),
                             ],
                           )
                         ],
@@ -120,8 +120,8 @@ class Billing extends StatelessWidget {
                             border:
                                 TableBorder.all(color: AppColors.stainedGlass),
                             columnWidths: {
-                              0: FixedColumnWidth(60.0), // Sr.No
-                              1: FlexColumnWidth(), // Particulars
+                              0: const FixedColumnWidth(60.0), // Sr.No
+                              1: const FlexColumnWidth(), // Particulars
                               2: FixedColumnWidth(
                                   scribbleController.showButtons.value
                                       ? 120.0
@@ -137,6 +137,9 @@ class Billing extends StatelessWidget {
                             },
                             children: const [
                               TableRow(
+                                decoration: BoxDecoration(
+                                  color: Colors.blueAccent
+                                ),
                                 children: [
                                   TableCell(
                                     child: Padding(
@@ -144,6 +147,7 @@ class Billing extends StatelessWidget {
                                       child: Text('Sr. No.',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
+                                            color: Colors.white,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ),
@@ -153,6 +157,7 @@ class Billing extends StatelessWidget {
                                       child: Text('PARTICULARS',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
+                                              color: Colors.white,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ),
@@ -162,6 +167,7 @@ class Billing extends StatelessWidget {
                                       child: Text('QTY.',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
+                                              color: Colors.white,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ),
@@ -171,6 +177,7 @@ class Billing extends StatelessWidget {
                                       child: Text('RATE',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
+                                              color: Colors.white,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ),
@@ -180,6 +187,7 @@ class Billing extends StatelessWidget {
                                       child: Text('AMOUNT',
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
+                                              color: Colors.white,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                   ),
@@ -229,8 +237,8 @@ class Billing extends StatelessWidget {
                                                 color: AppColors.stainedGlass),
                                           ),
                                           columnWidths: {
-                                            0: FixedColumnWidth(60.0),
-                                            1: FlexColumnWidth(),
+                                            0: const FixedColumnWidth(60.0),
+                                            1: const FlexColumnWidth(),
                                             2: FixedColumnWidth(
                                                 scribbleController
                                                         .showButtons.value
@@ -352,8 +360,8 @@ class Billing extends StatelessWidget {
                           border:
                               TableBorder.all(color: AppColors.stainedGlass),
                           columnWidths: {
-                            0: FixedColumnWidth(60.0),
-                            1: FlexColumnWidth(),
+                            0: const FixedColumnWidth(60.0),
+                            1: const FlexColumnWidth(),
                             2: FixedColumnWidth(
                                 scribbleController.showButtons.value
                                     ? 240.0
@@ -369,6 +377,9 @@ class Billing extends StatelessWidget {
                           },
                           children: [
                             TableRow(
+                              decoration:const BoxDecoration(
+                                color: Colors.blueAccent
+                              ),
                               children: [
                                 const TableCell(
                                   child: Padding(
@@ -391,6 +402,7 @@ class Billing extends StatelessWidget {
                                     padding: EdgeInsets.all(8.0),
                                     child: Text('TOTAL',
                                         style: TextStyle(
+                                            color: Colors.white,
                                             fontWeight: FontWeight.bold)),
                                   ),
                                 ),
@@ -398,6 +410,9 @@ class Billing extends StatelessWidget {
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
                                     '${scribbleController.totalAmount}',
+                                    style: const TextStyle(
+                                      color: Colors.white
+                                    ),
                                     textAlign: TextAlign.center,
                                   ), // Dynamic total calculation
                                 ),
@@ -667,11 +682,11 @@ class Billing extends StatelessWidget {
               scribbleController.update();
             },
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 // color: Colors.white, // Background color to make the button stand out
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.close, color: Colors.black),
+              child: const Icon(Icons.close, color: Colors.black),
             ),
           ),
         ),
@@ -737,11 +752,11 @@ class Billing extends StatelessWidget {
               scribbleController.update();
             },
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 // color: Colors.white, // Background color to make the button stand out
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.close, color: Colors.black),
+              child: const Icon(Icons.close, color: Colors.black),
             ),
           ),
         ),
@@ -807,12 +822,12 @@ class Billing extends StatelessWidget {
               scribbleController.update();
             },
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 // color: Colors.white, // Background color to make the button stand out
                 shape: BoxShape.circle,
               ),
               // padding: const EdgeInsets.all(8.0),
-              child: Icon(
+              child: const Icon(
                 Icons.close,
                 color: Colors.black,
               ),

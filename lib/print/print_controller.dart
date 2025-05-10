@@ -145,7 +145,7 @@ class PrintController extends GetxController {
 
     // Load and add the logo image with minimal top spacing
     try {
-      final ByteData imageData = await rootBundle.load('assets/ganpati.png');
+      final ByteData imageData = await rootBundle.load('assets/sai.png');
       final Uint8List logoBytes = imageData.buffer.asUint8List();
       final img.Image logoImage = img.decodeImage(logoBytes)!;
       final img.Image resizedLogo =
@@ -157,7 +157,7 @@ class PrintController extends GetxController {
 
     // Add receipt header with minimal spacing
     bytes += generator.text(
-      'Shri Ganesh Farsan'.toUpperCase(),
+      'Deepa Farsan'.toUpperCase(),
       styles: PosStyles(
           align: PosAlign.center,
           bold: true,
@@ -166,15 +166,7 @@ class PrintController extends GetxController {
     );
 
     bytes += generator.text(
-      '95/96, Floor-0,Balaji Nagar kk krishnana Menan Marg',
-      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
-    );
-    bytes += generator.text(
-      '90 Feet Road,Dharavi, Mumbai-400017',
-      styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
-    );
-    bytes += generator.text(
-      'Mobile No: 9324755451',
+      'Shop No.86 Shell Colony,Chembur Mumbai-400017\nMail ID: deepafarsan@gmail.com\nMobile No: 9833088124',
       styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
     );
     bytes += generator.feed(1);
@@ -434,7 +426,7 @@ class PrintController extends GetxController {
         styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA));
     bytes += generator.text('Please visit again',
         styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA));
-    bytes += generator.feed(2);
+    bytes += generator.feed(1);
     bytes += generator.cut();
 
     return bytes;
