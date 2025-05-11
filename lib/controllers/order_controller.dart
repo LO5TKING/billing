@@ -21,6 +21,8 @@ import 'package:image/image.dart' as img;
 class OrderController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
   List<Uint8List?> newItemList = [];
+  // List to store rate ink objects for each item
+  RxList<Ink> rateInkList = <Ink>[].obs;
 
   final DigitalInkRecognizerModelManager modelManager =
   DigitalInkRecognizerModelManager();
@@ -35,6 +37,8 @@ class OrderController extends GetxController {
   List<StrokePoint> quantityPoints = [];
   String recognizedRate = '';
   String recognizedQuantity = '';
+  // Current item index for rate input
+  RxInt currentRateItemIndex = (-1).obs;
   RxBool showButtons = false.obs;
   // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
@@ -194,6 +198,37 @@ class OrderController extends GetxController {
     recognizedRate = '';
     recognizedQuantity = '';
     update();
+  }
+  
+  // Method to set the current item for rate input
+  void setCurrentRateItem(int index) {
+    if (index >= 0 && index < itemList.length) {
+      currentRateItemIndex.value = index;
+      // Clear the rate ink for new input
+      rateInk.strokes.clear();
+      ratePoints.clear();
+      update();
+    }
+  }
+  
+  // Method to update an item's rate after recognition
+  Future<void> updateItemRate(int index) async {
+    if (index >= 0 && index < itemList.length) {
+      await recogniseRateText();
+      
+      if (recognizedRate.isNotEmpty) {
+        // Update the item's rate
+        itemList[index]['rate'] = recognizedRate;
+        // Clear the rate input
+        rateInk.strokes.clear();
+        ratePoints.clear();
+        // Reset current index
+        currentRateItemIndex.value = -1;
+        update();
+      } else {
+        Get.snackbar("Error", "Rate Not Recognized");
+      }
+    }
   }
 
   Future<bool> isModelDownloaded() async {
@@ -412,7 +447,6 @@ class OrderController extends GetxController {
   }
 
   Future<void> addItem() async {
-    // await recogniseRateText();
     await recogniseQuantityText();
 
     Uint8List? particularImage = await convertToPngBytes(
@@ -421,12 +455,17 @@ class OrderController extends GetxController {
     );
     if (particularImage != null &&
         recognizedQuantity.isNotEmpty) {
+      // Add a new item with empty rate
       itemList.add({
         'particulars': particularImage,
         'quantity': recognizedQuantity,
-        'rate': recognizedRate ?? "0",
+        'rate': "0", // Default rate is 0
       });
+      
+      // Add a new Ink object for this item's rate
+      rateInkList.add(Ink());
 
+      // Scroll to the newly added item
       update();
     } else {
       Get.snackbar("Error", "Field is Empty");
@@ -477,6 +516,8 @@ class OrderController extends GetxController {
 
   void clearPadAndSignature() {
     clearPad();
+    currentRateItemIndex.value = -1; // Reset current rate item index
+    update();
   }
 
   void editItem(int index) {

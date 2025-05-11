@@ -103,7 +103,7 @@ class Billing extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Sabari Vilas'.toUpperCase(),
+                                      'Deepa Farsan'.toUpperCase(),
                                       style: GoogleFonts.poppins(
                                         fontSize: 28,
                                         fontWeight: FontWeight.bold,
@@ -114,7 +114,7 @@ class Billing extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Mob No : 9876567855',
+                                      'Mob No : 9833088124',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,

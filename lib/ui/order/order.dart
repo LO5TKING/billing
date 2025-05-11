@@ -104,7 +104,7 @@ class Order extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Sabari Vilas'.toUpperCase(),
+                                        'Deepa Farsan'.toUpperCase(),
                                         style: GoogleFonts.poppins(
                                           fontSize: 28,
                                           fontWeight: FontWeight.bold,
@@ -115,7 +115,7 @@ class Order extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Mob No : 9876567855',
+                                        'Mob No : 9833088124',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -281,7 +281,7 @@ class Order extends StatelessWidget {
                                           amount.truncateToDouble() == amount
                                               ? amount.toInt().toString()
                                               : amount.toString();
-                                          late List<Ink>? rateInk = [];
+                                          // Get the rate ink for this item
                                           return Row(
                                             children: [
                                               Expanded(
@@ -346,12 +346,27 @@ class Order extends StatelessWidget {
                                                           padding:
                                                           const EdgeInsets.only(
                                                               top: 10.0,left: 40),
-                                                          child: rateTextBox(0.15,rateInk: rateInk[index]),
-
-                                                          // Text(
-                                                          //   item['rate'] ?? '',
-                                                          //   textAlign: TextAlign.right,
-                                                          // ),
+                                                          child: GestureDetector(
+                                                            onTap: () {
+                                                              // Set this item as the current one for rate input
+                                                              orderController.setCurrentRateItem(index);
+                                                            },
+                                                            child: item['rate'] == "0" || orderController.currentRateItemIndex.value == index
+                                                              ? rateTextBox(0.15, itemIndex: index)
+                                                              : Container(
+                                                                  height: 50,
+                                                                  width: Get.width * 0.15,
+                                                                  decoration: BoxDecoration(
+                                                                    border: Border.all(color: AppColors.blueGradient),
+                                                                  ),
+                                                                  alignment: Alignment.center,
+                                                                  child: Text(
+                                                                    item['rate'] ?? '',
+                                                                    textAlign: TextAlign.center,
+                                                                    style: const TextStyle(fontSize: 16),
+                                                                  ),
+                                                                ),
+                                                          ),
                                                         ),
                                                         Padding(
                                                           padding:
@@ -683,53 +698,91 @@ class Order extends StatelessWidget {
     );
   }
 
-  Widget rateTextBox(double widthFactor, {Ink? rateInk}) {
-    // Get the rateInk from the controller using itemIndex
-    return Container(
-      height: 50,
-      width: Get.width * widthFactor,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.blueGradient),
-      ),
-      child: ClipRect(
-        child: Listener(
-          onPointerDown: (event) {
-            if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-              if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
-                rateInk?.strokes.add(Stroke());
-                orderController.update();
-              }
-            }
-          },
-          onPointerMove: (event) {
-            if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-              final RenderObject? object = Get.context?.findRenderObject();
-              final localPosition = (object as RenderBox?)?.globalToLocal(event.localPosition);
-              if (rateInk != null) {
-                if (localPosition != null && rateInk.strokes.isNotEmpty) {
-                  rateInk.strokes.last.points.add(
-                    StrokePoint(
-                      x: localPosition.dx,
-                      y: localPosition.dy,
-                      t: DateTime.now().millisecondsSinceEpoch,
-                    ),
-                  );
-                  orderController.update();  // Update the ink state in controller
+  Widget rateTextBox(double widthFactor, {int? itemIndex}) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          height: 50,
+          width: Get.width * widthFactor,
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.blueGradient),
+          ),
+          child: ClipRect(
+            child: Listener(
+              onPointerDown: (event) {
+                if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                  if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
+                    orderController.rateInk.strokes.add(Stroke());
+                    orderController.update();
+                  }
                 }
-              }
-            }
-          },
-          onPointerUp: (event) {
-            if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-              orderController.update();  // Ensure state is updated after interaction
-            }
-          },
-          child: CustomPaint(
-            painter: SignatureStyle(ink: rateInk),
-            size: Size.infinite,
+              },
+              onPointerMove: (event) {
+                if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                  final RenderObject? object = Get.context?.findRenderObject();
+                  final localPosition = (object as RenderBox?)?.globalToLocal(event.position);
+                  if (localPosition != null && orderController.rateInk.strokes.isNotEmpty) {
+                    orderController.rateInk.strokes.last.points.add(
+                      StrokePoint(
+                        x: localPosition.dx,
+                        y: localPosition.dy,
+                        t: DateTime.now().millisecondsSinceEpoch,
+                      ),
+                    );
+                    orderController.update();  // Update the ink state in controller
+                  }
+                }
+              },
+              onPointerUp: (event) {
+                if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                  orderController.update();  // Ensure state is updated after interaction
+                }
+              },
+              child: CustomPaint(
+                painter: SignatureStyle(ink: orderController.rateInk),
+                size: Size.infinite,
+              ),
+            ),
           ),
         ),
-      ),
+        Positioned(
+          top: -0,
+          right: -0,
+          child: Row(
+            children: [
+              // Cancel button
+              GestureDetector(
+                onTap: () {
+                  orderController.rateInk.strokes.clear();
+                  orderController.ratePoints.clear();
+                  orderController.currentRateItemIndex.value = -1;
+                  orderController.update();
+                },
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                ),
+              ),
+              // Confirm button
+              if (itemIndex != null)
+                GestureDetector(
+                  onTap: () async {
+                    await orderController.updateItemRate(itemIndex);
+                  },
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
