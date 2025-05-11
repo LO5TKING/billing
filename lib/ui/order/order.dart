@@ -26,8 +26,16 @@ class Order extends StatelessWidget {
         return SafeArea(
           child: Stack(
             children: [
-              Scaffold(
-                backgroundColor:AppColors.peachColor,
+              GestureDetector(
+                // Add a GestureDetector to handle clicks outside the rate box
+                onTap: () {
+                  // If a rate box is currently being edited, cancel the edit
+                  if (orderController.currentRateItemIndex.value >= 0) {
+                    orderController.cancelRateEdit();
+                  }
+                },
+                child: Scaffold(
+                  backgroundColor:AppColors.peachColor,
                 body: Container(
                   width: Get.width,
                   height: Get.height * 0.97,
@@ -714,7 +722,7 @@ class Order extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+              ),],
           ),
         );
       },
@@ -735,9 +743,16 @@ class Order extends StatelessWidget {
               border: Border.all(color: AppColors.blueGradient),
             ),
             child: ClipRect(
-              child: Listener(
-                onPointerDown: (event) {
-                  if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+              child: GestureDetector(
+                // Prevent the GestureDetector from handling tap events that should go to the Listener
+                behavior: HitTestBehavior.opaque,
+                // Prevent the outer GestureDetector from capturing this tap
+                onTap: () {
+                  // Prevent the tap from propagating to the outer GestureDetector
+                },
+                child: Listener(
+                  onPointerDown: (event) {
+                    // Handle both stylus and touch events
                     if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
                       // Use the current item's ink object if an index is provided
                       if (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) {
@@ -747,11 +762,8 @@ class Order extends StatelessWidget {
                       }
                       orderController.update();
                     }
-                  }
-                },
-                onPointerMove: (event) {
-                  if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-                    // Use event.localPosition directly instead of globalToLocal conversion
+                  },
+                  onPointerMove: (event) {
                     // Use the current item's ink object if an index is provided
                     Ink inkToUse = (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length)
                         ? orderController.rateInkList[itemIndex]
@@ -767,58 +779,45 @@ class Order extends StatelessWidget {
                       );
                       orderController.update();  // Update the ink state in controller
                     }
-                  }
-                },
-                onPointerUp: (event) {
-                  if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                  },
+                  onPointerUp: (event) {
                     orderController.update();  // Ensure state is updated after interaction
-                  }
-                },
-                child: CustomPaint(
-                  painter: SignatureStyle(ink: (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length)
-                      ? orderController.rateInkList[itemIndex]
-                      : orderController.rateInk),
-                  size: Size.infinite,
+                  },
+                  onPointerCancel: (event) {
+                    // Handle pointer cancel events to prevent issues
+                    debugPrint('Pointer Cancelled in rate box');
+                  },
+                  child: CustomPaint(
+                    painter: SignatureStyle(ink: (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length)
+                        ? orderController.rateInkList[itemIndex]
+                        : orderController.rateInk),
+                    size: Size.infinite,
+                  ),
                 ),
               ),
             ),
           ),
-          // Positioned(
-          //   top: -0,
-          //   right: -0,
-          //   child: Row(
-          //     children: [
-          //       // Cancel button
-          //       // GestureDetector(
-          //       //   onTap: () {
-          //       //     orderController.rateInk.strokes.clear();
-          //       //     orderController.ratePoints.clear();
-          //       //     orderController.currentRateItemIndex.value = -1;
-          //       //     orderController.update();
-          //       //   },
-          //       //   child: Container(
-          //       //     decoration: const BoxDecoration(
-          //       //       shape: BoxShape.circle,
-          //       //     ),
-          //       //     child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
-          //       //   ),
-          //       // ),
-          //       // Confirm button
-          //       if (itemIndex != null)
-          //         GestureDetector(
-          //           onTap: () async {
-          //             await orderController.updateItemRate(itemIndex);
-          //           },
-          //           child: Container(
-          //             decoration: const BoxDecoration(
-          //               shape: BoxShape.circle,
-          //             ),
-          //             child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
-          //           ),
-          //         ),
-          //     ],
-          //   ),
-          // ),
+          Positioned(
+            top: -0,
+            right: -0,
+            child: Row(
+              children: [
+                // Cancel button
+                GestureDetector(
+                  onTap: () {
+                    orderController.cancelRateEdit();
+                  },
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                  ),
+                ),
+                // Confirm button is now in the table row
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -966,12 +965,24 @@ class Order extends StatelessWidget {
   }
 
   /// Helper function to determine if the touch event is inside the bounding box
+  /// Added buffer to better handle touch events near the edges
   bool isTouchInsideBox(Offset localPosition, double widthFactor) {
-    return localPosition.dx >= 0 &&
-        localPosition.dx <= Get.width * widthFactor &&
-        localPosition.dy >= 0 &&
-        localPosition.dy <= 75; // Adjust height if needed
+    // Add a small buffer to ensure we capture events near the edges
+    const double buffer = 5.0;
+    double boxWidth = widthFactor is double ? Get.width * widthFactor : widthFactor;
+    double boxHeight = 75.0; // Default height for description box
+    
+    // For rate box, the height is 50
+    if (boxWidth < Get.width) {
+      boxHeight = 50.0;
+    }
+    
+    return localPosition.dx >= -buffer &&
+        localPosition.dx <= boxWidth + buffer &&
+        localPosition.dy >= -buffer &&
+        localPosition.dy <= boxHeight + buffer;
   }
+
 }
 
 class SignatureStyle extends CustomPainter {
@@ -982,18 +993,38 @@ class SignatureStyle extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (ink == null || ink!.strokes.isEmpty) return;
+    
     final Paint paint = Paint()
       ..color = Colors.black87
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 4.0;
+      ..strokeWidth = 4.0
+      ..isAntiAlias = true; // Enable anti-aliasing for smoother lines
 
     for (final stroke in ink!.strokes) {
+      if (stroke.points.isEmpty) continue;
+      
+      // Handle single point (dot) case
+      if (stroke.points.length == 1) {
+        final point = stroke.points[0];
+        canvas.drawCircle(
+          Offset(point.x.toDouble(), point.y.toDouble()),
+          2.0, // Radius of the dot
+          paint,
+        );
+        continue;
+      }
+      
+      // Draw lines between points for multiple points
       for (int i = 0; i < stroke.points.length - 1; i++) {
         final p1 = stroke.points[i];
         final p2 = stroke.points[i + 1];
-        canvas.drawLine(Offset(p1.x.toDouble(), p1.y.toDouble()),
-            Offset(p2.x.toDouble(), p2.y.toDouble()), paint);
+        canvas.drawLine(
+          Offset(p1.x.toDouble(), p1.y.toDouble()),
+          Offset(p2.x.toDouble(), p2.y.toDouble()),
+          paint,
+        );
       }
     }
   }
@@ -1025,21 +1056,24 @@ class VerticalBorderLines extends StatelessWidget {
             // Third column (QTY - 100/120px based on showButtons)
             SizedBox(width: orderController.showButtons.value
                 ? 118.0
-                : 98), // You might need to adjust this with Obx() if it changes
+                : 98),
+            // You might need to adjust this with Obx() if it changes
             // Vertical line
             _buildVerticalLine(),
 
             // Fourth column (Rate - 100/120px based on showButtons)
             SizedBox(width: orderController.showButtons.value
                 ? 220.0
-                : 200), // You might need to adjust this with Obx() if it changes
+                : 200),
+            // You might need to adjust this with Obx() if it changes
             // Vertical line
             _buildVerticalLine(),
 
             // Fifth column (Amount - 100/120px based on showButtons)
             SizedBox(width: orderController.showButtons.value
                 ? 145.0
-                : 120), // You might need to adjust this with Obx() if it changes
+                : 120),
+            // You might need to adjust this with Obx() if it changes
           ],
         ),
     );

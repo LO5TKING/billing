@@ -226,6 +226,13 @@ class OrderController extends GetxController {
           ? rateInkList[index] 
           : rateInk;
       
+      // Check if there are any strokes to recognize
+      if (inkToUse.strokes.isEmpty) {
+        // If no strokes, don't update the rate and show a message
+        Get.snackbar("Info", "No rate input detected. Please write a rate first.");
+        return;
+      }
+      
       // Temporarily set the rateInk to the item's ink for recognition
       Ink tempInk = rateInk;
       rateInk = inkToUse;
@@ -254,6 +261,20 @@ class OrderController extends GetxController {
         // Keep the current item selected so user can retry
       }
     }
+  }
+  
+  // Method to cancel rate editing and restore previous state
+  void cancelRateEdit() {
+    // Clear the current rate ink
+    if (currentRateItemIndex.value >= 0 && currentRateItemIndex.value < rateInkList.length) {
+      rateInkList[currentRateItemIndex.value].strokes.clear();
+    }
+    rateInk.strokes.clear();
+    ratePoints.clear();
+    
+    // Reset current index to exit edit mode
+    currentRateItemIndex.value = -1;
+    update();
   }
 
   Future<bool> isModelDownloaded() async {
@@ -419,8 +440,8 @@ class OrderController extends GetxController {
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
     // Increase the size by 50% for better visibility
-    width = width * 1.5;
-    height = height * 1.5;
+    width = width * 2;
+    height = height * 1.7;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(
