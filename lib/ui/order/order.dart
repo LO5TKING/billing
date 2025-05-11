@@ -202,7 +202,7 @@ class Order extends StatelessWidget {
                                                 ? 125.0
                                                 : 100), // Amount
                                       },
-                                      children: const [
+                                      children: [
                                         TableRow(
                                           decoration: BoxDecoration(
                                               color: AppColors.blueGradient
@@ -345,7 +345,7 @@ class Order extends StatelessWidget {
                                                         Padding(
                                                           padding:
                                                           const EdgeInsets.only(
-                                                              top: 10.0,left: 40),
+                                                              top: 10.0,left: 29),
                                                           child: GestureDetector(
                                                             onTap: () {
                                                               // Set this item as the current one for rate input
@@ -372,9 +372,28 @@ class Order extends StatelessWidget {
                                                           padding:
                                                           const EdgeInsets.only(
                                                               top: 22.0,right: 10),
-                                                          child: Text(
-                                                            '$amountDisplay',
-                                                            textAlign: TextAlign.right,
+                                                          child: Row(
+                                                            children: [
+                                                              Spacer(),
+                                                              if (!index.isNegative)
+                                                                GestureDetector(
+                                                                  onTap: () async {
+                                                                    await orderController.updateItemRate(index);
+                                                                  },
+                                                                  child: Container(
+                                                                    decoration: const BoxDecoration(
+                                                                      shape: BoxShape.circle,
+                                                                    ),
+                                                                    child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
+                                                                  ),
+                                                                ),
+                                                              Spacer(),
+                                                              Text(
+                                                                '$amountDisplay',
+                                                                textAlign: TextAlign.right,
+                                                              ),
+                                                              Spacer(),
+                                                            ],
                                                           ),
                                                         ),
                                                       ],
@@ -713,20 +732,29 @@ class Order extends StatelessWidget {
               onPointerDown: (event) {
                 if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
                   if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
-                    orderController.rateInk.strokes.add(Stroke());
+                    // Use the current item's ink object if an index is provided
+                    if (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) {
+                      orderController.rateInkList[itemIndex].strokes.add(Stroke());
+                    } else {
+                      orderController.rateInk.strokes.add(Stroke());
+                    }
                     orderController.update();
                   }
                 }
               },
               onPointerMove: (event) {
                 if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-                  final RenderObject? object = Get.context?.findRenderObject();
-                  final localPosition = (object as RenderBox?)?.globalToLocal(event.position);
-                  if (localPosition != null && orderController.rateInk.strokes.isNotEmpty) {
-                    orderController.rateInk.strokes.last.points.add(
+                  // Use event.localPosition directly instead of globalToLocal conversion
+                  // Use the current item's ink object if an index is provided
+                  Ink inkToUse = (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) 
+                      ? orderController.rateInkList[itemIndex] 
+                      : orderController.rateInk;
+                  
+                  if (inkToUse.strokes.isNotEmpty) {
+                    inkToUse.strokes.last.points.add(
                       StrokePoint(
-                        x: localPosition.dx,
-                        y: localPosition.dy,
+                        x: event.localPosition.dx,
+                        y: event.localPosition.dy,
                         t: DateTime.now().millisecondsSinceEpoch,
                       ),
                     );
@@ -740,48 +768,50 @@ class Order extends StatelessWidget {
                 }
               },
               child: CustomPaint(
-                painter: SignatureStyle(ink: orderController.rateInk),
+                painter: SignatureStyle(ink: (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) 
+                    ? orderController.rateInkList[itemIndex] 
+                    : orderController.rateInk),
                 size: Size.infinite,
               ),
             ),
           ),
         ),
-        Positioned(
-          top: -0,
-          right: -0,
-          child: Row(
-            children: [
-              // Cancel button
-              GestureDetector(
-                onTap: () {
-                  orderController.rateInk.strokes.clear();
-                  orderController.ratePoints.clear();
-                  orderController.currentRateItemIndex.value = -1;
-                  orderController.update();
-                },
-                child: Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
-                ),
-              ),
-              // Confirm button
-              if (itemIndex != null)
-                GestureDetector(
-                  onTap: () async {
-                    await orderController.updateItemRate(itemIndex);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
-                  ),
-                ),
-            ],
-          ),
-        ),
+        // Positioned(
+        //   top: -0,
+        //   right: -0,
+        //   child: Row(
+        //     children: [
+        //       // Cancel button
+        //       // GestureDetector(
+        //       //   onTap: () {
+        //       //     orderController.rateInk.strokes.clear();
+        //       //     orderController.ratePoints.clear();
+        //       //     orderController.currentRateItemIndex.value = -1;
+        //       //     orderController.update();
+        //       //   },
+        //       //   child: Container(
+        //       //     decoration: const BoxDecoration(
+        //       //       shape: BoxShape.circle,
+        //       //     ),
+        //       //     child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+        //       //   ),
+        //       // ),
+        //       // Confirm button
+        //       if (itemIndex != null)
+        //         GestureDetector(
+        //           onTap: () async {
+        //             await orderController.updateItemRate(itemIndex);
+        //           },
+        //           child: Container(
+        //             decoration: const BoxDecoration(
+        //               shape: BoxShape.circle,
+        //             ),
+        //             child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
+        //           ),
+        //         ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }

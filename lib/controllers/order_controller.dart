@@ -29,7 +29,7 @@ class OrderController extends GetxController {
   final String language = 'en-US';
   late final DigitalInkRecognizer digitalInkRecognizer =
   DigitalInkRecognizer(languageCode: language);
-  final Ink rateInk = Ink();
+  late Ink rateInk = Ink();
   final Ink quantityInk = Ink();
   final Ink descriptionInk = Ink();
   List<StrokePoint> ratePoints = [];
@@ -205,6 +205,9 @@ class OrderController extends GetxController {
     if (index >= 0 && index < itemList.length) {
       currentRateItemIndex.value = index;
       // Clear the rate ink for new input
+      if (index < rateInkList.length) {
+        rateInkList[index].strokes.clear();
+      }
       rateInk.strokes.clear();
       ratePoints.clear();
       update();
@@ -214,12 +217,27 @@ class OrderController extends GetxController {
   // Method to update an item's rate after recognition
   Future<void> updateItemRate(int index) async {
     if (index >= 0 && index < itemList.length) {
+      // Use the item-specific ink object for recognition
+      Ink inkToUse = (index >= 0 && index < rateInkList.length) 
+          ? rateInkList[index] 
+          : rateInk;
+      
+      // Temporarily set the rateInk to the item's ink for recognition
+      Ink tempInk = rateInk;
+      rateInk = inkToUse;
+      
       await recogniseRateText();
+      
+      // Restore the original rateInk
+      rateInk = tempInk;
       
       if (recognizedRate.isNotEmpty) {
         // Update the item's rate
         itemList[index]['rate'] = recognizedRate;
         // Clear the rate input
+        if (index < rateInkList.length) {
+          rateInkList[index].strokes.clear();
+        }
         rateInk.strokes.clear();
         ratePoints.clear();
         // Reset current index
