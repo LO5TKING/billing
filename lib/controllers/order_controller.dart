@@ -203,13 +203,17 @@ class OrderController extends GetxController {
   // Method to set the current item for rate input
   void setCurrentRateItem(int index) {
     if (index >= 0 && index < itemList.length) {
-      currentRateItemIndex.value = index;
-      // Clear the rate ink for new input
-      if (index < rateInkList.length) {
-        rateInkList[index].strokes.clear();
+      // Only clear ink if we're switching to a different item
+      if (currentRateItemIndex.value != index) {
+        // Clear the rate ink for new input
+        if (index < rateInkList.length) {
+          rateInkList[index].strokes.clear();
+        }
+        rateInk.strokes.clear();
+        ratePoints.clear();
       }
-      rateInk.strokes.clear();
-      ratePoints.clear();
+      
+      currentRateItemIndex.value = index;
       update();
     }
   }
@@ -234,7 +238,7 @@ class OrderController extends GetxController {
       if (recognizedRate.isNotEmpty) {
         // Update the item's rate
         itemList[index]['rate'] = recognizedRate;
-        // Clear the rate input
+        // Clear the rate input only on successful recognition
         if (index < rateInkList.length) {
           rateInkList[index].strokes.clear();
         }
@@ -244,7 +248,10 @@ class OrderController extends GetxController {
         currentRateItemIndex.value = -1;
         update();
       } else {
-        Get.snackbar("Error", "Rate Not Recognized");
+        // Don't clear ink strokes on failed recognition so user can try again
+        // Just show an error message
+        Get.snackbar("Error", "Rate Not Recognized. Please try again.");
+        // Keep the current item selected so user can retry
       }
     }
   }
@@ -334,24 +341,35 @@ class OrderController extends GetxController {
             .replaceAll('B', '3')
             .replaceAll('S', '5')
             .replaceAll('Z', '2')
-            .replaceAll('T', '7');
+            .replaceAll('T', '7')
+            .replaceAll(',', '.'); // Replace comma with period for decimal
 
+        // Improved regex to better handle decimal points
         recognizedRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
+        
+        // Handle multiple decimal points - keep only the first one
+        if (recognizedRate.contains('.')) {
+          final parts = recognizedRate.split('.');
+          if (parts.length > 2) {
+            recognizedRate = parts[0] + '.' + parts.sublist(1).join('');
+          }
+        }
 
-        // If no digits are found after cleaning, set as 'No'
+        // If no digits are found after cleaning, show error but don't clear ink
         if (recognizedRate.isEmpty) {
-          rateInk.strokes.clear();
-          ratePoints.clear();
           Get.snackbar("Error", "Rate Not Recognized");
-
+          // Don't clear ink strokes so user can try again
           // recognizedRate = 'No';
         }
       } else {
-        recognizedRate = 'No candidates recognized';
+        Get.snackbar("Error", "No text recognized. Please try again.");
       }
 
       update();
-    } catch (e) {}
+    } catch (e) {
+      print('Error in recogniseRateText: $e');
+      Get.snackbar("Error", "Failed to recognize text");
+    }
   }
 
   Future<void> recogniseQuantityText() async {

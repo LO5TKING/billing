@@ -279,8 +279,8 @@ class Order extends StatelessWidget {
                                           final amount = rate * quantity;
                                           final amountDisplay =
                                           amount.truncateToDouble() == amount
-                                              ? amount.toInt().toString()
-                                              : amount.toString();
+                                              ? amount.toStringAsFixed(2)
+                                              : amount.toStringAsFixed(2);
                                           // Get the rate ink for this item
                                           return Row(
                                             children: [
@@ -345,7 +345,7 @@ class Order extends StatelessWidget {
                                                         Padding(
                                                           padding:
                                                           const EdgeInsets.only(
-                                                              top: 10.0,left: 29),
+                                                              top: 10.0,left: 40),
                                                           child: GestureDetector(
                                                             onTap: () {
                                                               // Set this item as the current one for rate input
@@ -353,25 +353,29 @@ class Order extends StatelessWidget {
                                                             },
                                                             child: item['rate'] == "0" || orderController.currentRateItemIndex.value == index
                                                               ? rateTextBox(0.15, itemIndex: index)
-                                                              : Container(
-                                                                  height: 50,
-                                                                  width: Get.width * 0.15,
-                                                                  decoration: BoxDecoration(
-                                                                    border: Border.all(color: AppColors.blueGradient),
+                                                              : Material(
+                                                              elevation: 30,
+                                                                color: AppColors.peachColor,
+                                                                child: Container(
+                                                                    height: 50,
+                                                                    width: Get.width * 0.15,
+                                                                    decoration: BoxDecoration(
+                                                                      border: Border.all(color: AppColors.blueGradient),
+                                                                    ),
+                                                                    alignment: Alignment.center,
+                                                                    child: Text(
+                                                                      item['rate'] ?? '',
+                                                                      textAlign: TextAlign.center,
+                                                                      style: const TextStyle(fontSize: 16),
+                                                                    ),
                                                                   ),
-                                                                  alignment: Alignment.center,
-                                                                  child: Text(
-                                                                    item['rate'] ?? '',
-                                                                    textAlign: TextAlign.center,
-                                                                    style: const TextStyle(fontSize: 16),
-                                                                  ),
-                                                                ),
+                                                              ),
                                                           ),
                                                         ),
-                                                        Padding(
-                                                          padding:
+                                                        Container(
+                                                          margin:
                                                           const EdgeInsets.only(
-                                                              top: 22.0,right: 10),
+                                                              top: 22.0,right: 10,),
                                                           child: Row(
                                                             children: [
                                                               Spacer(),
@@ -389,7 +393,7 @@ class Order extends StatelessWidget {
                                                                 ),
                                                               Spacer(),
                                                               Text(
-                                                                '$amountDisplay',
+                                                                '${amountDisplay}',
                                                                 textAlign: TextAlign.right,
                                                               ),
                                                               Spacer(),
@@ -718,101 +722,105 @@ class Order extends StatelessWidget {
   }
 
   Widget rateTextBox(double widthFactor, {int? itemIndex}) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          height: 50,
-          width: Get.width * widthFactor,
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.blueGradient),
-          ),
-          child: ClipRect(
-            child: Listener(
-              onPointerDown: (event) {
-                if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-                  if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
-                    // Use the current item's ink object if an index is provided
-                    if (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) {
-                      orderController.rateInkList[itemIndex].strokes.add(Stroke());
-                    } else {
-                      orderController.rateInk.strokes.add(Stroke());
+    return Material(
+      color: AppColors.peachColor,
+      elevation: 30,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            height: 50,
+            width: Get.width,
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.blueGradient),
+            ),
+            child: ClipRect(
+              child: Listener(
+                onPointerDown: (event) {
+                  if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                    if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
+                      // Use the current item's ink object if an index is provided
+                      if (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) {
+                        orderController.rateInkList[itemIndex].strokes.add(Stroke());
+                      } else {
+                        orderController.rateInk.strokes.add(Stroke());
+                      }
+                      orderController.update();
                     }
-                    orderController.update();
                   }
-                }
-              },
-              onPointerMove: (event) {
-                if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-                  // Use event.localPosition directly instead of globalToLocal conversion
-                  // Use the current item's ink object if an index is provided
-                  Ink inkToUse = (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) 
-                      ? orderController.rateInkList[itemIndex] 
-                      : orderController.rateInk;
-                  
-                  if (inkToUse.strokes.isNotEmpty) {
-                    inkToUse.strokes.last.points.add(
-                      StrokePoint(
-                        x: event.localPosition.dx,
-                        y: event.localPosition.dy,
-                        t: DateTime.now().millisecondsSinceEpoch,
-                      ),
-                    );
-                    orderController.update();  // Update the ink state in controller
+                },
+                onPointerMove: (event) {
+                  if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                    // Use event.localPosition directly instead of globalToLocal conversion
+                    // Use the current item's ink object if an index is provided
+                    Ink inkToUse = (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length)
+                        ? orderController.rateInkList[itemIndex]
+                        : orderController.rateInk;
+
+                    if (inkToUse.strokes.isNotEmpty) {
+                      inkToUse.strokes.last.points.add(
+                        StrokePoint(
+                          x: event.localPosition.dx,
+                          y: event.localPosition.dy,
+                          t: DateTime.now().millisecondsSinceEpoch,
+                        ),
+                      );
+                      orderController.update();  // Update the ink state in controller
+                    }
                   }
-                }
-              },
-              onPointerUp: (event) {
-                if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
-                  orderController.update();  // Ensure state is updated after interaction
-                }
-              },
-              child: CustomPaint(
-                painter: SignatureStyle(ink: (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) 
-                    ? orderController.rateInkList[itemIndex] 
-                    : orderController.rateInk),
-                size: Size.infinite,
+                },
+                onPointerUp: (event) {
+                  if (event.kind == PointerDeviceKind.stylus || event.kind == PointerDeviceKind.touch) {
+                    orderController.update();  // Ensure state is updated after interaction
+                  }
+                },
+                child: CustomPaint(
+                  painter: SignatureStyle(ink: (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length)
+                      ? orderController.rateInkList[itemIndex]
+                      : orderController.rateInk),
+                  size: Size.infinite,
+                ),
               ),
             ),
           ),
-        ),
-        // Positioned(
-        //   top: -0,
-        //   right: -0,
-        //   child: Row(
-        //     children: [
-        //       // Cancel button
-        //       // GestureDetector(
-        //       //   onTap: () {
-        //       //     orderController.rateInk.strokes.clear();
-        //       //     orderController.ratePoints.clear();
-        //       //     orderController.currentRateItemIndex.value = -1;
-        //       //     orderController.update();
-        //       //   },
-        //       //   child: Container(
-        //       //     decoration: const BoxDecoration(
-        //       //       shape: BoxShape.circle,
-        //       //     ),
-        //       //     child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
-        //       //   ),
-        //       // ),
-        //       // Confirm button
-        //       if (itemIndex != null)
-        //         GestureDetector(
-        //           onTap: () async {
-        //             await orderController.updateItemRate(itemIndex);
-        //           },
-        //           child: Container(
-        //             decoration: const BoxDecoration(
-        //               shape: BoxShape.circle,
-        //             ),
-        //             child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
-        //           ),
-        //         ),
-        //     ],
-        //   ),
-        // ),
-      ],
+          // Positioned(
+          //   top: -0,
+          //   right: -0,
+          //   child: Row(
+          //     children: [
+          //       // Cancel button
+          //       // GestureDetector(
+          //       //   onTap: () {
+          //       //     orderController.rateInk.strokes.clear();
+          //       //     orderController.ratePoints.clear();
+          //       //     orderController.currentRateItemIndex.value = -1;
+          //       //     orderController.update();
+          //       //   },
+          //       //   child: Container(
+          //       //     decoration: const BoxDecoration(
+          //       //       shape: BoxShape.circle,
+          //       //     ),
+          //       //     child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+          //       //   ),
+          //       // ),
+          //       // Confirm button
+          //       if (itemIndex != null)
+          //         GestureDetector(
+          //           onTap: () async {
+          //             await orderController.updateItemRate(itemIndex);
+          //           },
+          //           child: Container(
+          //             decoration: const BoxDecoration(
+          //               shape: BoxShape.circle,
+          //             ),
+          //             child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
+          //           ),
+          //         ),
+          //     ],
+          //   ),
+          // ),
+        ],
+      ),
     );
   }
 
