@@ -195,7 +195,7 @@ class Order extends StatelessWidget {
                                     // Table header
                                     Table(
                                       columnWidths: {
-                                        0: const FixedColumnWidth(60.0), // Sr.No
+                                        0: const FixedColumnWidth(100.0), // Sr.No
                                         1: const FlexColumnWidth(), // Particulars
                                         2: FixedColumnWidth(
                                             orderController.showButtons.value
@@ -210,7 +210,7 @@ class Order extends StatelessWidget {
                                                 ? 125.0
                                                 : 100), // Amount
                                       },
-                                      children: [
+                                      children: const [
                                         TableRow(
                                           decoration: BoxDecoration(
                                               color: AppColors.blueGradient
@@ -295,7 +295,7 @@ class Order extends StatelessWidget {
                                               Expanded(
                                                 child: Table(
                                                   columnWidths: {
-                                                    0: const FixedColumnWidth(60.0),
+                                                    0: const FixedColumnWidth(100.0),
                                                     1: const FlexColumnWidth(),
                                                     2: FixedColumnWidth(
                                                         orderController
@@ -319,10 +319,23 @@ class Order extends StatelessWidget {
                                                         Padding(
                                                           padding:
                                                           const EdgeInsets.only(
-                                                              top: 22.0),
-                                                          child: Text(
-                                                            '${index + 1}',
-                                                            textAlign: TextAlign.center,
+                                                              top: 10.0),
+                                                          child: Row(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              SizedBox(
+                                                                width: 100,
+                                                                height: 60,
+                                                                child: CheckboxListTile(
+                                                                  controlAffinity: ListTileControlAffinity.trailing,
+                                                                  title: Text('${index + 1}'),
+                                                                  value: item['checked'] ?? false,
+                                                                  activeColor: AppColors.blueGradient,
+                                                                  onChanged: (value) => orderController.toggleCheckbox(index),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ),
                                                         Padding(
@@ -333,12 +346,14 @@ class Order extends StatelessWidget {
                                                               ? Container(
                                                               alignment:
                                                               Alignment.topLeft,
+                                                              width: 300,
                                                               child: Image.memory(
                                                                   item[
                                                                   'particulars'],
                                                                   height: 65,
+                                                                  width: 300,
                                                                   fit: BoxFit
-                                                                      .contain))
+                                                                      .fill))
                                                               : Container(),
                                                         ),
                                                         Padding(
@@ -1044,7 +1059,7 @@ class VerticalBorderLines extends StatelessWidget {
         Row(
           children: [
             // First column (Sr.No - 60px)
-            const SizedBox(width: 60),
+            const SizedBox(width: 100),
             // Vertical line
             _buildVerticalLine(),
 

@@ -20,6 +20,13 @@ import 'package:image/image.dart' as img;
 
 class OrderController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
+  // Method to toggle checkbox state
+  void toggleCheckbox(int index) {
+    if (index >= 0 && index < itemList.length) {
+      itemList[index]['checked'] = !(itemList[index]['checked'] ?? false);
+      update();
+    }
+  }
   List<Uint8List?> newItemList = [];
   // List to store rate ink objects for each item
   RxList<Ink> rateInkList = <Ink>[].obs;
@@ -440,7 +447,7 @@ class OrderController extends GetxController {
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
     // Increase the size by 50% for better visibility
-    width = width * 2;
+    width = width * 1;
     height = height * 1.7;
 
     final recorder = ui.PictureRecorder();
@@ -507,7 +514,7 @@ class OrderController extends GetxController {
     await recogniseQuantityText();
 
     Uint8List? particularImage = await convertToPngBytes(
-      Get.width * 0.8, // Keep the width proportional
+      Get.width, // Keep the width proportional
       85, // Reduced height from 100 to 85 for less vertical space
     );
     if (particularImage != null &&
@@ -517,6 +524,7 @@ class OrderController extends GetxController {
         'particulars': particularImage,
         'quantity': recognizedQuantity,
         'rate': "0", // Default rate is 0
+        'checked': false, // Initialize checkbox state
       });
       
       // Add a new Ink object for this item's rate
