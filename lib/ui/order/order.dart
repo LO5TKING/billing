@@ -31,7 +31,9 @@ class Order extends StatelessWidget {
                 onTap: () {
                   // If a rate box is currently being edited, cancel the edit
                   if (orderController.currentRateItemIndex.value >= 0) {
-                    orderController.cancelRateEdit();
+                    // Pass the current index to cancelRateEdit
+                    int currentIndex = orderController.currentRateItemIndex.value;
+                    orderController.cancelRateEdit(currentIndex);
                   }
                 },
                 child: Scaffold(
@@ -820,7 +822,8 @@ class Order extends StatelessWidget {
                 // Cancel button
                 GestureDetector(
                   onTap: () {
-                    orderController.cancelRateEdit();
+                    // Pass the itemIndex to cancelRateEdit
+                    orderController.cancelRateEdit(itemIndex);
                   },
                   child: Container(
                     decoration: const BoxDecoration(

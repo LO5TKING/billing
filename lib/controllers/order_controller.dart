@@ -271,16 +271,24 @@ class OrderController extends GetxController {
   }
   
   // Method to cancel rate editing and restore previous state
-  void cancelRateEdit() {
-    // Clear the current rate ink
-    if (currentRateItemIndex.value >= 0 && currentRateItemIndex.value < rateInkList.length) {
-      rateInkList[currentRateItemIndex.value].strokes.clear();
+  void cancelRateEdit([int? index]) {
+    // Use provided index if available, otherwise use current index
+    int currentIndex = index ?? currentRateItemIndex.value;
+    
+    // Clear the specific ink for the current rate box
+    if (currentIndex >= 0 && currentIndex < rateInkList.length) {
+      // Make sure to clear all strokes from this specific ink
+      rateInkList[currentIndex] = Ink(); // Replace with a new empty Ink object
     }
-    rateInk.strokes.clear();
+    
+    // Always clear the temporary ink used for recognition
+    rateInk = Ink(); // Replace with a new empty Ink object
     ratePoints.clear();
     
     // Reset current index to exit edit mode
     currentRateItemIndex.value = -1;
+    
+    // Force UI update
     update();
   }
 
