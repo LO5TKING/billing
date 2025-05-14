@@ -1,5 +1,7 @@
 import 'dart:ui' as ui;
 
+import 'package:billing/app/config/constants_text.dart';
+import 'package:billing/utils/constants.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
@@ -145,7 +147,7 @@ class PrintController extends GetxController {
 
     // Load and add the logo image with minimal top spacing
     try {
-      final ByteData imageData = await rootBundle.load('assets/sai.png');
+      final ByteData imageData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = imageData.buffer.asUint8List();
       final img.Image logoImage = img.decodeImage(logoBytes)!;
       final img.Image resizedLogo =
@@ -157,7 +159,7 @@ class PrintController extends GetxController {
 
     // Add receipt header with minimal spacing
     bytes += generator.text(
-      'Deepa Farsan'.toUpperCase(),
+      ConstantsText.shopName.toUpperCase(),
       styles: PosStyles(
           align: PosAlign.center,
           bold: true,
@@ -166,7 +168,7 @@ class PrintController extends GetxController {
     );
 
     bytes += generator.text(
-      'Shop No.86 Shell Colony,Chembur Mumbai-400017\nMail ID: deepafarsan@gmail.com\nMobile No: 9833088124',
+      '${ConstantsText.address}\n${ConstantsText.mobileNo}',
       styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
     );
     bytes += generator.feed(1);
@@ -219,9 +221,9 @@ class PrintController extends GetxController {
     bytes += generator.hr();
 
     // Calculate total
-    final total = items.fold<int>(0, (sum, item) {
-      final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
-      final rate = int.tryParse(item['rate'].toString()) ?? 0;
+    final total = items.fold<double>(0, (sum, item) {
+      final quantity = double.tryParse(item['quantity'].toString()) ?? 0;
+      final rate = double.tryParse(item['rate'].toString()) ?? 0;
       return sum + (quantity * rate);
     });
 
@@ -234,8 +236,8 @@ class PrintController extends GetxController {
       for (var item in batch) {
         try {
           if (item['particulars'] != null && item['particulars'] is Uint8List) {
-            final quantity = int.tryParse(item['quantity'].toString()) ?? 0;
-            final rate = int.tryParse(item['rate'].toString()) ?? 0;
+            final quantity = double.tryParse(item['quantity'].toString()) ?? 0;
+            final rate = double.tryParse(item['rate'].toString()) ?? 0;
             final amount = quantity * rate;
 
             // Create a canvas for the complete row

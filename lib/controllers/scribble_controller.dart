@@ -13,6 +13,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../app/config/constants_text.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
@@ -552,7 +553,7 @@ class ScribbleController extends GetxController {
       final pdf = pw.Document();
 
       // Load Ganesh logo as Uint8List
-      final ByteData logoData = await rootBundle.load('assets/sai.png');
+      final ByteData logoData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = logoData.buffer.asUint8List();
 
       pdf.addPage(
@@ -566,12 +567,11 @@ class ScribbleController extends GetxController {
                 pw.Image(pw.MemoryImage(logoBytes), width: 50, height: 50),
                 pw.SizedBox(height: 8),
                 // Business details
-                pw.Text('SHRI GANESH FARSAN',
+                pw.Text(ConstantsText.shopName,
                     style: pw.TextStyle(
                         fontWeight: pw.FontWeight.bold, fontSize: 18)),
-                pw.Text('95/96, Floor-0, Balaji Nagar kk krishnana Menan Marg'),
-                pw.Text('90 Feet Road, Dharavi, Mumbai-400017'),
-                pw.Text('Mobile No: 9324755451'),
+                pw.Text('${ConstantsText.address}\n'),
+                pw.Text('${ConstantsText.mobileNo}'),
                 pw.SizedBox(height: 8),
                 // Date and Time
                 pw.Row(
