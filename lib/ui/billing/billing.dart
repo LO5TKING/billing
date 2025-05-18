@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 // import 'package:pdf/pdf.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 
+import '../../app/config/constants_text.dart';
 import '../../utils/utility.dart';
 
 class Billing extends StatelessWidget {
@@ -103,7 +104,7 @@ class Billing extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Shri Ganesh Farsan'.toUpperCase(),
+                                      ConstantsText.shopName.toUpperCase(),
                                       style: GoogleFonts.poppins(
                                         fontSize: 28,
                                         fontWeight: FontWeight.bold,
@@ -114,7 +115,7 @@ class Billing extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Mob No : 9324755451',
+                                      ConstantsText.mobileNo,
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,

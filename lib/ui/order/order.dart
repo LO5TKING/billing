@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 // import 'package:pdf/pdf.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 
+import '../../app/config/constants_text.dart';
 import '../../controllers/order_controller.dart';
 import '../../utils/utility.dart';
 
@@ -114,7 +115,7 @@ class Order extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Deepa Farsan'.toUpperCase(),
+                                        ConstantsText.shopName.toUpperCase(),
                                         style: GoogleFonts.poppins(
                                           fontSize: 28,
                                           fontWeight: FontWeight.bold,
@@ -125,7 +126,7 @@ class Order extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Mob No : 9833088124',
+                                        ConstantsText.mobileNo,
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -142,7 +143,7 @@ class Order extends StatelessWidget {
                       // Input row (unchanged)
                       Row(
                         children: [
-                          descBox(0.50),
+                          descBox(0.44),
                           const SizedBox(
                             width: 5,
                           ),
@@ -279,6 +280,10 @@ class Order extends StatelessWidget {
                                         itemCount: orderController.itemList.length,
                                         padding: EdgeInsets.zero,
                                         controller: scrollController,
+                                        // Disable scrolling when editing a rate box or when drawing ink
+                                        physics: orderController.currentRateItemIndex.value >= 0 || orderController.ratePoints.isNotEmpty
+                                            ? const NeverScrollableScrollPhysics()
+                                            : const AlwaysScrollableScrollPhysics(),
                                         itemBuilder: (context, index) {
                                           final item = orderController.itemList[index];
                                           final rate =
@@ -771,6 +776,13 @@ class Order extends StatelessWidget {
                   onPointerDown: (event) {
                     // Handle both stylus and touch events
                     if (isTouchInsideBox(event.localPosition, Get.width * widthFactor)) {
+                      // Add a point to ratePoints to trigger scroll locking via physics property
+                      orderController.ratePoints.add(StrokePoint(
+                        x: event.localPosition.dx,
+                        y: event.localPosition.dy,
+                        t: DateTime.now().millisecondsSinceEpoch,
+                      ));
+                      
                       // Use the current item's ink object if an index is provided
                       if (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) {
                         orderController.rateInkList[itemIndex].strokes.add(Stroke());
@@ -798,7 +810,8 @@ class Order extends StatelessWidget {
                     }
                   },
                   onPointerUp: (event) {
-                    orderController.update();  // Ensure state is updated after interaction
+                    // State is updated after interaction
+                    orderController.update();
                   },
                   onPointerCancel: (event) {
                     // Handle pointer cancel events to prevent issues
