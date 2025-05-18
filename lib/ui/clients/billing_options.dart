@@ -1,8 +1,10 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
+import 'package:billing/controllers/purchase_controller.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/clients/search_add_client_details.dart';
 import 'package:billing/ui/guest/add_guest.dart';
+import 'package:billing/ui/purchase/purchase.dart';
 import 'package:billing/ui/reports/search_and_reports.dart';
 import 'package:billing/ui/return/return_items.dart';
 import 'package:billing/ui/settings/setting_options.dart';
@@ -13,13 +15,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 
 import '../../controllers/order_controller.dart';
-import '../../controllers/scribble_controller.dart';
+import '../../controllers/billing_controller.dart';
 import '../../utils/utility.dart';
 import '../order/order.dart';
 
 class BillingOptions extends StatelessWidget {
-  ScribbleController scribbleController = Get.put(ScribbleController());
+  BillingController scribbleController = Get.put(BillingController());
   OrderController orderController = Get.put(OrderController());
+  PurchaseController purchaseController = Get.put(PurchaseController());
 
   BillingOptions({super.key});
 
@@ -112,7 +115,7 @@ class BillingOptions extends StatelessWidget {
                                   text: 'Purchase',
                                   icon: Icons.book,
                                   onItemTap: () {
-                                    Get.to(() => Billing());
+                                    Get.to(() => Purchase());
                                   }),
                               billingOptionsBlock(
                                   text: 'Reports',

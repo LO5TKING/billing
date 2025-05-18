@@ -1,6 +1,6 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
-import 'package:billing/controllers/scribble_controller.dart';
+import 'package:billing/controllers/billing_controller.dart';
 import 'package:billing/print/print_page.dart';
 import 'package:billing/utils/one_pointer_widget.dart';
 import 'package:flutter/gestures.dart';
@@ -18,7 +18,6 @@ class Order extends StatelessWidget {
   OrderController orderController = Get.find<OrderController>();
   final ScrollController scrollController = ScrollController();
 
-  Map<int, List<Offset>> fingerPaths = {};
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +197,10 @@ class Order extends StatelessWidget {
                                     // Table header
                                     Table(
                                       columnWidths: {
-                                        0: const FixedColumnWidth(100.0), // Sr.No
+                                        0:  FixedColumnWidth(
+                                            orderController.showButtons.value
+                                            ? 0.0
+                                            : 100), // Sr.No
                                         1: const FlexColumnWidth(), // Particulars
                                         2: FixedColumnWidth(
                                             orderController.showButtons.value
@@ -213,7 +215,7 @@ class Order extends StatelessWidget {
                                                 ? 125.0
                                                 : 100), // Amount
                                       },
-                                      children: const [
+                                      children:  [
                                         TableRow(
                                           decoration: BoxDecoration(
                                               color: AppColors.blueGradient
@@ -222,7 +224,9 @@ class Order extends StatelessWidget {
                                             TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
-                                                child: Text('Sr. No.',
+                                                child: Text( orderController.showButtons.value
+                                                    ? ""
+                                                    : "Sr. No.",
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                         color: Colors.white,
@@ -302,7 +306,10 @@ class Order extends StatelessWidget {
                                               Expanded(
                                                 child: Table(
                                                   columnWidths: {
-                                                    0: const FixedColumnWidth(100.0),
+                                                    0: FixedColumnWidth(
+                                                        orderController.showButtons.value
+                                                        ? 0.0
+                                                        : 100),
                                                     1: const FlexColumnWidth(),
                                                     2: FixedColumnWidth(
                                                         orderController
@@ -1075,7 +1082,9 @@ class VerticalBorderLines extends StatelessWidget {
         Row(
           children: [
             // First column (Sr.No - 60px)
-            const SizedBox(width: 100),
+            SizedBox(width: orderController.showButtons.value
+                ? 0.0
+                : 100),
             // Vertical line
             _buildVerticalLine(),
 

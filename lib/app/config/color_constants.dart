@@ -37,7 +37,7 @@ class AppColors {
 
   //loading color
   static const baseLoadColor = Color(0xfffbfbfb);
-  static const blackLead = Color(0xff250e02);
+  static const blackLead = Color(0xff471d04);
   static const lighGreyLoad = Color(0xfffefefe);
   static const highlightLoadColor = Color(0xffe4e4e4);
 

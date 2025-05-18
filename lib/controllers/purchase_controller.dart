@@ -19,25 +19,16 @@ import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
 import 'package:image/image.dart' as img;
 
-class OrderController extends GetxController {
+class PurchaseController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
-  // Method to toggle checkbox state
-  void toggleCheckbox(int index) {
-    if (index >= 0 && index < itemList.length) {
-      itemList[index]['checked'] = !(itemList[index]['checked'] ?? false);
-      update();
-    }
-  }
   List<Uint8List?> newItemList = [];
-  // List to store rate ink objects for each item
-  RxList<Ink> rateInkList = <Ink>[].obs;
 
   final DigitalInkRecognizerModelManager modelManager =
   DigitalInkRecognizerModelManager();
   final String language = 'en-US';
   late final DigitalInkRecognizer digitalInkRecognizer =
   DigitalInkRecognizer(languageCode: language);
-  late Ink rateInk = Ink();
+  final Ink rateInk = Ink();
   final Ink quantityInk = Ink();
   final Ink descriptionInk = Ink();
   List<StrokePoint> ratePoints = [];
@@ -45,9 +36,8 @@ class OrderController extends GetxController {
   List<StrokePoint> quantityPoints = [];
   String recognizedRate = '';
   String recognizedQuantity = '';
-  // Current item index for rate input
-  RxInt currentRateItemIndex = (-1).obs;
   RxBool showButtons = false.obs;
+
   // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
@@ -207,91 +197,6 @@ class OrderController extends GetxController {
     recognizedQuantity = '';
     update();
   }
-  
-  // Method to set the current item for rate input
-  void setCurrentRateItem(int index) {
-    if (index >= 0 && index < itemList.length) {
-      // Only clear ink if we're switching to a different item
-      if (currentRateItemIndex.value != index) {
-        // Clear the rate ink for new input
-        if (index < rateInkList.length) {
-          rateInkList[index].strokes.clear();
-        }
-        rateInk.strokes.clear();
-        ratePoints.clear();
-      }
-      
-      currentRateItemIndex.value = index;
-      update();
-    }
-  }
-  
-  // Method to update an item's rate after recognition
-  Future<void> updateItemRate(int index) async {
-    if (index >= 0 && index < itemList.length) {
-      // Use the item-specific ink object for recognition
-      Ink inkToUse = (index >= 0 && index < rateInkList.length) 
-          ? rateInkList[index] 
-          : rateInk;
-      
-      // Check if there are any strokes to recognize
-      if (inkToUse.strokes.isEmpty) {
-        // If no strokes, don't update the rate and show a message
-        Get.snackbar("Info", "No rate input detected. Please write a rate first.");
-        return;
-      }
-      
-      // Temporarily set the rateInk to the item's ink for recognition
-      Ink tempInk = rateInk;
-      rateInk = inkToUse;
-      
-      await recogniseRateText();
-      
-      // Restore the original rateInk
-      rateInk = tempInk;
-      
-      if (recognizedRate.isNotEmpty) {
-        // Update the item's rate
-        itemList[index]['rate'] = recognizedRate;
-        // Clear the rate input only on successful recognition
-        if (index < rateInkList.length) {
-          rateInkList[index].strokes.clear();
-        }
-        rateInk.strokes.clear();
-        ratePoints.clear();
-        // Reset current index
-        currentRateItemIndex.value = -1;
-        update();
-      } else {
-        // Don't clear ink strokes on failed recognition so user can try again
-        // Just show an error message
-        Get.snackbar("Error", "Rate Not Recognized. Please try again.");
-        // Keep the current item selected so user can retry
-      }
-    }
-  }
-  
-  // Method to cancel rate editing and restore previous state
-  void cancelRateEdit([int? index]) {
-    // Use provided index if available, otherwise use current index
-    int currentIndex = index ?? currentRateItemIndex.value;
-    
-    // Clear the specific ink for the current rate box
-    if (currentIndex >= 0 && currentIndex < rateInkList.length) {
-      // Make sure to clear all strokes from this specific ink
-      rateInkList[currentIndex] = Ink(); // Replace with a new empty Ink object
-    }
-    
-    // Always clear the temporary ink used for recognition
-    rateInk = Ink(); // Replace with a new empty Ink object
-    ratePoints.clear();
-    
-    // Reset current index to exit edit mode
-    currentRateItemIndex.value = -1;
-    
-    // Force UI update
-    update();
-  }
 
   Future<bool> isModelDownloaded() async {
     try {
@@ -378,35 +283,24 @@ class OrderController extends GetxController {
             .replaceAll('B', '3')
             .replaceAll('S', '5')
             .replaceAll('Z', '2')
-            .replaceAll('T', '7')
-            .replaceAll(',', '.'); // Replace comma with period for decimal
+            .replaceAll('T', '7');
 
-        // Improved regex to better handle decimal points
         recognizedRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
-        
-        // Handle multiple decimal points - keep only the first one
-        if (recognizedRate.contains('.')) {
-          final parts = recognizedRate.split('.');
-          if (parts.length > 2) {
-            recognizedRate = parts[0] + '.' + parts.sublist(1).join('');
-          }
-        }
 
-        // If no digits are found after cleaning, show error but don't clear ink
+        // If no digits are found after cleaning, set as 'No'
         if (recognizedRate.isEmpty) {
+          rateInk.strokes.clear();
+          ratePoints.clear();
           Get.snackbar("Error", "Rate Not Recognized");
-          // Don't clear ink strokes so user can try again
+
           // recognizedRate = 'No';
         }
       } else {
-        Get.snackbar("Error", "No text recognized. Please try again.");
+        recognizedRate = 'No candidates recognized';
       }
 
       update();
-    } catch (e) {
-      print('Error in recogniseRateText: $e');
-      Get.snackbar("Error", "Failed to recognize text");
-    }
+    } catch (e) {}
   }
 
   Future<void> recogniseQuantityText() async {
@@ -456,8 +350,8 @@ class OrderController extends GetxController {
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
     // Increase the size by 50% for better visibility
-    width = width * 1;
-    height = height * 1.7;
+    width = width * 1.5;
+    height = height * 1.5;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(
@@ -520,26 +414,22 @@ class OrderController extends GetxController {
   }
 
   Future<void> addItem() async {
+    await recogniseRateText();
     await recogniseQuantityText();
 
     Uint8List? particularImage = await convertToPngBytes(
-      Get.width, // Keep the width proportional
+      Get.width * 0.8, // Keep the width proportional
       85, // Reduced height from 100 to 85 for less vertical space
     );
     if (particularImage != null &&
-        recognizedQuantity.isNotEmpty) {
-      // Add a new item with empty rate
+        recognizedQuantity.isNotEmpty &&
+        recognizedRate.isNotEmpty) {
       itemList.add({
         'particulars': particularImage,
         'quantity': recognizedQuantity,
-        'rate': "0", // Default rate is 0
-        'checked': false, // Initialize checkbox state
+        'rate': recognizedRate,
       });
-      
-      // Add a new Ink object for this item's rate
-      rateInkList.add(Ink());
 
-      // Scroll to the newly added item
       update();
     } else {
       Get.snackbar("Error", "Field is Empty");
@@ -590,8 +480,6 @@ class OrderController extends GetxController {
 
   void clearPadAndSignature() {
     clearPad();
-    currentRateItemIndex.value = -1; // Reset current rate item index
-    update();
   }
 
   void editItem(int index) {
@@ -670,7 +558,7 @@ class OrderController extends GetxController {
       final pdf = pw.Document();
 
       // Load Ganesh logo as Uint8List
-      final ByteData logoData = await rootBundle.load('assets/sai.png');
+      final ByteData logoData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = logoData.buffer.asUint8List();
 
       pdf.addPage(

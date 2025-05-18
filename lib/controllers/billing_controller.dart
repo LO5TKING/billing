@@ -19,7 +19,7 @@ import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
 import 'package:image/image.dart' as img;
 
-class ScribbleController extends GetxController {
+class BillingController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
   List<Uint8List?> newItemList = [];
 
@@ -474,7 +474,7 @@ class ScribbleController extends GetxController {
   double get totalQty {
     return itemList.fold(0, (sum, item) {
       final quantity = double.tryParse(item['quantity'] ?? '0') ?? 0;
-      return sum + (quantity).ceil();
+      return sum + (quantity);
     });
   }
 
@@ -487,6 +487,7 @@ class ScribbleController extends GetxController {
 
     Get.defaultDialog(
       title: 'Edit Item',
+      barrierDismissible: false,
       content: Column(
         children: [
           TextField(
@@ -508,6 +509,10 @@ class ScribbleController extends GetxController {
         ],
       ),
       textConfirm: 'Save',
+      textCancel: 'Cancel',
+      onCancel: (){
+        Get.back();
+      },
       onConfirm: () {
         update();
         Get.back();

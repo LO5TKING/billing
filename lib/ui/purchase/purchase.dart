@@ -1,6 +1,7 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller.dart';
+import 'package:billing/controllers/purchase_controller.dart';
 import 'package:billing/print/print_page.dart';
 import 'package:billing/utils/one_pointer_widget.dart';
 import 'package:flutter/gestures.dart';
@@ -13,9 +14,10 @@ import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_re
 import '../../app/config/constants_text.dart';
 import '../../utils/utility.dart';
 
-class Billing extends StatelessWidget {
-  BillingController billingCOntroller = Get.find<BillingController>();
+class Purchase extends StatelessWidget {
+  PurchaseController purchaseController = Get.find<PurchaseController>();
   final ScrollController scrollController = ScrollController();
+
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +61,7 @@ class Billing extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: DesignConstants.padding5),
                                     child: Obx(() => Text(
-                                      billingCOntroller
+                                      purchaseController
                                           .formattedDateTime.value,
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
@@ -99,27 +101,27 @@ class Billing extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: DesignConstants.padding5),
-                                    child: Text(
-                                      ConstantsText.shopName.toUpperCase(),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.appBgColor,
-                                      ),
-                                    )),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: DesignConstants.padding5),
+                                      child: Text(
+                                        ConstantsText.shopName.toUpperCase(),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.appBgColor,
+                                        ),
+                                      )),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: DesignConstants.padding5),
-                                    child: Text(
-                                      ConstantsText.mobileNo,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.appBgColor,
-                                      ),
-                                    )),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: DesignConstants.padding5),
+                                      child: Text(
+                                        ConstantsText.mobileNo,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.appBgColor,
+                                        ),
+                                      )),
                                 ],
                               ),
                             ),
@@ -146,7 +148,7 @@ class Billing extends StatelessWidget {
                             children: [
                               InkWell(
                                 onTap: () {
-                                  billingCOntroller.clearPadAndSignature();
+                                  purchaseController.clearPadAndSignature();
                                 },
                                 child: Container(
                                   height: 35,
@@ -160,8 +162,8 @@ class Billing extends StatelessWidget {
                               ),
                               IconButton(
                                   onPressed: () async {
-                                    await billingCOntroller.addItem();
-                                    billingCOntroller.clearPadAndSignature();
+                                    await purchaseController.addItem();
+                                    purchaseController.clearPadAndSignature();
                                   },
                                   hoverColor: Colors.white,
                                   padding: const EdgeInsets.only(right: 3),
@@ -188,15 +190,15 @@ class Billing extends StatelessWidget {
                                         0: const FixedColumnWidth(60.0), // Sr.No
                                         1: const FlexColumnWidth(), // Particulars
                                         2: FixedColumnWidth(
-                                            billingCOntroller.showButtons.value
+                                            purchaseController.showButtons.value
                                                 ? 120.0
                                                 : 100), // QTY
                                         3: FixedColumnWidth(
-                                            billingCOntroller.showButtons.value
+                                            purchaseController.showButtons.value
                                                 ? 120.0
                                                 : 100), // Rate
                                         4: FixedColumnWidth(
-                                            billingCOntroller.showButtons.value
+                                            purchaseController.showButtons.value
                                                 ? 125.0
                                                 : 100), // Amount
                                       },
@@ -264,11 +266,11 @@ class Billing extends StatelessWidget {
                                     // Item rows
                                     Expanded(
                                       child: ListView.builder(
-                                        itemCount: billingCOntroller.itemList.length,
+                                        itemCount: purchaseController.itemList.length,
                                         padding: EdgeInsets.zero,
                                         controller: scrollController,
                                         itemBuilder: (context, index) {
-                                          final item = billingCOntroller.itemList[index];
+                                          final item = purchaseController.itemList[index];
                                           final rate =
                                               double.tryParse(item['rate'] ?? '0') ?? 0;
                                           final quantity =
@@ -288,17 +290,17 @@ class Billing extends StatelessWidget {
                                                     0: const FixedColumnWidth(60.0),
                                                     1: const FlexColumnWidth(),
                                                     2: FixedColumnWidth(
-                                                        billingCOntroller
+                                                        purchaseController
                                                             .showButtons.value
                                                             ? 130.0
                                                             : 120),
                                                     3: FixedColumnWidth(
-                                                        billingCOntroller
+                                                        purchaseController
                                                             .showButtons.value
                                                             ? 130.0
                                                             : 120),
                                                     4: FixedColumnWidth(
-                                                        billingCOntroller
+                                                        purchaseController
                                                             .showButtons.value
                                                             ? 140.0
                                                             : 130),
@@ -365,15 +367,15 @@ class Billing extends StatelessWidget {
                                               ),
                                               Obx(
                                                     () => Visibility(
-                                                  visible: billingCOntroller
+                                                  visible: purchaseController
                                                       .showButtons.value,
                                                   child: GestureDetector(
                                                     onTap: () {
-                                                      billingCOntroller
+                                                      purchaseController
                                                           .editItem(index);
                                                     },
                                                     onDoubleTap: () {
-                                                      billingCOntroller
+                                                      purchaseController
                                                           .deleteItem(index);
                                                     },
                                                     child: Container(
@@ -381,7 +383,7 @@ class Billing extends StatelessWidget {
                                                       height: 15.0,
                                                       margin: const EdgeInsets.only(
                                                           bottom: 25.0,
-                                                        right: 10
+                                                          right: 10
                                                       ),
                                                       alignment:
                                                       Alignment.topRight,
@@ -415,17 +417,17 @@ class Billing extends StatelessWidget {
                             0: const FixedColumnWidth(60.0),
                             1: const FlexColumnWidth(),
                             2: FixedColumnWidth(
-                                billingCOntroller
+                                purchaseController
                                     .showButtons.value
                                     ? 120.0
                                     : 100),
                             3: FixedColumnWidth(
-                                billingCOntroller
+                                purchaseController
                                     .showButtons.value
                                     ? 121.0
                                     : 100),
                             4: FixedColumnWidth(
-                                billingCOntroller
+                                purchaseController
                                     .showButtons.value
                                     ? 145.0
                                     : 120),
@@ -450,15 +452,15 @@ class Billing extends StatelessWidget {
                                     child: Text('TOTAL',
                                         textAlign: TextAlign.end,
                                         style: TextStyle(
-                                          color: Colors.white,
+                                            color: Colors.white,
                                             fontWeight: FontWeight.bold)),
                                   ),
                                 ),
-                                 TableCell(
+                                TableCell(
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                        '${billingCOntroller.totalQty}',
+                                        '${purchaseController.totalQty}',
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                             color: Colors.white,
@@ -476,7 +478,7 @@ class Billing extends StatelessWidget {
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
-                                    '${billingCOntroller.totalAmount}',
+                                    '${purchaseController.totalAmount}',
                                     style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold
@@ -502,7 +504,7 @@ class Billing extends StatelessWidget {
                                 padding: const EdgeInsets.only(
                                     top: DesignConstants.padding5),
                                 child: Visibility(
-                                  visible: billingCOntroller.showButtons.value,
+                                  visible: purchaseController.showButtons.value,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -520,14 +522,14 @@ class Billing extends StatelessWidget {
                                                       Radius.circular(
                                                           5))),
                                             ),
-                                            onPressed: billingCOntroller
+                                            onPressed: purchaseController
                                                 .isPrinting.value
                                                 ? null
                                                 : () {
-                                              billingCOntroller
+                                              purchaseController
                                                   .printPdfReceipt();
                                             },
-                                            child: billingCOntroller
+                                            child: purchaseController
                                                 .isPrinting.value
                                                 ? const SizedBox(
                                               width: 20,
@@ -562,7 +564,7 @@ class Billing extends StatelessWidget {
                                                           5))),
                                             ),
                                             onPressed: () {
-                                              billingCOntroller.itemList
+                                              purchaseController.itemList
                                                   .clear();
                                             },
                                             child: const Text(
@@ -588,7 +590,7 @@ class Billing extends StatelessWidget {
                                                           5))),
                                             ),
                                             onPressed: () async {
-                                              await billingCOntroller.saveReceiptAsPdf();
+                                              await purchaseController.saveReceiptAsPdf();
                                             },
                                             child: const Text(
                                               'Save Receipt',
@@ -609,8 +611,8 @@ class Billing extends StatelessWidget {
                                   alignment: Alignment.bottomCenter,
                                   child: IconButton(
                                       onPressed: () {
-                                        billingCOntroller.showButtons.value =
-                                        !billingCOntroller
+                                        purchaseController.showButtons.value =
+                                        !purchaseController
                                             .showButtons.value;
                                       },
                                       icon: const Icon(
@@ -646,58 +648,58 @@ class Billing extends StatelessWidget {
           ),
           child: ClipRect(
               child: Listener(
-            onPointerDown: (event) {
-              if (event.kind == PointerDeviceKind.stylus ||
-                  event.kind == PointerDeviceKind.touch) {
-                if (isTouchInsideBox(
-                    event.localPosition, Get.width * widthFactor)) {
-                  billingCOntroller.rateInk.strokes.add(Stroke());
-                  billingCOntroller.update();
-                }
-              }
-            },
-            onPointerMove: (event) {
-              if (event.kind == PointerDeviceKind.stylus ||
-                  event.kind == PointerDeviceKind.touch) {
-                final RenderObject? object = Get.context?.findRenderObject();
-                final localPosition =
+                onPointerDown: (event) {
+                  if (event.kind == PointerDeviceKind.stylus ||
+                      event.kind == PointerDeviceKind.touch) {
+                    if (isTouchInsideBox(
+                        event.localPosition, Get.width * widthFactor)) {
+                      purchaseController.rateInk.strokes.add(Stroke());
+                      purchaseController.update();
+                    }
+                  }
+                },
+                onPointerMove: (event) {
+                  if (event.kind == PointerDeviceKind.stylus ||
+                      event.kind == PointerDeviceKind.touch) {
+                    final RenderObject? object = Get.context?.findRenderObject();
+                    final localPosition =
                     (object as RenderBox?)?.globalToLocal(event.localPosition);
-                if (localPosition != null &&
-                    billingCOntroller.rateInk.strokes.isNotEmpty) {
-                  billingCOntroller.rateInk.strokes.last.points.add(
-                    StrokePoint(
-                      x: localPosition.dx,
-                      y: localPosition.dy,
-                      t: DateTime.now().millisecondsSinceEpoch,
-                    ),
-                  );
-                  billingCOntroller.update();
-                }
-              }
-            },
-            onPointerUp: (event) {
-              if (event.kind == PointerDeviceKind.stylus ||
-                  event.kind == PointerDeviceKind.touch) {
-                billingCOntroller.update();
-              }
-            },
-            onPointerCancel: (event) {
-              debugPrint('Pointer Cancelled');
-            },
-            child: CustomPaint(
-              painter: SignatureStyle(ink: billingCOntroller.rateInk),
-              size: Size.infinite,
-            ),
-          )),
+                    if (localPosition != null &&
+                        purchaseController.rateInk.strokes.isNotEmpty) {
+                      purchaseController.rateInk.strokes.last.points.add(
+                        StrokePoint(
+                          x: localPosition.dx,
+                          y: localPosition.dy,
+                          t: DateTime.now().millisecondsSinceEpoch,
+                        ),
+                      );
+                      purchaseController.update();
+                    }
+                  }
+                },
+                onPointerUp: (event) {
+                  if (event.kind == PointerDeviceKind.stylus ||
+                      event.kind == PointerDeviceKind.touch) {
+                    purchaseController.update();
+                  }
+                },
+                onPointerCancel: (event) {
+                  debugPrint('Pointer Cancelled');
+                },
+                child: CustomPaint(
+                  painter: SignatureStyle(ink: purchaseController.rateInk),
+                  size: Size.infinite,
+                ),
+              )),
         ),
         Positioned(
           top: -0,
           right: -0,
           child: GestureDetector(
             onTap: () {
-              billingCOntroller.rateInk.strokes.clear();
-              billingCOntroller.ratePoints.clear();
-              billingCOntroller.update();
+              purchaseController.rateInk.strokes.clear();
+              purchaseController.ratePoints.clear();
+              purchaseController.update();
             },
             child: Container(
               decoration: const BoxDecoration(
@@ -727,34 +729,34 @@ class Billing extends StatelessWidget {
               onPointerDown: (event) {
                 if (isTouchInsideBox(
                     event.localPosition, Get.width * widthFactor)) {
-                  billingCOntroller.quantityInk.strokes.add(Stroke());
-                  billingCOntroller.update();
+                  purchaseController.quantityInk.strokes.add(Stroke());
+                  purchaseController.update();
                 }
               },
               onPointerMove: (event) {
                 final RenderObject? object = Get.context?.findRenderObject();
                 final localPosition =
-                    (object as RenderBox?)?.globalToLocal(event.localPosition);
+                (object as RenderBox?)?.globalToLocal(event.localPosition);
                 if (localPosition != null) {
-                  billingCOntroller.quantityInk.strokes.last.points.add(
+                  purchaseController.quantityInk.strokes.last.points.add(
                     StrokePoint(
                       x: localPosition.dx,
                       y: localPosition.dy,
                       t: DateTime.now().millisecondsSinceEpoch,
                     ),
                   );
-                  billingCOntroller.update();
+                  purchaseController.update();
                 }
               },
               onPointerUp: (event) {
-                billingCOntroller.update();
+                purchaseController.update();
               },
               onPointerCancel: (event) {
                 // Ignore the cancel event, don't stop drawing
                 debugPrint('Pointer Cancelled');
               },
               child: CustomPaint(
-                painter: SignatureStyle(ink: billingCOntroller.quantityInk),
+                painter: SignatureStyle(ink: purchaseController.quantityInk),
                 size: Size.infinite,
               ),
             ),
@@ -765,9 +767,9 @@ class Billing extends StatelessWidget {
           right: -0,
           child: GestureDetector(
             onTap: () {
-              billingCOntroller.quantityInk.strokes.clear();
-              billingCOntroller.quantityPoints.clear();
-              billingCOntroller.update();
+              purchaseController.quantityInk.strokes.clear();
+              purchaseController.quantityPoints.clear();
+              purchaseController.update();
             },
             child: Container(
               decoration: const BoxDecoration(
@@ -797,34 +799,34 @@ class Billing extends StatelessWidget {
               onPointerDown: (event) async {
                 if (isTouchInsideBox(
                     event.localPosition, Get.width * widthFactor)) {
-                  billingCOntroller.descriptionInk.strokes.add(Stroke());
-                  billingCOntroller.update();
+                  purchaseController.descriptionInk.strokes.add(Stroke());
+                  purchaseController.update();
                 }
               },
               onPointerMove: (event) async {
                 final RenderObject? object = Get.context?.findRenderObject();
                 final localPosition =
-                    (object as RenderBox?)?.globalToLocal(event.localPosition);
+                (object as RenderBox?)?.globalToLocal(event.localPosition);
                 if (localPosition != null &&
-                    billingCOntroller.descriptionInk.strokes.isNotEmpty) {
-                  billingCOntroller.descriptionInk.strokes.last.points.add(
+                    purchaseController.descriptionInk.strokes.isNotEmpty) {
+                  purchaseController.descriptionInk.strokes.last.points.add(
                     StrokePoint(
                       x: localPosition.dx,
                       y: localPosition.dy,
                       t: DateTime.now().millisecondsSinceEpoch,
                     ),
                   );
-                  billingCOntroller.update();
+                  purchaseController.update();
                 }
               },
               onPointerUp: (event) async {
-                billingCOntroller.update();
+                purchaseController.update();
               },
               onPointerCancel: (event) async {
                 debugPrint('Pointer Cancelled');
               },
               child: CustomPaint(
-                painter: SignatureStyle(ink: billingCOntroller.descriptionInk),
+                painter: SignatureStyle(ink: purchaseController.descriptionInk),
                 size: Size.infinite,
               ),
             ),
@@ -835,9 +837,9 @@ class Billing extends StatelessWidget {
           right: -0,
           child: GestureDetector(
             onTap: () {
-              billingCOntroller.descriptionInk.strokes.clear();
-              billingCOntroller.descriptionPoints.clear();
-              billingCOntroller.update();
+              purchaseController.descriptionInk.strokes.clear();
+              purchaseController.descriptionPoints.clear();
+              purchaseController.update();
             },
             child: Container(
               decoration: const BoxDecoration(
@@ -845,10 +847,10 @@ class Billing extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               // padding: const EdgeInsets.all(8.0),
-                child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
-              ),
+              child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
             ),
           ),
+        ),
       ],
     );
   }
@@ -893,43 +895,43 @@ class SignatureStyle extends CustomPainter {
 // This custom widget draws the vertical lines that will always be visible
 class VerticalBorderLines extends StatelessWidget {
 
-  BillingController billingCOntroller = Get.find<BillingController>();
+  BillingController purchaseController = Get.find<BillingController>();
 
   @override
   Widget build(BuildContext context) {
     return Obx(() =>
-      Row(
-        children: [
-          // First column (Sr.No - 60px)
-          const SizedBox(width: 60),
-          // Vertical line
-          _buildVerticalLine(),
+        Row(
+          children: [
+            // First column (Sr.No - 60px)
+            const SizedBox(width: 60),
+            // Vertical line
+            _buildVerticalLine(),
 
-          // Second column (Particulars - flexible)
-          const Expanded(child: SizedBox()),
-          // Vertical line
-          _buildVerticalLine(),
+            // Second column (Particulars - flexible)
+            const Expanded(child: SizedBox()),
+            // Vertical line
+            _buildVerticalLine(),
 
-          // Third column (QTY - 100/120px based on showButtons)
-          SizedBox(width: billingCOntroller.showButtons.value
-              ? 118.0
-              : 98), // You might need to adjust this with Obx() if it changes
-          // Vertical line
-          _buildVerticalLine(),
+            // Third column (QTY - 100/120px based on showButtons)
+            SizedBox(width: purchaseController.showButtons.value
+                ? 118.0
+                : 98), // You might need to adjust this with Obx() if it changes
+            // Vertical line
+            _buildVerticalLine(),
 
-          // Fourth column (Rate - 100/120px based on showButtons)
-          SizedBox(width: billingCOntroller.showButtons.value
-              ? 120.0
-              : 100), // You might need to adjust this with Obx() if it changes
-          // Vertical line
-          _buildVerticalLine(),
+            // Fourth column (Rate - 100/120px based on showButtons)
+            SizedBox(width: purchaseController.showButtons.value
+                ? 120.0
+                : 100), // You might need to adjust this with Obx() if it changes
+            // Vertical line
+            _buildVerticalLine(),
 
-          // Fifth column (Amount - 100/120px based on showButtons)
-          SizedBox(width: billingCOntroller.showButtons.value
-              ? 145.0
-              : 120), // You might need to adjust this with Obx() if it changes
-        ],
-      ),
+            // Fifth column (Amount - 100/120px based on showButtons)
+            SizedBox(width: purchaseController.showButtons.value
+                ? 145.0
+                : 120), // You might need to adjust this with Obx() if it changes
+          ],
+        ),
     );
   }
 
