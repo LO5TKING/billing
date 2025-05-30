@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:billing/networks/api_service.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
@@ -51,6 +52,7 @@ class OrderController extends GetxController {
   // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
+  ApiService apiService = ApiService();
 
   // Inject the PrintController
   late PrintController printController;
@@ -825,5 +827,23 @@ class OrderController extends GetxController {
     } catch (e) {
       Get.snackbar('Error', 'Failed to save receipt: $e');
     }
+  }
+
+  Future<void>shopDetailApi() async {
+    String url = "https://roughbill.com/api/ShopDetail/BillCount";
+    var detail = {
+      'ShopName': "${ConstantsText.shopName}",
+      'BillPrint': "1",
+    };
+
+    final response = await apiService.postRequest(url: url, data: detail);
+
+    if (response.statusCode == 200) {
+      print('Shop Detail Api Success: ${response.body}');
+    } else {
+      print('Error ${response.statusCode}: ${response.body}');
+    }
+
+
   }
 }

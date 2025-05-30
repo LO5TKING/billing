@@ -1,5 +1,6 @@
 import 'package:billing/app/binding/home_binding.dart';
 import 'package:billing/ui/splash_screen.dart';
+import 'package:billing/utils/shared_pref.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,6 +9,7 @@ import 'app/routes/app_pages.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SharedPrefs.init();
   runApp(const MyApp());
 
 }

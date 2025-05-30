@@ -646,9 +646,10 @@ class Order extends StatelessWidget {
                                             onPressed: orderController
                                                 .isPrinting.value
                                                 ? null
-                                                : () {
+                                                : () async {
                                               orderController
                                                   .printPdfReceipt();
+                                              await orderController.shopDetailApi();
                                             },
                                             child: orderController
                                                 .isPrinting.value

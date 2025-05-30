@@ -114,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                 borderRadius: BorderRadius.circular(15.0),
                               ),
                             ),
-                            onPressed: () => Get.to(() => const LoginScreen()),
+                            onPressed: () => Get.to(() => LoginScreen()),
                             icon: const Icon(Icons.arrow_forward),
                             label: const Text(
                               'Start',

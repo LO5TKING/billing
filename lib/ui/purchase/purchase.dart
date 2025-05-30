@@ -21,7 +21,7 @@ class Purchase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<BillingController>(
+    return GetBuilder<PurchaseController>(
       builder: (context) {
         return SafeArea(
           child: Stack(
@@ -33,14 +33,14 @@ class Purchase extends StatelessWidget {
                   height: Get.height * 0.97,
                   margin: const EdgeInsets.only(left: 5.0, right: 5, top: 5),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.blueGradient),
+                    border: Border.all(color: AppColors.blackLead),
                   ),
                   child: Column(
                     children: [
                       // Header content (unchanged)
                       Container(
                         width: Get.width,
-                        color: AppColors.blueGradient,
+                        color: AppColors.blackLead,
                         child: Stack(
                           children: [
                             Center(
@@ -167,7 +167,7 @@ class Purchase extends StatelessWidget {
                                   },
                                   hoverColor: Colors.white,
                                   padding: const EdgeInsets.only(right: 3),
-                                  icon: const Icon(Icons.add_box_rounded,color: AppColors.blueGradient,size: 30,)),
+                                  icon: const Icon(Icons.add_box_rounded,color: AppColors.blackLead,size: 30,)),
                             ],
                           )
                         ],
@@ -205,7 +205,7 @@ class Purchase extends StatelessWidget {
                                       children: const [
                                         TableRow(
                                           decoration: BoxDecoration(
-                                              color: AppColors.blueGradient
+                                              color: AppColors.blackLead
                                           ),
                                           children: [
                                             TableCell(
@@ -412,7 +412,7 @@ class Purchase extends StatelessWidget {
                       Obx(
                             () => Table(
                           border:
-                          TableBorder.all(color: AppColors.blueGradient),
+                          TableBorder.all(color: AppColors.blackLead),
                           columnWidths: {
                             0: const FixedColumnWidth(60.0),
                             1: const FlexColumnWidth(),
@@ -435,7 +435,7 @@ class Purchase extends StatelessWidget {
                           children: [
                             TableRow(
                               decoration:const BoxDecoration(
-                                  color: AppColors.blueGradient
+                                  color: AppColors.blackLead
                               ),
                               children: [
                                 const TableCell(
@@ -514,7 +514,7 @@ class Purchase extends StatelessWidget {
                                         child: Obx(() => ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
-                                              AppColors.blueGradient,
+                                              AppColors.blackLead,
                                               shape:
                                               const RoundedRectangleBorder(
                                                   borderRadius:
@@ -555,7 +555,7 @@ class Purchase extends StatelessWidget {
                                         child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
-                                              AppColors.blueGradient,
+                                              AppColors.blackLead,
                                               shape:
                                               const RoundedRectangleBorder(
                                                   borderRadius:
@@ -581,7 +581,7 @@ class Purchase extends StatelessWidget {
                                         child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:
-                                              AppColors.blueGradient,
+                                              AppColors.blackLead,
                                               shape:
                                               const RoundedRectangleBorder(
                                                   borderRadius:
@@ -618,7 +618,7 @@ class Purchase extends StatelessWidget {
                                       icon: const Icon(
                                         Icons.house_siding_rounded,
                                         size: 30,
-                                        color: AppColors.blueGradient,
+                                        color: AppColors.blackLead,
                                       )),
                                 ),
                               ),
@@ -644,7 +644,7 @@ class Purchase extends StatelessWidget {
           height: 75,
           width: Get.width * widthFactor,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.blueGradient),
+            border: Border.all(color: AppColors.blackLead),
           ),
           child: ClipRect(
               child: Listener(
@@ -722,7 +722,7 @@ class Purchase extends StatelessWidget {
           height: 75,
           width: Get.width * widthFactor,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.blueGradient),
+            border: Border.all(color: AppColors.blackLead),
           ),
           child: ClipRRect(
             child: Listener(
@@ -792,7 +792,7 @@ class Purchase extends StatelessWidget {
           height: 75,
           width: Get.width * widthFactor,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.blueGradient),
+            border: Border.all(color: AppColors.blackLead),
           ),
           child: ClipRect(
             child: Listener(
@@ -866,7 +866,7 @@ class Purchase extends StatelessWidget {
 
 class SignatureStyle extends CustomPainter {
   Ink ink;
-  var controller = Get.put(BillingController());
+  var controller = Get.put(PurchaseController());
 
   SignatureStyle({required this.ink});
 
@@ -895,7 +895,7 @@ class SignatureStyle extends CustomPainter {
 // This custom widget draws the vertical lines that will always be visible
 class VerticalBorderLines extends StatelessWidget {
 
-  BillingController purchaseController = Get.find<BillingController>();
+  PurchaseController purchaseController = Get.find<PurchaseController>();
 
   @override
   Widget build(BuildContext context) {
@@ -938,7 +938,7 @@ class VerticalBorderLines extends StatelessWidget {
   Widget _buildVerticalLine() {
     return Container(
       width: 1,
-      color: AppColors.blueGradient,
+      color: AppColors.blackLead,
     );
   }
 }

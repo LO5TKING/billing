@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/gestures.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,10 +15,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app/config/constants_text.dart';
+import '../networks/api_service.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
 import 'package:image/image.dart' as img;
+import 'dart:convert';
 
 class BillingController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
@@ -37,6 +40,8 @@ class BillingController extends GetxController {
   String recognizedRate = '';
   String recognizedQuantity = '';
   RxBool showButtons = false.obs;
+
+  ApiService apiService = ApiService();
 
   // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
@@ -482,40 +487,282 @@ class BillingController extends GetxController {
     clearPad();
   }
 
+  // Create separate Ink objects for editing
+  final Ink editRateInk = Ink();
+  final Ink editQuantityInk = Ink();
+  String recognizedEditRate = '';
+  String recognizedEditQuantity = '';
+
   void editItem(int index) {
     final item = itemList[index];
+    
+    // Reset the edit ink objects and recognized values
+    editRateInk.strokes.clear();
+    editQuantityInk.strokes.clear();
+    recognizedEditRate = item['rate'];
+    recognizedEditQuantity = item['quantity'];
 
     Get.defaultDialog(
       title: 'Edit Item',
       barrierDismissible: false,
-      content: Column(
-        children: [
-          TextField(
-            keyboardType: TextInputType.number,
-            controller: TextEditingController(text: item['quantity']),
-            decoration: const InputDecoration(labelText: 'quantity'),
-            onChanged: (value) {
-              itemList[index]['quantity'] = value;
-            },
-          ),
-          TextField(
-            keyboardType: TextInputType.number,
-            controller: TextEditingController(text: item['rate']),
-            decoration: const InputDecoration(labelText: 'rate'),
-            onChanged: (value) {
-              itemList[index]['rate'] = value;
-            },
-          ),
-        ],
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            children: [
+              // Quantity handwriting box
+              Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 75,
+                    width: Get.width * 0.6,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.blueGradient),
+                    ),
+                    child: ClipRRect(
+                      child: Listener(
+                        onPointerDown: (event) {
+                          if (event.kind == PointerDeviceKind.stylus ||
+                              event.kind == PointerDeviceKind.touch) {
+                            editQuantityInk.strokes.add(Stroke());
+                            setState(() {});
+                          }
+                        },
+                        onPointerMove: (event) {
+                          if (event.kind == PointerDeviceKind.stylus ||
+                              event.kind == PointerDeviceKind.touch) {
+                            final RenderObject? object = context.findRenderObject();
+                            final localPosition =
+                                (object as RenderBox?)?.globalToLocal(event.position);
+                            if (localPosition != null &&
+                                editQuantityInk.strokes.isNotEmpty) {
+                              editQuantityInk.strokes.last.points.add(
+                                StrokePoint(
+                                  x: localPosition.dx,
+                                  y: localPosition.dy,
+                                  t: DateTime.now().millisecondsSinceEpoch,
+                                ),
+                              );
+                              setState(() {});
+                            }
+                          }
+                        },
+                        onPointerUp: (event) {
+                          setState(() {});
+                        },
+                        child: CustomPaint(
+                          painter: SignatureStyle(ink: editQuantityInk),
+                          size: Size.infinite,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () {
+                        editQuantityInk.strokes.clear();
+                        setState(() {});
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          final candidates = await digitalInkRecognizer.recognize(editQuantityInk);
+                          if (candidates.isNotEmpty) {
+                            var text = candidates[0].text;
+                            text = text
+                                .toUpperCase()
+                                .replaceAll('O', '0')
+                                .replaceAll('I', '1')
+                                .replaceAll('L', '1')
+                                .replaceAll('U', '4')
+                                .replaceAll('A', '4')
+                                .replaceAll('Z', '2')
+                                .replaceAll('\\', '1')
+                                .replaceAll('/', '1')
+                                .replaceAll('H', '4')
+                                .replaceAll('B', '3')
+                                .replaceAll('S', '5')
+                                .replaceAll('Z', '2')
+                                .replaceAll('T', '7');
+
+                            recognizedEditQuantity = text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            if (recognizedEditQuantity.isEmpty) {
+                              Get.snackbar("Error", "Quantity Not Recognized");
+                            }
+                          } else {
+                            Get.snackbar("Error", "No candidates recognized");
+                          }
+                          setState(() {});
+                        } catch (e) {
+                          Get.snackbar("Error", "Recognition failed: $e");
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.blueGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: EdgeInsets.all(4),
+                        child: const Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Text('Recognized: $recognizedEditQuantity', 
+                style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 20),
+              
+              // Rate handwriting box
+              Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 75,
+                    width: Get.width * 0.6,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.blueGradient),
+                    ),
+                    child: ClipRRect(
+                      child: Listener(
+                        onPointerDown: (event) {
+                          if (event.kind == PointerDeviceKind.stylus ||
+                              event.kind == PointerDeviceKind.touch) {
+                            editRateInk.strokes.add(Stroke());
+                            setState(() {});
+                          }
+                        },
+                        onPointerMove: (event) {
+                          if (event.kind == PointerDeviceKind.stylus ||
+                              event.kind == PointerDeviceKind.touch) {
+                            final RenderObject? object = context.findRenderObject();
+                            final localPosition =
+                                (object as RenderBox?)?.globalToLocal(event.position);
+                            if (localPosition != null &&
+                                editRateInk.strokes.isNotEmpty) {
+                              editRateInk.strokes.last.points.add(
+                                StrokePoint(
+                                  x: localPosition.dx,
+                                  y: localPosition.dy,
+                                  t: DateTime.now().millisecondsSinceEpoch,
+                                ),
+                              );
+                              setState(() {});
+                            }
+                          }
+                        },
+                        onPointerUp: (event) {
+                          setState(() {});
+                        },
+                        child: CustomPaint(
+                          painter: SignatureStyle(ink: editRateInk),
+                          size: Size.infinite,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () {
+                        editRateInk.strokes.clear();
+                        setState(() {});
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          final candidates = await digitalInkRecognizer.recognize(editRateInk);
+                          if (candidates.isNotEmpty) {
+                            var text = candidates[0].text;
+                            text = text
+                                .toUpperCase()
+                                .replaceAll('O', '0')
+                                .replaceAll('I', '1')
+                                .replaceAll('L', '1')
+                                .replaceAll('U', '4')
+                                .replaceAll('A', '4')
+                                .replaceAll('Z', '2')
+                                .replaceAll('\\', '1')
+                                .replaceAll('/', '1')
+                                .replaceAll('H', '4')
+                                .replaceAll('B', '3')
+                                .replaceAll('S', '5')
+                                .replaceAll('Z', '2')
+                                .replaceAll('T', '7');
+
+                            recognizedEditRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            if (recognizedEditRate.isEmpty) {
+                              Get.snackbar("Error", "Rate Not Recognized");
+                            }
+                          } else {
+                            Get.snackbar("Error", "No candidates recognized");
+                          }
+                          setState(() {});
+                        } catch (e) {
+                          Get.snackbar("Error", "Recognition failed: $e");
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.blueGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: EdgeInsets.all(4),
+                        child: const Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Text('Recognized: $recognizedEditRate', 
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          );
+        },
       ),
       textConfirm: 'Save',
       textCancel: 'Cancel',
-      onCancel: (){
+      onCancel: () {
         Get.back();
       },
       onConfirm: () {
-        update();
-        Get.back();
+        if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
+          itemList[index]['quantity'] = recognizedEditQuantity;
+          itemList[index]['rate'] = recognizedEditRate;
+          update();
+          Get.back();
+        } else {
+          Get.snackbar("Error", "Quantity and Rate cannot be empty");
+        }
       },
     );
   }
@@ -551,6 +798,24 @@ class BillingController extends GetxController {
     formattedDateTime.value =
         "Date:- ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} "
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+  }
+
+  Future<void>shopDetailApi() async {
+    String url = "https://roughbill.com/api/ShopDetail/BillCount";
+    var detail = {
+      'ShopName': "${ConstantsText.shopName}",
+      'BillPrint': "1",
+    };
+
+    final response = await apiService.postRequest(url: url, data: detail);
+
+    if (response.statusCode == 200) {
+      print('Shop Detail Api Success: ${response.body}');
+    } else {
+      print('Error ${response.statusCode}: ${response.body}');
+    }
+
+
   }
 
   Future<void> saveReceiptAsPdf() async {
@@ -714,4 +979,159 @@ class BillingController extends GetxController {
       Get.snackbar('Error', 'Failed to save receipt: $e');
     }
   }
+
+  String _convertImageToBase64(Uint8List? imageBytes) {
+    if (imageBytes == null) return '';
+    return base64Encode(imageBytes);
+  }
+
+  // Function to make billing API call
+  Future<void> submitBillingData({
+    String orderNo = '',
+    int customerId = 0,
+    String customerName = '',
+    String clientId = '',
+    double discount = 0,
+    double gst = 0,
+    String discountType = 'Flat',
+    double paidAmount = 0,
+    String paidAmountType = 'Cash',
+    String transactionNo = '',
+    String referenceNo = '',
+    String paymentStatus = 'Pending',
+  }) async {
+    try {
+      // Show loading indicator
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      // Calculate total amount from items
+      final double calculatedTotal = totalAmount;
+      final double balanceAmount = calculatedTotal - paidAmount;
+
+      // Current date time
+      final DateTime now = DateTime.now();
+      final String formattedDate = now.toIso8601String();
+
+      // Prepare order details from itemList
+      List<Map<String, dynamic>> orderDetails = [];
+
+      for (int i = 0; i < itemList.length; i++) {
+        final item = itemList[i];
+        final double qty = double.tryParse(item['quantity'] ?? '0') ?? 0;
+        final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
+        final double totalPrice = qty * rate;
+
+        // Convert image to base64 if available
+        String productName = '';
+        if (item['particulars'] is Uint8List) {
+          productName = _convertImageToBase64(item['particulars']);
+        }
+
+        orderDetails.add({
+          "orderNo": orderNo,
+          "orderDetailsId": 0,
+          "billingId": 0,
+          "customerId": customerId,
+          "clientId": clientId,
+          "customerName": customerName,
+          "productName": productName,
+          "quantity": qty,
+          "pricePerQuantity": rate,
+          "totalPrice": totalPrice,
+          "productType": "",
+          "isDelete": false,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "clientUserId": 1
+        });
+      }
+
+      // Prepare billing data
+      Map<String, dynamic> billingData = {
+        "Billing": {
+          "billingId": 0,
+          "orderNo": orderNo,
+          "customerId": customerId,
+          "customerName": customerName,
+          "clientId": clientId,
+          "totalAmount": calculatedTotal,
+          "balanceAmount": balanceAmount,
+          "discount": discount,
+          "gst": gst,
+          "discountType": discountType,
+          "paidAmount": paidAmount,
+          "paidAmountType": paidAmountType,
+          "transactionNo": transactionNo,
+          "referenceNo": referenceNo,
+          "paymentStatus": paymentStatus,
+          "paymentDate": formattedDate,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "isDelete": false,
+          "isRefund": false,
+          "refundAmount": 0,
+          "refundRemark": "",
+          "refundType": "",
+          "refundDate": null,
+          "refundTransNo": "",
+          "refundStatus": "",
+          "clientUserId": 1
+        },
+        "orderDetails": orderDetails
+      };
+
+      // Make API call
+      final response = await apiService.postRequest(
+        url: "https://roughbill.com/api/Billing/AddBilling",
+        data: billingData,
+      );
+
+      // Close loading dialog
+      Get.back();
+
+      if (response.statusCode == 200) {
+        // Success
+        Get.snackbar(
+          "Success",
+          "Billing data submitted successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // Call shop detail API to update bill count
+        await shopDetailApi();
+
+        // Clear items after successful submission
+        itemList.clear();
+        update();
+      } else {
+        // Error
+        Get.snackbar(
+          "Error",
+          "Failed to submit billing data: ${response.body}",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      // Show error
+      Get.snackbar(
+        "Error",
+        "Exception occurred: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
 }
+
+
+
+
+
+  // Function to convert Uint8List to base64 string

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/config/color_constants.dart';
 import '../../app/config/design_constants.dart';
+import '../../controllers/search_add_client_controller.dart';
 import '../../utils/utility.dart';
 
 class SearchAddClientDetails extends StatelessWidget {
+
+  SearchAddClientController searchAddClientController = Get.put(SearchAddClientController());
 
   final List<Map<String, String>> dummyData = [
     {
@@ -103,7 +107,6 @@ class SearchAddClientDetails extends StatelessWidget {
     // Add more rows as needed
   ];
 
-
   SearchAddClientDetails({super.key});
 
   @override
@@ -140,103 +143,120 @@ class SearchAddClientDetails extends StatelessWidget {
                             fontsize: DesignConstants.fontSize16,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        Form(
+                          key: searchAddClientController.searchFormKey,
+                          child: Column(
                             children: [
-                              shadowText(text: 'Name',fontsize: DesignConstants.fontSize14),
                               Container(
-                                  width: Get.width*0.4,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: TextFormField(
-                                    keyboardType: TextInputType.emailAddress,
-                                    onChanged: (value){},
-                                    style: GoogleFonts.montserrat(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: DesignConstants.fontSize12,
-                                        color: Colors.black),
-                                    decoration:InputDecoration(
-                                      fillColor: Colors.white,
-                                      focusedBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: Colors.grey,
+                                padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    shadowText(text: 'Name',fontsize: DesignConstants.fontSize14),
+                                    Container(
+                                        width: Get.width*0.4,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: TextFormField(
+                                          controller: searchAddClientController.searchNameController,
+                                          keyboardType: TextInputType.name,
+                                          onChanged: (value){},
+                                          style: GoogleFonts.montserrat(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: DesignConstants.fontSize12,
+                                              color: Colors.black),
+                                          decoration:InputDecoration(
+                                            fillColor: Colors.white,
+                                            focusedBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                ),
+                                                borderRadius: BorderRadius.circular(20)
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(20)
+                                            ),
                                           ),
-                                          borderRadius: BorderRadius.circular(20)
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: Colors.grey,
-                                            width: 1.0,
-                                          ),
-                                          borderRadius: BorderRadius.circular(20)
-                                      ),
-                                    ),
-                                  ))
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              shadowText(text: 'Mobile',fontsize: DesignConstants.fontSize14),
-                              Container(
-                                  width: Get.width*0.4,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: TextFormField(
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value){},
-                                    style: GoogleFonts.montserrat(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: DesignConstants.fontSize12,
-                                        color: Colors.black),
-                                    decoration:InputDecoration(
-                                      fillColor: Colors.white,
-                                      focusedBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: Colors.grey,
-                                          ),
-                                          borderRadius: BorderRadius.circular(20)
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: Colors.grey,
-                                            width: 1.0,
-                                          ),
-                                          borderRadius: BorderRadius.circular(20)
-                                      ),
-                                    ),
-                                  ))
-                            ],
-                          ),
-                        ),
-                        Center(
-                          child: InkWell(
-                            onTap: (){},
-                            child: Container(
-                              height: 40,
-                              width: 100,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: AppColors.blueGradient,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Colors.grey.withOpacity(0.3),
-                                        blurRadius: 0.4,
-                                        offset: const Offset(3, 4)
-                                    )
-                                  ]
+                                        ))
+                                  ],
+                                ),
                               ),
-                              child: Center(child: shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)),
-                            ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    shadowText(text: 'Mobile',fontsize: DesignConstants.fontSize14),
+                                    Container(
+                                        width: Get.width*0.4,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: TextFormField(
+                                          controller: searchAddClientController.searchMobileController,
+                                          keyboardType: TextInputType.phone,
+                                          onChanged: (value){},
+                                          style: GoogleFonts.montserrat(
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: DesignConstants.fontSize12,
+                                              color: Colors.black),
+                                          decoration:InputDecoration(
+                                            fillColor: Colors.white,
+                                            focusedBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                ),
+                                                borderRadius: BorderRadius.circular(20)
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                  width: 1.0,
+                                                ),
+                                                borderRadius: BorderRadius.circular(20)
+                                            ),
+                                          ),
+                                        ))
+                                  ],
+                                ),
+                              ),
+                              Center(
+                                child: Obx(() => InkWell(
+                                  onTap: (){
+                                    if (!searchAddClientController.isSearching.value) {
+                                      searchAddClientController.searchClients();
+                                    }
+                                  },
+                                  child: Container(
+                                    height: 40,
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        color: AppColors.blueGradient,
+                                        boxShadow: [
+                                          BoxShadow(
+                                              color: Colors.grey.withOpacity(0.3),
+                                              blurRadius: 0.4,
+                                              offset: const Offset(3, 4)
+                                          )
+                                        ]
+                                    ),
+                                    child: Center(
+                                      child: searchAddClientController.isSearching.value
+                                          ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
+                                          : shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)
+                                    ),
+                                  ),
+                                )),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(
@@ -363,38 +383,48 @@ class SearchAddClientDetails extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 15),
                                       Expanded(
-                                        child: SingleChildScrollView(
-                                          child: Column(
-                                            children: dummyData.map((row) {
-                                              return Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 5), // Padding between rows
-                                                child: Card(
-                                                  elevation: 6, // Elevation for the row's card
-                                                  color: Colors.white, // Card background color
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(10), // Card border radius
-                                                  ),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.all(8.0),
-                                                    child: Table(
-                                                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                                      children: [
-                                                        TableRow(
-                                                          children: [
-                                                            tableCell(row["sr"] ?? ""),
-                                                            tableCell(row["name"] ?? ""),
-                                                            tableCell(row["mobile"] ?? ""),
-                                                            tableCell(row["address"] ?? ""),
-                                                          ],
-                                                        ),
-                                                      ],
+                                        child: Obx(() => SingleChildScrollView(
+                                          child: searchAddClientController.clientList.isEmpty
+                                              ? Center(
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(DesignConstants.padding20),
+                                                    child: shadowText(
+                                                      text: 'No clients found. Try searching or add a new client.',
+                                                      fontsize: DesignConstants.fontSize14
                                                     ),
                                                   ),
+                                                )
+                                              : Column(
+                                                  children: searchAddClientController.clientList.map((row) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets.symmetric(vertical: 5),
+                                                      child: Card(
+                                                        elevation: 6,
+                                                        color: Colors.white,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(10),
+                                                        ),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.all(8.0),
+                                                          child: Table(
+                                                            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                            children: [
+                                                              TableRow(
+                                                                children: [
+                                                                  tableCell(row["sr"] ?? ""),
+                                                                  tableCell(row["name"] ?? ""),
+                                                                  tableCell(row["mobile"] ?? ""),
+                                                                  tableCell(row["address"] ?? ""),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }).toList(),
                                                 ),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        ),
+                                        )),
                                       ),
                                     ],
                                   ),
@@ -418,283 +448,249 @@ class SearchAddClientDetails extends StatelessWidget {
     );
   }
 
-  addClientDialogBox(){
-    return Get.dialog(
-      Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: Get.width * 0.9,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Dialog(
-              surfaceTintColor: Colors.white,
-              shadowColor: Colors.white,
-              elevation: DesignConstants.padding0,
-              child: Container(
-                color: Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+  void addClientDialogBox(){
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(DesignConstants.padding20),
+          child: Form(
+            key: searchAddClientController.formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                shadowText(text: 'Add Client',fontsize: DesignConstants.fontSize16),
+                const SizedBox(height: DesignConstants.padding10),
+                Container(
+                    width: Get.width*0.8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextFormField(
+                      controller: searchAddClientController.nameController,
+                      keyboardType: TextInputType.name,
+                      validator: (value) => searchAddClientController.validateName(value),
+                      style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w500,
+                          fontSize: DesignConstants.fontSize12,
+                          color: Colors.black),
+                      decoration:InputDecoration(
+                        hintText: 'Name',
+                        fillColor: Colors.white,
+                        errorStyle: const TextStyle(fontSize: 10),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: DesignConstants.padding10),
+                Container(
+                    width: Get.width*0.8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextFormField(
+                      controller: searchAddClientController.mobileController,
+                      keyboardType: TextInputType.phone,
+                      validator: (value) => searchAddClientController.validateMobile(value),
+                      style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w500,
+                          fontSize: DesignConstants.fontSize12,
+                          color: Colors.black),
+                      decoration:InputDecoration(
+                        hintText: 'Mobile',
+                        fillColor: Colors.white,
+                        errorStyle: const TextStyle(fontSize: 10),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: DesignConstants.padding10),
+                Container(
+                    width: Get.width*0.8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextFormField(
+                      controller: searchAddClientController.gstController,
+                      keyboardType: TextInputType.text,
+                      validator: (value) => searchAddClientController.validateGST(value),
+                      style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w500,
+                          fontSize: DesignConstants.fontSize12,
+                          color: Colors.black),
+                      decoration:InputDecoration(
+                        hintText: 'GST',
+                        fillColor: Colors.white,
+                        errorStyle: const TextStyle(fontSize: 10),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: DesignConstants.padding10),
+                Container(
+                    width: Get.width*0.8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextFormField(
+                      controller: searchAddClientController.emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) => searchAddClientController.validateEmail(value),
+                      style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w500,
+                          fontSize: DesignConstants.fontSize12,
+                          color: Colors.black),
+                      decoration:InputDecoration(
+                        hintText: 'Email',
+                        fillColor: Colors.white,
+                        errorStyle: const TextStyle(fontSize: 10),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: DesignConstants.padding10),
+                Container(
+                    width: Get.width*0.8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextFormField(
+                      controller: searchAddClientController.addressController,
+                      keyboardType: TextInputType.streetAddress,
+                      style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w500,
+                          fontSize: DesignConstants.fontSize12,
+                          color: Colors.black),
+                      decoration:InputDecoration(
+                        hintText: 'Address',
+                        fillColor: Colors.white,
+                        errorStyle: const TextStyle(fontSize: 10),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(20)
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: DesignConstants.padding10),
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: shadowText(
-                        text: 'Add client',
-                        fontsize: DesignConstants.fontSize16,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          shadowText(text: 'Name',fontsize: DesignConstants.fontSize16,fontWeight: FontWeight.w400),
-                          Container(
-                              width: Get.width*0.4,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: TextFormField(
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: (value){},
-                                style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: DesignConstants.fontSize12,
-                                    color: Colors.black),
-                                decoration:InputDecoration(
-                                  fillColor: Colors.white,
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                ),
-                              ))
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          shadowText(text: 'Mobile',fontsize: DesignConstants.fontSize16,fontWeight: FontWeight.w400),
-                          Container(
-                              width: Get.width*0.4,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: TextFormField(
-                                keyboardType: TextInputType.number,
-                                onChanged: (value){},
-                                style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: DesignConstants.fontSize12,
-                                    color: Colors.black),
-                                decoration:InputDecoration(
-                                  fillColor: Colors.white,
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                ),
-                              ))
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          shadowText(text: 'GST No.',fontsize: DesignConstants.fontSize16,fontWeight: FontWeight.w400),
-                          Container(
-                              width: Get.width*0.4,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: TextFormField(
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: (value){},
-                                style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: DesignConstants.fontSize12,
-                                    color: Colors.black),
-                                decoration:InputDecoration(
-                                  fillColor: Colors.white,
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                ),
-                              ))
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          shadowText(text: 'Email Id',fontsize: DesignConstants.fontSize16,fontWeight: FontWeight.w400),
-                          Container(
-                              width: Get.width*0.4,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: TextFormField(
-                                keyboardType: TextInputType.number,
-                                onChanged: (value){},
-                                style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: DesignConstants.fontSize12,
-                                    color: Colors.black),
-                                decoration:InputDecoration(
-                                  fillColor: Colors.white,
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                ),
-                              ))
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          shadowText(text: 'Address',fontsize: DesignConstants.fontSize16,fontWeight: FontWeight.w400),
-                          Container(
-                              width: Get.width*0.4,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: TextFormField(
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: (value){},
-                                style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: DesignConstants.fontSize12,
-                                    color: Colors.black),
-                                decoration:InputDecoration(
-                                  fillColor: Colors.white,
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20)
-                                  ),
-                                ),
-                              ))
-                        ],
-                      ),
-                    ),
-                    const SizedBox(
-                      height: DesignConstants.padding20,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        InkWell(
-                          onTap: (){},
-                          child: Container(
-                            height: 40,
-                            width: 100,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: AppColors.blueGradient,
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      blurRadius: 0.4,
-                                      offset: const Offset(3, 4)
-                                  )
-                                ]
-                            ),
-                            child: Center(child: shadowText(text: 'Ok',textcolor: Colors.white,fontsize: 16)),
-                          ),
+                    InkWell(
+                      onTap: (){
+                        Get.back();
+                      },
+                      child: Container(
+                        height: 40,
+                        width: 100,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: AppColors.blueGradient,
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  blurRadius: 0.4,
+                                  offset: const Offset(3, 4)
+                              )
+                            ]
                         ),
-                        InkWell(
-                          onTap: (){},
-                          child: Container(
-                            height: 40,
-                            width: 100,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color: AppColors.blueGradient,
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      blurRadius: 0.4,
-                                      offset: const Offset(3, 4)
-                                  )
-                                ]
-                            ),
-                            child: Center(child: shadowText(text: 'Cancel',textcolor: Colors.white,fontsize: 16)),
-                          ),
-                        ),
-                      ],
+                        child: Center(child: shadowText(text: 'Cancel',textcolor: Colors.white,fontsize: 16)),
+                      ),
                     ),
-
+                    Obx(() => InkWell(
+                      onTap: (){
+                        if (!searchAddClientController.isLoading.value) {
+                          if (searchAddClientController.formKey.currentState!.validate()) {
+                            searchAddClientController.addClientPostApi();
+                          }
+                        }
+                      },
+                      child: Container(
+                        height: 40,
+                        width: 100,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: AppColors.blueGradient,
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  blurRadius: 0.4,
+                                  offset: const Offset(3, 4)
+                              )
+                            ]
+                        ),
+                        child: Center(
+                          child: searchAddClientController.isLoading.value
+                              ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
+                              : shadowText(text: 'Add',textcolor: Colors.white,fontsize: 16)
+                        ),
+                      ),
+                    )),
                   ],
-                ),
-              ),
+                )
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

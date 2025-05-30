@@ -20,7 +20,7 @@ import '../../utils/utility.dart';
 import '../order/order.dart';
 
 class BillingOptions extends StatelessWidget {
-  BillingController scribbleController = Get.put(BillingController());
+  BillingController billingController = Get.put(BillingController());
   OrderController orderController = Get.put(OrderController());
   PurchaseController purchaseController = Get.put(PurchaseController());
 
@@ -150,7 +150,7 @@ class BillingOptions extends StatelessWidget {
                 ],
               ),
             ),
-            Obx(() => scribbleController.isModelLoading.value
+            Obx(() => billingController.isModelLoading.value
                 ? BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                     child: Container(
@@ -178,7 +178,7 @@ class BillingOptions extends StatelessWidget {
                               const CircularProgressIndicator(),
                               const SizedBox(height: 20),
                               Obx(() => Text(
-                                    scribbleController.downloadStatus.value,
+                                    billingController.downloadStatus.value,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,

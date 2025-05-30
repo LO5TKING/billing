@@ -1,6 +1,8 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
+import 'package:billing/controllers/login_controller.dart';
 import 'package:billing/ui/auth/signup_screen.dart';
+import 'package:billing/validation/validation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,7 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../clients/billing_options.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  final LoginController loginController = Get.put(LoginController());
+  
+  LoginScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +50,13 @@ class LoginScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15),
                   ),
                   padding: const EdgeInsets.all(DesignConstants.padding20),
-                  child: Column(
+                  child: Form(
+                    key: loginController.formKey,
+                    child: Column(
                     children: [
                       TextFormField(
+                        controller: loginController.mobileNo,
+                        validator: Validation.validateMobileNumber,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
                           labelText: 'Mobile No.',
@@ -68,7 +76,9 @@ class LoginScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      TextField(
+                      TextFormField(
+                        controller: loginController.password,
+                        validator: Validation.validatePassword,
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: 'Password',
@@ -88,11 +98,12 @@ class LoginScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement login logic
-                          Get.to(() => BillingOptions());
-                        },
+                      Obx(() => ElevatedButton(
+                        onPressed: loginController.isLoading.value
+                            ? null
+                            : () async {
+                                await loginController.loginPostApi();
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.blueGradient,
                           padding: const EdgeInsets.symmetric(
@@ -103,14 +114,16 @@ class LoginScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
+                        child: loginController.isLoading.value
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
                           'Login',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
                           ),
                         ),
-                      ),
+                      )),
                       const SizedBox(height: 20),
                       TextButton(
                         onPressed: () {
@@ -125,7 +138,7 @@ class LoginScreen extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ),
+                  )),
                 ),
                 const Spacer(),
               ],
