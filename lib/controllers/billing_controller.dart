@@ -495,7 +495,7 @@ class BillingController extends GetxController {
 
   void editItem(int index) {
     final item = itemList[index];
-    
+
     // Reset the edit ink objects and recognized values
     editRateInk.strokes.clear();
     editQuantityInk.strokes.clear();
@@ -521,39 +521,41 @@ class BillingController extends GetxController {
                       border: Border.all(color: AppColors.blueGradient),
                     ),
                     child: ClipRRect(
-                      child: Listener(
-                        onPointerDown: (event) {
-                          if (event.kind == PointerDeviceKind.stylus ||
-                              event.kind == PointerDeviceKind.touch) {
-                            editQuantityInk.strokes.add(Stroke());
-                            setState(() {});
-                          }
-                        },
-                        onPointerMove: (event) {
-                          if (event.kind == PointerDeviceKind.stylus ||
-                              event.kind == PointerDeviceKind.touch) {
-                            final RenderObject? object = context.findRenderObject();
-                            final localPosition =
-                                (object as RenderBox?)?.globalToLocal(event.position);
-                            if (localPosition != null &&
-                                editQuantityInk.strokes.isNotEmpty) {
-                              editQuantityInk.strokes.last.points.add(
-                                StrokePoint(
-                                  x: localPosition.dx,
-                                  y: localPosition.dy,
-                                  t: DateTime.now().millisecondsSinceEpoch,
-                                ),
-                              );
+                      child: Builder(  // Add Builder widget here
+                        builder: (quantityContext) => Listener(
+                          onPointerDown: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              editQuantityInk.strokes.add(Stroke());
                               setState(() {});
                             }
-                          }
-                        },
-                        onPointerUp: (event) {
-                          setState(() {});
-                        },
-                        child: CustomPaint(
-                          painter: SignatureStyle(ink: editQuantityInk),
-                          size: Size.infinite,
+                          },
+                          onPointerMove: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              final RenderObject? object = quantityContext.findRenderObject();  // Use quantityContext
+                              final localPosition =
+                              (object as RenderBox?)?.globalToLocal(event.position);
+                              if (localPosition != null &&
+                                  editQuantityInk.strokes.isNotEmpty) {
+                                editQuantityInk.strokes.last.points.add(
+                                  StrokePoint(
+                                    x: localPosition.dx,
+                                    y: localPosition.dy,
+                                    t: DateTime.now().millisecondsSinceEpoch,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            }
+                          },
+                          onPointerUp: (event) {
+                            setState(() {});
+                          },
+                          child: CustomPaint(
+                            painter: SignatureStyle(ink: editQuantityInk),
+                            size: Size.infinite,
+                          ),
                         ),
                       ),
                     ),
@@ -625,7 +627,7 @@ class BillingController extends GetxController {
               ),
               SizedBox(height: 10),
               Text('Recognized: $recognizedEditQuantity',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 20),
 
               // Rate handwriting box
@@ -640,39 +642,41 @@ class BillingController extends GetxController {
                       border: Border.all(color: AppColors.blueGradient),
                     ),
                     child: ClipRRect(
-                      child: Listener(
-                        onPointerDown: (event) {
-                          if (event.kind == PointerDeviceKind.stylus ||
-                              event.kind == PointerDeviceKind.touch) {
-                            editRateInk.strokes.add(Stroke());
-                            setState(() {});
-                          }
-                        },
-                        onPointerMove: (event) {
-                          if (event.kind == PointerDeviceKind.stylus ||
-                              event.kind == PointerDeviceKind.touch) {
-                            final RenderObject? object = context.findRenderObject();
-                            final localPosition =
-                                (object as RenderBox?)?.globalToLocal(event.position);
-                            if (localPosition != null &&
-                                editRateInk.strokes.isNotEmpty) {
-                              editRateInk.strokes.last.points.add(
-                                StrokePoint(
-                                  x: localPosition.dx,
-                                  y: localPosition.dy,
-                                  t: DateTime.now().millisecondsSinceEpoch,
-                                ),
-                              );
+                      child: Builder(  // Add Builder widget here
+                        builder: (rateContext) => Listener(
+                          onPointerDown: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              editRateInk.strokes.add(Stroke());
                               setState(() {});
                             }
-                          }
-                        },
-                        onPointerUp: (event) {
-                          setState(() {});
-                        },
-                        child: CustomPaint(
-                          painter: SignatureStyle(ink: editRateInk),
-                          size: Size.infinite,
+                          },
+                          onPointerMove: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              final RenderObject? object = rateContext.findRenderObject();  // Use rateContext
+                              final localPosition =
+                              (object as RenderBox?)?.globalToLocal(event.position);
+                              if (localPosition != null &&
+                                  editRateInk.strokes.isNotEmpty) {
+                                editRateInk.strokes.last.points.add(
+                                  StrokePoint(
+                                    x: localPosition.dx,
+                                    y: localPosition.dy,
+                                    t: DateTime.now().millisecondsSinceEpoch,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            }
+                          },
+                          onPointerUp: (event) {
+                            setState(() {});
+                          },
+                          child: CustomPaint(
+                            painter: SignatureStyle(ink: editRateInk),
+                            size: Size.infinite,
+                          ),
                         ),
                       ),
                     ),
@@ -744,7 +748,7 @@ class BillingController extends GetxController {
               ),
               SizedBox(height: 10),
               Text('Recognized: $recognizedEditRate',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           );
         },
