@@ -624,10 +624,10 @@ class BillingController extends GetxController {
                 ],
               ),
               SizedBox(height: 10),
-              Text('Recognized: $recognizedEditQuantity', 
+              Text('Recognized: $recognizedEditQuantity',
                 style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 20),
-              
+
               // Rate handwriting box
               Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
               Stack(
@@ -743,7 +743,7 @@ class BillingController extends GetxController {
                 ],
               ),
               SizedBox(height: 10),
-              Text('Recognized: $recognizedEditRate', 
+              Text('Recognized: $recognizedEditRate',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           );
@@ -772,7 +772,7 @@ class BillingController extends GetxController {
     update();
   }
 
-  // Add a method to print PDF receipts
+  // Add a method to print PDF receipts with dialog
   Future<void> printPdfReceipt() async {
     if (isPrinting.value) return; // Prevent multiple prints
 
@@ -781,16 +781,207 @@ class BillingController extends GetxController {
       return;
     }
 
-    try {
-      isPrinting.value = true;
-      await printController.printPdfReceipt(itemList);
+    // Variables for the dialog
+    double discountAmount = 0;
+    double amountToBePaid = totalAmount;
+    double balanceAmount = 0;
+    String discountType = 'Flat'; // 'Flat' or 'Percentage'
 
-      Get.snackbar('Success', 'Receipt sent to printer');
-    } catch (e) {
-      Get.snackbar("Error", "Failed to print: $e");
-    } finally {
-      isPrinting.value = false;
-    }
+    Get.defaultDialog(
+      title: 'Payment Details',
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          // Calculate amounts based on current values
+          double calculatedTotal = totalAmount;
+          double finalAmount = calculatedTotal;
+
+          // Apply discount based on type
+          if (discountType == 'Percentage' && discountAmount > 0) {
+            finalAmount = calculatedTotal - (calculatedTotal * discountAmount / 100);
+          } else if (discountType == 'Flat') {
+            finalAmount = calculatedTotal - discountAmount;
+          }
+
+          // Ensure final amount is not negative
+          finalAmount = finalAmount < 0 ? 0 : finalAmount;
+
+          // Calculate balance
+          balanceAmount = finalAmount - amountToBePaid;
+          balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
+
+          return Container(
+            width: Get.width * 0.8,
+            child: Column(
+              children: [
+                // Total Amount
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('₹ ${calculatedTotal.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                SizedBox(height: 10),
+
+                // Discount Type Selection
+                Row(
+                  children: [
+                    Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(width: 10),
+                    Row(
+                      children: [
+                        Radio(
+                          value: 'Flat',
+                          groupValue: discountType,
+                          onChanged: (value) {
+                            setState(() {
+                              discountType = value.toString();
+                              // Reset discount amount when changing type
+                              discountAmount = 0;
+                            });
+                          },
+                        ),
+                        Text('Flat Amount'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Radio(
+                          value: 'Percentage',
+                          groupValue: discountType,
+                          onChanged: (value) {
+                            setState(() {
+                              discountType = value.toString();
+                              // Reset discount amount when changing type
+                              discountAmount = 0;
+                            });
+                          },
+                        ),
+                        Text('Percentage'),
+                      ],
+                    ),
+                  ],
+                ),
+
+                // Discount Amount Input
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
+                      style: TextStyle(fontWeight: FontWeight.bold)
+                    ),
+                    Container(
+                      width: 100,
+                      child: TextField(
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          border: OutlineInputBorder(),
+                          prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            discountAmount = double.tryParse(value) ?? 0;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+
+                // Final Amount after discount
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('₹ ${finalAmount.toStringAsFixed(2)}',
+                         style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
+                  ],
+                ),
+                SizedBox(height: 10),
+
+                // Amount to be Paid Input
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Container(
+                      width: 100,
+                      child: TextField(
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          border: OutlineInputBorder(),
+                          prefixText: '₹ ',
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            amountToBePaid = double.tryParse(value) ?? 0;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+
+                // Balance Amount
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('₹ ${balanceAmount.toStringAsFixed(2)}',
+                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      textConfirm: 'Print Receipt',
+      confirmTextColor: Colors.white,
+      buttonColor: AppColors.blueGradient,
+      onConfirm: () async {
+        try {
+          Get.back(); // Close dialog
+          isPrinting.value = true;
+
+          // Calculate final amount based on discount
+          double finalAmount = totalAmount;
+          if (discountType == 'Percentage' && discountAmount > 0) {
+            finalAmount = totalAmount - (totalAmount * discountAmount / 100);
+          } else if (discountType == 'Flat') {
+            finalAmount = totalAmount - discountAmount;
+          }
+          finalAmount = finalAmount < 0 ? 0 : finalAmount;
+
+          // Pass discount information to print controller
+          // Calculate actual discount amount in flat value
+          double actualDiscountAmount = discountType == 'Percentage' ?
+              (totalAmount * discountAmount / 100) : discountAmount;
+
+          await printController.printPdfReceipt(
+            itemList,
+            discountAmount: actualDiscountAmount,
+            amountPaid: amountToBePaid
+          );
+
+          Get.snackbar('Success', 'Receipt sent to printer');
+          await shopDetailApi(); // Update bill count
+        } catch (e) {
+          Get.snackbar("Error", "Failed to print: $e");
+        } finally {
+          isPrinting.value = false;
+        }
+      },
+      textCancel: 'Cancel',
+      onCancel: () {
+        // Just close the dialog
+      },
+    );
   }
 
   void _updateDateTime() {

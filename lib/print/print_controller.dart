@@ -25,7 +25,7 @@ class PrintController extends GetxController {
   final SplashScreenController _splashController =
       Get.find<SplashScreenController>();
 
-  Future<void> printPdfReceipt(List<Map<String, dynamic>> items) async {
+  Future<void> printPdfReceipt(List<Map<String, dynamic>> items, {double discountAmount = 0, double amountPaid = 0}) async {
     if (!_splashController.isConnected.value) {
       throw Exception('No printer connected');
     }
@@ -90,7 +90,7 @@ class PrintController extends GetxController {
       }
 
       // Generate receipt data
-      final bytes = await generateDirectReceiptData(items);
+      final bytes = await generateDirectReceiptData(items, discountAmount: discountAmount, amountPaid: amountPaid);
 
       // Use even larger chunk size for faster transfer
       int chunkSize = 200; // Increased from 100 to 200
@@ -135,7 +135,7 @@ class PrintController extends GetxController {
   }
 
   Future<List<int>> generateDirectReceiptData(
-      List<Map<String, dynamic>> items) async {
+      List<Map<String, dynamic>> items, {double discountAmount = 0, double amountPaid = 0}) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
     List<int> bytes = [];
@@ -422,6 +422,102 @@ class PrintController extends GetxController {
         ),
       ),
     ]);
+    
+    // Add discount if applicable
+    if (discountAmount > 0) {
+      bytes += generator.row([
+        PosColumn(text: '', width: 7),
+        PosColumn(
+            text: 'DISCOUNT',
+            width: 2,
+            styles: PosStyles(
+              align: PosAlign.right,
+              bold: true,
+              fontType: PosFontType.fontA,
+            )),
+        PosColumn(
+          text: discountAmount.toString(),
+          width: 3,
+          styles: PosStyles(
+            align: PosAlign.center,
+            bold: true,
+            fontType: PosFontType.fontA,
+          ),
+        ),
+      ]);
+      
+      // Add final amount after discount
+      bytes += generator.row([
+        PosColumn(text: '', width: 7),
+        PosColumn(
+            text: 'FINAL AMOUNT',
+            width: 2,
+            styles: PosStyles(
+              align: PosAlign.right,
+              bold: true,
+              fontType: PosFontType.fontA,
+            )),
+        PosColumn(
+          text: (total - discountAmount).toString(),
+          width: 3,
+          styles: PosStyles(
+            align: PosAlign.center,
+            bold: true,
+            fontType: PosFontType.fontA,
+          ),
+        ),
+      ]);
+    }
+    
+    // Add amount paid if applicable
+    if (amountPaid > 0) {
+      bytes += generator.row([
+        PosColumn(text: '', width: 7),
+        PosColumn(
+            text: 'AMOUNT PAID',
+            width: 2,
+            styles: PosStyles(
+              align: PosAlign.right,
+              bold: true,
+              fontType: PosFontType.fontA,
+            )),
+        PosColumn(
+          text: amountPaid.toString(),
+          width: 3,
+          styles: PosStyles(
+            align: PosAlign.center,
+            bold: true,
+            fontType: PosFontType.fontA,
+          ),
+        ),
+      ]);
+      
+      // Add balance amount
+      double finalAmount = total - discountAmount;
+      double balanceAmount = amountPaid - finalAmount;
+      String balanceText = balanceAmount >= 0 ? 'CHANGE' : 'BALANCE DUE';
+      
+      bytes += generator.row([
+        PosColumn(text: '', width: 7),
+        PosColumn(
+            text: balanceText,
+            width: 2,
+            styles: PosStyles(
+              align: PosAlign.right,
+              bold: true,
+              fontType: PosFontType.fontA,
+            )),
+        PosColumn(
+          text: balanceAmount.abs().toString(),
+          width: 3,
+          styles: PosStyles(
+            align: PosAlign.center,
+            bold: true,
+            fontType: PosFontType.fontA,
+          ),
+        ),
+      ]);
+    }
 
     bytes += generator.hr();
     bytes += generator.text('Thank you for your business!',
