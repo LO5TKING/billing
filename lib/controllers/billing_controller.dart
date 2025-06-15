@@ -56,6 +56,11 @@ class BillingController extends GetxController {
   final RxString formattedDateTime = ''.obs;
   Timer? _dateTimeTimer;
 
+  final Ink editRateInk = Ink();
+  final Ink editQuantityInk = Ink();
+  String recognizedEditRate = '';
+  String recognizedEditQuantity = '';
+
   Future<bool> _downloadModelWithTimeout() async {
     try {
       // Create a timeout future
@@ -489,10 +494,7 @@ class BillingController extends GetxController {
   }
 
   // Create separate Ink objects for editing
-  final Ink editRateInk = Ink();
-  final Ink editQuantityInk = Ink();
-  String recognizedEditRate = '';
-  String recognizedEditQuantity = '';
+
 
   void editItem(int index) {
     final item = itemList[index];
