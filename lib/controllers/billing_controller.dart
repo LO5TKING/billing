@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app/config/constants_text.dart';
+import '../model/customer_response_model.dart';
 import '../networks/api_service.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
@@ -777,7 +778,7 @@ class BillingController extends GetxController {
   }
 
   // Add a method to print PDF receipts with dialog
-  Future<void> printPdfReceipt() async {
+  Future<void> printPdfReceipt(Datum? customer) async {
     if (isPrinting.value) return; // Prevent multiple prints
 
     if (itemList.isEmpty) {
@@ -967,6 +968,13 @@ class BillingController extends GetxController {
           double actualDiscountAmount = discountType == 'Percentage' ?
               (totalAmount * discountAmount / 100) : discountAmount;
 
+          await submitBillingData(
+              customerId: customer?.custId,
+              customerName: customer?.name,
+            clientId: customer?.clientId
+
+
+          );
           await printController.printPdfReceipt(
             itemList,
             discountAmount: actualDiscountAmount,
@@ -1183,9 +1191,9 @@ class BillingController extends GetxController {
   // Function to make billing API call
   Future<void> submitBillingData({
     String orderNo = '',
-    int customerId = 0,
-    String customerName = '',
-    String clientId = '',
+    int? customerId = 0,
+    String? customerName = '',
+    String? clientId = '',
     double discount = 0,
     double gst = 0,
     String discountType = 'Flat',
@@ -1212,6 +1220,7 @@ class BillingController extends GetxController {
 
       // Prepare order details from itemList
       List<Map<String, dynamic>> orderDetails = [];
+      orderNo = DateTime.now().millisecondsSinceEpoch.toString();
 
       for (int i = 0; i < itemList.length; i++) {
         final item = itemList[i];
@@ -1222,7 +1231,8 @@ class BillingController extends GetxController {
         // Convert image to base64 if available
         String productName = '';
         if (item['particulars'] is Uint8List) {
-          productName = _convertImageToBase64(item['particulars']);
+          // productName = _convertImageToBase64(item['particulars']);
+          productName = "trying test";
         }
 
         orderDetails.add({
@@ -1246,7 +1256,7 @@ class BillingController extends GetxController {
 
       // Prepare billing data
       Map<String, dynamic> billingData = {
-        "Billing": {
+        "oBilling": {
           "billingId": 0,
           "orderNo": orderNo,
           "customerId": customerId,
@@ -1280,7 +1290,7 @@ class BillingController extends GetxController {
 
       // Make API call
       final response = await apiService.postRequest(
-        url: "https://roughbill.com/api/Billing/AddBilling",
+        url: "https://roughbill.com/api/Order/addorder",
         data: billingData,
       );
 

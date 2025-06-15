@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
@@ -481,41 +482,285 @@ class PurchaseController extends GetxController {
   void clearPadAndSignature() {
     clearPad();
   }
+  final Ink editRateInk = Ink();
+  final Ink editQuantityInk = Ink();
+  String recognizedEditRate = '';
+  String recognizedEditQuantity = '';
 
   void editItem(int index) {
     final item = itemList[index];
 
+    // Reset the edit ink objects and recognized values
+    editRateInk.strokes.clear();
+    editQuantityInk.strokes.clear();
+    recognizedEditRate = item['rate'];
+    recognizedEditQuantity = item['quantity'];
+
     Get.defaultDialog(
       title: 'Edit Item',
       barrierDismissible: false,
-      content: Column(
-        children: [
-          TextField(
-            keyboardType: TextInputType.number,
-            controller: TextEditingController(text: item['quantity']),
-            decoration: const InputDecoration(labelText: 'quantity'),
-            onChanged: (value) {
-              itemList[index]['quantity'] = value;
-            },
-          ),
-          TextField(
-            keyboardType: TextInputType.number,
-            controller: TextEditingController(text: item['rate']),
-            decoration: const InputDecoration(labelText: 'rate'),
-            onChanged: (value) {
-              itemList[index]['rate'] = value;
-            },
-          ),
-        ],
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            children: [
+              // Quantity handwriting box
+              Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 75,
+                    width: Get.width * 0.6,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.blueGradient),
+                    ),
+                    child: ClipRRect(
+                      child: Builder(  // Add Builder widget here
+                        builder: (quantityContext) => Listener(
+                          onPointerDown: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              editQuantityInk.strokes.add(Stroke());
+                              setState(() {});
+                            }
+                          },
+                          onPointerMove: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              final RenderObject? object = quantityContext.findRenderObject();  // Use quantityContext
+                              final localPosition =
+                              (object as RenderBox?)?.globalToLocal(event.position);
+                              if (localPosition != null &&
+                                  editQuantityInk.strokes.isNotEmpty) {
+                                editQuantityInk.strokes.last.points.add(
+                                  StrokePoint(
+                                    x: localPosition.dx,
+                                    y: localPosition.dy,
+                                    t: DateTime.now().millisecondsSinceEpoch,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            }
+                          },
+                          onPointerUp: (event) {
+                            setState(() {});
+                          },
+                          child: CustomPaint(
+                            painter: SignatureStyle(ink: editQuantityInk),
+                            size: Size.infinite,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () {
+                        editQuantityInk.strokes.clear();
+                        setState(() {});
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          final candidates = await digitalInkRecognizer.recognize(editQuantityInk);
+                          if (candidates.isNotEmpty) {
+                            var text = candidates[0].text;
+                            text = text
+                                .toUpperCase()
+                                .replaceAll('O', '0')
+                                .replaceAll('I', '1')
+                                .replaceAll('L', '1')
+                                .replaceAll('U', '4')
+                                .replaceAll('A', '4')
+                                .replaceAll('Z', '2')
+                                .replaceAll('\\', '1')
+                                .replaceAll('/', '1')
+                                .replaceAll('H', '4')
+                                .replaceAll('B', '3')
+                                .replaceAll('S', '5')
+                                .replaceAll('Z', '2')
+                                .replaceAll('T', '7');
+
+                            recognizedEditQuantity = text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            if (recognizedEditQuantity.isEmpty) {
+                              Get.snackbar("Error", "Quantity Not Recognized");
+                            }
+                          } else {
+                            Get.snackbar("Error", "No candidates recognized");
+                          }
+                          setState(() {});
+                        } catch (e) {
+                          Get.snackbar("Error", "Recognition failed: $e");
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.blueGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: EdgeInsets.all(4),
+                        child: const Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Text('Recognized: $recognizedEditQuantity',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 20),
+
+              // Rate handwriting box
+              Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 75,
+                    width: Get.width * 0.6,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.blueGradient),
+                    ),
+                    child: ClipRRect(
+                      child: Builder(  // Add Builder widget here
+                        builder: (rateContext) => Listener(
+                          onPointerDown: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              editRateInk.strokes.add(Stroke());
+                              setState(() {});
+                            }
+                          },
+                          onPointerMove: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              final RenderObject? object = rateContext.findRenderObject();  // Use rateContext
+                              final localPosition =
+                              (object as RenderBox?)?.globalToLocal(event.position);
+                              if (localPosition != null &&
+                                  editRateInk.strokes.isNotEmpty) {
+                                editRateInk.strokes.last.points.add(
+                                  StrokePoint(
+                                    x: localPosition.dx,
+                                    y: localPosition.dy,
+                                    t: DateTime.now().millisecondsSinceEpoch,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            }
+                          },
+                          onPointerUp: (event) {
+                            setState(() {});
+                          },
+                          child: CustomPaint(
+                            painter: SignatureStyle(ink: editRateInk),
+                            size: Size.infinite,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () {
+                        editRateInk.strokes.clear();
+                        setState(() {});
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          final candidates = await digitalInkRecognizer.recognize(editRateInk);
+                          if (candidates.isNotEmpty) {
+                            var text = candidates[0].text;
+                            text = text
+                                .toUpperCase()
+                                .replaceAll('O', '0')
+                                .replaceAll('I', '1')
+                                .replaceAll('L', '1')
+                                .replaceAll('U', '4')
+                                .replaceAll('A', '4')
+                                .replaceAll('Z', '2')
+                                .replaceAll('\\', '1')
+                                .replaceAll('/', '1')
+                                .replaceAll('H', '4')
+                                .replaceAll('B', '3')
+                                .replaceAll('S', '5')
+                                .replaceAll('Z', '2')
+                                .replaceAll('T', '7');
+
+                            recognizedEditRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            if (recognizedEditRate.isEmpty) {
+                              Get.snackbar("Error", "Rate Not Recognized");
+                            }
+                          } else {
+                            Get.snackbar("Error", "No candidates recognized");
+                          }
+                          setState(() {});
+                        } catch (e) {
+                          Get.snackbar("Error", "Recognition failed: $e");
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.blueGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: EdgeInsets.all(4),
+                        child: const Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              Text('Recognized: $recognizedEditRate',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          );
+        },
       ),
       textConfirm: 'Save',
       textCancel: 'Cancel',
-      onCancel: (){
+      onCancel: () {
         Get.back();
       },
       onConfirm: () {
-        update();
-        Get.back();
+        if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
+          itemList[index]['quantity'] = recognizedEditQuantity;
+          itemList[index]['rate'] = recognizedEditRate;
+          update();
+          Get.back();
+        } else {
+          Get.snackbar("Error", "Quantity and Rate cannot be empty");
+        }
       },
     );
   }

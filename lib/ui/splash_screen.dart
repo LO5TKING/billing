@@ -1,7 +1,9 @@
 import 'package:billing/app/config/color_constants.dart';
+import 'package:billing/app/config/constants_text.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/ui/auth/login_screen.dart';
 import 'package:billing/ui/clients/billing_options.dart';
+import 'package:billing/utils/shared_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -115,8 +117,15 @@ class _SplashScreenState extends State<SplashScreen> {
                                 borderRadius: BorderRadius.circular(15.0),
                               ),
                             ),
-                            // onPressed: () => Get.to(() => LoginScreen()),
-                            onPressed: () => Get.to(() => BillingOptions()),
+                            onPressed: () async {
+                              bool isLoogedIn = await SharedPrefs.getBool(ConstantsText.isloggedIn) ?? false;
+                              if(isLoogedIn){
+                                Get.to(() => BillingOptions());
+                              }else{
+                                Get.to(() => LoginScreen());
+                              }
+                            } ,
+                            // onPressed: () => ,
                             icon: const Icon(Icons.arrow_forward),
                             label: const Text(
                               'Start',

@@ -9,7 +9,7 @@ LoginResponseModel loginResponseModelFromJson(String str) => LoginResponseModel.
 String loginResponseModelToJson(LoginResponseModel data) => json.encode(data.toJson());
 
 class LoginResponseModel {
-  int? userId;
+  int? clientUserId;
   String? companyName;
   String? personName;
   String? mobileNo;
@@ -31,7 +31,7 @@ class LoginResponseModel {
   dynamic password;
 
   LoginResponseModel({
-    this.userId,
+    this.clientUserId,
     this.companyName,
     this.personName,
     this.mobileNo,
@@ -54,7 +54,7 @@ class LoginResponseModel {
   });
 
   factory LoginResponseModel.fromJson(Map<String, dynamic> json) => LoginResponseModel(
-    userId: json["userId"],
+    clientUserId: json["clientUserId"],
     companyName: json["companyName"],
     personName: json["personName"],
     mobileNo: json["mobileNo"],
@@ -77,7 +77,7 @@ class LoginResponseModel {
   );
 
   Map<String, dynamic> toJson() => {
-    "userId": userId,
+    "clientUserId": clientUserId,
     "companyName": companyName,
     "personName": personName,
     "mobileNo": mobileNo,

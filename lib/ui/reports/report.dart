@@ -1,3 +1,4 @@
+import 'package:billing/controllers/report_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -106,6 +107,8 @@ class SearchAndReports extends StatelessWidget {
     },
     // Add more rows as needed
   ];
+
+  ReportController reportController = Get.put(ReportController());
 
   SearchAndReports({super.key});
 

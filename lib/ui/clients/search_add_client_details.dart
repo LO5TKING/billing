@@ -1,3 +1,4 @@
+import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
@@ -6,106 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../app/config/color_constants.dart';
 import '../../app/config/design_constants.dart';
 import '../../controllers/search_add_client_controller.dart';
+import '../../model/customer_response_model.dart';
 import '../../utils/utility.dart';
 
 class SearchAddClientDetails extends StatelessWidget {
 
   SearchAddClientController searchAddClientController = Get.put(SearchAddClientController());
-
-  final List<Map<String, String>> dummyData = [
-    {
-      "sr": "1",
-      "name": "Rahul",
-      "mobile": "9812345678",
-      "address": "ABC",
-    },
-    {
-      "sr": "2",
-      "name": "David",
-      "mobile": "9708765432",
-      "address": "ABC",
-    },
-    {
-      "sr": "3",
-      "name": "Bala",
-      "mobile": "9667890345",
-      "address": "ABC",
-    },
-    {
-      "sr": "1",
-      "name": "Rahul",
-      "mobile": "9812345678",
-      "address": "ABC",
-    },
-    {
-      "sr": "2",
-      "name": "David",
-      "mobile": "9708765432",
-      "address": "ABC",
-    },
-    {
-      "sr": "3",
-      "name": "Bala",
-      "mobile": "9667890345",
-      "address": "ABC",
-    },
-    {
-      "sr": "1",
-      "name": "Rahul",
-      "mobile": "9812345678",
-      "address": "ABC",
-    },
-    {
-      "sr": "2",
-      "name": "David",
-      "mobile": "9708765432",
-      "address": "ABC",
-    },
-    {
-      "sr": "3",
-      "name": "Bala",
-      "mobile": "9667890345",
-      "address": "ABC",
-    },
-    {
-      "sr": "1",
-      "name": "Rahul",
-      "mobile": "9812345678",
-      "address": "ABC",
-    },
-    {
-      "sr": "2",
-      "name": "David",
-      "mobile": "9708765432",
-      "address": "ABC",
-    },
-    {
-      "sr": "3",
-      "name": "Bala",
-      "mobile": "9667890345",
-      "address": "ABC",
-    },
-    {
-      "sr": "1",
-      "name": "Rahul",
-      "mobile": "9812345678",
-      "address": "ABC",
-    },
-    {
-      "sr": "2",
-      "name": "David",
-      "mobile": "9708765432",
-      "address": "ABC",
-    },
-    {
-      "sr": "3",
-      "name": "Bala",
-      "mobile": "9667890345",
-      "address": "ABC",
-    },
-
-    // Add more rows as needed
-  ];
 
   SearchAddClientDetails({super.key});
 
@@ -123,193 +30,200 @@ class SearchAddClientDetails extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Card(
-                  elevation: 20,
-                  color: Colors.white,
-                  child: Container(
-                    width: Get.width * 0.9,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal:  DesignConstants.padding10,vertical: DesignConstants.padding20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                Obx(
+                () => Container(
+                    margin: const EdgeInsets.only(right: DesignConstants.padding30),
+                    alignment: Alignment.topRight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: shadowText(
-                            text: 'Search and add clients',
-                            fontsize: DesignConstants.fontSize16,
-                          ),
+                        Text("Add Purchaser",style: TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.bold),),
+                        Switch(
+                            value: searchAddClientController.addPurchaser.value,
+                            onChanged: (value){
+                              searchAddClientController.addPurchaser.value = value;
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  width: Get.width * 0.9,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal:  DesignConstants.padding10,vertical: DesignConstants.padding20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: shadowText(
+                          text: 'Search and add clients',
+                          fontsize: DesignConstants.fontSize16,
                         ),
-                        Form(
-                          key: searchAddClientController.searchFormKey,
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    shadowText(text: 'Name',fontsize: DesignConstants.fontSize14),
-                                    Container(
-                                        width: Get.width*0.4,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: TextFormField(
-                                          controller: searchAddClientController.searchNameController,
-                                          keyboardType: TextInputType.name,
-                                          onChanged: (value){},
-                                          style: GoogleFonts.montserrat(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: DesignConstants.fontSize12,
-                                              color: Colors.black),
-                                          decoration:InputDecoration(
-                                            fillColor: Colors.white,
-                                            focusedBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.grey,
-                                                ),
-                                                borderRadius: BorderRadius.circular(20)
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.grey,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius: BorderRadius.circular(20)
-                                            ),
-                                          ),
-                                        ))
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    shadowText(text: 'Mobile',fontsize: DesignConstants.fontSize14),
-                                    Container(
-                                        width: Get.width*0.4,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: TextFormField(
-                                          controller: searchAddClientController.searchMobileController,
-                                          keyboardType: TextInputType.phone,
-                                          onChanged: (value){},
-                                          style: GoogleFonts.montserrat(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: DesignConstants.fontSize12,
-                                              color: Colors.black),
-                                          decoration:InputDecoration(
-                                            fillColor: Colors.white,
-                                            focusedBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.grey,
-                                                ),
-                                                borderRadius: BorderRadius.circular(20)
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                  color: Colors.grey,
-                                                  width: 1.0,
-                                                ),
-                                                borderRadius: BorderRadius.circular(20)
-                                            ),
-                                          ),
-                                        ))
-                                  ],
-                                ),
-                              ),
-                              Center(
-                                child: Obx(() => InkWell(
-                                  onTap: (){
-                                    if (!searchAddClientController.isSearching.value) {
-                                      searchAddClientController.searchClients();
-                                    }
-                                  },
-                                  child: Container(
-                                    height: 40,
-                                    width: 100,
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        color: AppColors.blueGradient,
-                                        boxShadow: [
-                                          BoxShadow(
-                                              color: Colors.grey.withOpacity(0.3),
-                                              blurRadius: 0.4,
-                                              offset: const Offset(3, 4)
-                                          )
-                                        ]
-                                    ),
-                                    child: Center(
-                                      child: searchAddClientController.isSearching.value
-                                          ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                                          : shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)
-                                    ),
-                                  ),
-                                )),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: DesignConstants.padding20,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      ),
+                      Form(
+                        key: searchAddClientController.searchFormKey,
+                        child: Column(
                           children: [
-                            InkWell(
-                              onTap: (){
-                                addClientDialogBox();
-                              },
-                              child: Container(
-                                height: 40,
-                                width: 100,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    color: AppColors.blueGradient,
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Colors.grey.withOpacity(0.3),
-                                          blurRadius: 0.4,
-                                          offset: const Offset(3, 4)
-                                      )
-                                    ]
-                                ),
-                                child: Center(child: shadowText(text: 'Add',textcolor: Colors.white,fontsize: 16)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  shadowText(text: 'Name',fontsize: DesignConstants.fontSize14),
+                                  Container(
+                                      width: Get.width*0.4,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: TextFormField(
+                                        controller: searchAddClientController.searchNameController,
+                                        keyboardType: TextInputType.name,
+                                        onChanged: (value){},
+                                        style: GoogleFonts.montserrat(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: DesignConstants.fontSize12,
+                                            color: Colors.black),
+                                        decoration:InputDecoration(
+                                          fillColor: Colors.white,
+                                          focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                              borderRadius: BorderRadius.circular(20)
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                                width: 1.0,
+                                              ),
+                                              borderRadius: BorderRadius.circular(20)
+                                          ),
+                                        ),
+                                      ))
+                                ],
                               ),
                             ),
-                            InkWell(
-                              onTap: (){},
-                              child: Container(
-                                height: 40,
-                                width: 100,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    color: AppColors.blueGradient,
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Colors.grey.withOpacity(0.3),
-                                          blurRadius: 0.4,
-                                          offset: const Offset(3, 4)
-                                      )
-                                    ]
-                                ),
-                                child: Center(child: shadowText(text: 'Cancel',textcolor: Colors.white,fontsize: 16)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: DesignConstants.padding15,horizontal: DesignConstants.padding20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  shadowText(text: 'Mobile',fontsize: DesignConstants.fontSize14),
+                                  Container(
+                                      width: Get.width*0.4,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: TextFormField(
+                                        controller: searchAddClientController.searchMobileController,
+                                        keyboardType: TextInputType.phone,
+                                        onChanged: (value){},
+                                        style: GoogleFonts.montserrat(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: DesignConstants.fontSize12,
+                                            color: Colors.black),
+                                        decoration:InputDecoration(
+                                          fillColor: Colors.white,
+                                          focusedBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                              borderRadius: BorderRadius.circular(20)
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                                width: 1.0,
+                                              ),
+                                              borderRadius: BorderRadius.circular(20)
+                                          ),
+                                        ),
+                                      ))
+                                ],
                               ),
+                            ),
+                            Center(
+                              child: InkWell(
+                                onTap: (){},
+                                child: Container(
+                                  height: 40,
+                                  width: 100,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      color: AppColors.blueGradient,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.grey.withOpacity(0.3),
+                                            blurRadius: 0.4,
+                                            offset: const Offset(3, 4)
+                                        )
+                                      ]
+                                  ),
+                                  child: Center(
+                                    child: shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)
+                                    ),
+                                  ),
+                                )
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(
+                        height: DesignConstants.padding20,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          InkWell(
+                            onTap: (){
+                              addClientDialogBox();
+                            },
+                            child: Container(
+                              height: 40,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: AppColors.blueGradient,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.grey.withOpacity(0.3),
+                                        blurRadius: 0.4,
+                                        offset: const Offset(3, 4)
+                                    )
+                                  ]
+                              ),
+                              child: Center(child: shadowText(text: 'Add',textcolor: Colors.white,fontsize: 16)),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: (){},
+                            child: Container(
+                              height: 40,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: AppColors.blueGradient,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.grey.withOpacity(0.3),
+                                        blurRadius: 0.4,
+                                        offset: const Offset(3, 4)
+                                    )
+                                  ]
+                              ),
+                              child: Center(child: shadowText(text: 'Cancel',textcolor: Colors.white,fontsize: 16)),
+                            ),
+                          ),
+                        ],
+                      ),
 
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -386,44 +300,56 @@ class SearchAddClientDetails extends StatelessWidget {
                                         child: Obx(() => SingleChildScrollView(
                                           child: searchAddClientController.clientList.isEmpty
                                               ? Center(
-                                                  child: Container(
-                                                    padding: const EdgeInsets.all(DesignConstants.padding20),
-                                                    child: shadowText(
-                                                      text: 'No clients found. Try searching or add a new client.',
-                                                      fontsize: DesignConstants.fontSize14
-                                                    ),
-                                                  ),
-                                                )
+                                            child: Container(
+                                              padding: const EdgeInsets.all(DesignConstants.padding20),
+                                              child: shadowText(
+                                                  text: 'No clients found. Try searching or add a new client.',
+                                                  fontsize: DesignConstants.fontSize14
+                                              ),
+                                            ),
+                                          )
                                               : Column(
-                                                  children: searchAddClientController.clientList.map((row) {
-                                                    return Padding(
-                                                      padding: const EdgeInsets.symmetric(vertical: 5),
-                                                      child: Card(
-                                                        elevation: 6,
-                                                        color: Colors.white,
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(10),
-                                                        ),
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.all(8.0),
-                                                          child: Table(
-                                                            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                            children: searchAddClientController.clientList.asMap().entries.map((entry) {
+                                              int index = entry.key;
+                                              Datum customer = entry.value; // Now using Datum object
+                                              return Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 5),
+                                                child: Card(
+                                                  elevation: 6,
+                                                  color: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: InkWell(
+                                                    onTap: () {
+                                                      // Handle row tap here
+                                                      print('Tapped on ${customer.name}');
+                                                      Get.to(() => Billing(customer: customer));
+                                                      // You can navigate to another screen, show dialog, etc.
+                                                      // Example: Get.to(() => ClientDetailScreen(client: customer));
+                                                    },
+                                                    borderRadius: BorderRadius.circular(10),
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Table(
+                                                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                        children: [
+                                                          TableRow(
                                                             children: [
-                                                              TableRow(
-                                                                children: [
-                                                                  tableCell(row["sr"] ?? ""),
-                                                                  tableCell(row["name"] ?? ""),
-                                                                  tableCell(row["mobile"] ?? ""),
-                                                                  tableCell(row["address"] ?? ""),
-                                                                ],
-                                                              ),
+                                                              tableCell(customer.custId?.toString() ?? (index + 1).toString()),
+                                                              tableCell(customer.name ?? ""),
+                                                              tableCell(customer.mobileNo ?? ""),
+                                                              tableCell(customer.address ?? ""),
                                                             ],
                                                           ),
-                                                        ),
+                                                        ],
                                                       ),
-                                                    );
-                                                  }).toList(),
+                                                    ),
+                                                  ),
                                                 ),
+                                              );
+                                            }).toList(),
+                                          ),
                                         )),
                                       ),
                                     ],
@@ -660,6 +586,8 @@ class SearchAddClientDetails extends StatelessWidget {
                       onTap: (){
                         if (!searchAddClientController.isLoading.value) {
                           if (searchAddClientController.formKey.currentState!.validate()) {
+                            searchAddClientController.addPurchaser.value
+                                ? searchAddClientController.addPurchaserPostApi() :
                             searchAddClientController.addClientPostApi();
                           }
                         }

@@ -5,7 +5,7 @@ import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/clients/search_add_client_details.dart';
 import 'package:billing/ui/guest/add_guest.dart';
 import 'package:billing/ui/purchase/purchase.dart';
-import 'package:billing/ui/reports/search_and_reports.dart';
+import 'package:billing/ui/reports/report.dart';
 import 'package:billing/ui/return/return_items.dart';
 import 'package:billing/ui/settings/setting_options.dart';
 import 'package:flutter/material.dart';

@@ -22,4 +22,21 @@ class ApiService {
     }
   }
 
+  Future<http.Response> getRequest({
+    required String url,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers ?? {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to make GET request: $e');
+    }
+  }
 }

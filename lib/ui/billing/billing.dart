@@ -1,6 +1,7 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller.dart';
+import 'package:billing/model/customer_response_model.dart';
 import 'package:billing/print/print_page.dart';
 import 'package:billing/utils/one_pointer_widget.dart';
 import 'package:flutter/gestures.dart';
@@ -15,6 +16,11 @@ import '../../utils/utility.dart';
 
 class Billing extends StatelessWidget {
   BillingController billingController = Get.find<BillingController>();
+
+  final Datum? customer;
+
+  Billing({this.customer});
+
   final ScrollController scrollController = ScrollController();
 
   @override
@@ -72,7 +78,7 @@ class Billing extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'To : Customer',
+                                        'To : ${customer?.name}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -524,7 +530,7 @@ class Billing extends StatelessWidget {
                                                 .isPrinting.value
                                                 ? null
                                                 : () async {
-                                              billingController.printPdfReceipt();
+                                              billingController.printPdfReceipt(customer);
                                               await billingController.shopDetailApi();
                                             },
                                             child: billingController

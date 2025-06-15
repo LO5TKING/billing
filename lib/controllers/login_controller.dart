@@ -68,8 +68,9 @@ class LoginController extends GetxController {
       // Handle response
       if (response.statusCode == 200) {
         LoginResponseModel loginResponse = loginResponseModelFromJson(response.body);
-        await SharedPrefs.setInt(ConstantsText.userId,loginResponse.userId ?? 0);
+        await SharedPrefs.setInt(ConstantsText.clientUserId,loginResponse.clientUserId ?? 0);
         await SharedPrefs.setString(ConstantsText.clientId,loginResponse.clientId ?? "0");
+        await SharedPrefs.setBool(ConstantsText.isloggedIn,true);
 
         // Login successful
         Get.offAll(() => BillingOptions());

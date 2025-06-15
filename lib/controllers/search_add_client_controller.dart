@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:billing/app/config/constants_text.dart';
+import 'package:billing/model/customer_response_model.dart';
 import 'package:billing/utils/constants.dart';
 import 'package:billing/utils/shared_pref.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +23,19 @@ class SearchAddClientController extends GetxController{
   TextEditingController searchMobileController = TextEditingController();
   
   RxBool isLoading = false.obs;
-  RxBool isSearching = false.obs;
-  RxList clientList = [].obs;
   ApiService apiService = ApiService();
+  Rx<CustomerResponseModel?> customerList = Rx<CustomerResponseModel?>(null);
+  List<Datum> get clientList => customerList.value?.data ?? [];
+  RxBool addPurchaser = false.obs;
+
+
+
+  @override
+  void onInit() {
+    // TODO: implement onInit
+    super.onInit();
+    getClients();
+  }
 
   // Validation methods
   String? validateName(String? value) {
@@ -57,7 +70,7 @@ class SearchAddClientController extends GetxController{
     isLoading.value = true;
     String url = "https://roughbill.com/api/Customer/add";
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
-    String? clientUserId = SharedPrefs.getString(ConstantsText.userId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
 
     try {
       Map<String, dynamic> data = {
@@ -71,7 +84,7 @@ class SearchAddClientController extends GetxController{
         "createdDate": "${DateTime.now().toString().split(' ')[0]}",
         "modifiedDate": "${DateTime.now().toString().split(' ')[0]}",
         'status':true,
-        'clientUserId':clientUserId,
+        'clientUserId':clientUserId.toString(),
       };
       
       var response = await apiService.postRequest(url: url, data : data);
@@ -90,7 +103,65 @@ class SearchAddClientController extends GetxController{
         clearFields();
         
         // Refresh client list
-        searchClients();
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to add client',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void addPurchaserPostApi() async {
+    isLoading.value = true;
+    String url = "https://roughbill.com/api/Purchaser/add";
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+
+    try {
+      Map<String, dynamic> data = {
+        'purchaserId':0,
+        'purchaserName': nameController.text,
+        'mobileNo': mobileController.text,
+        'gstNo': gstController.text,
+        'emailId': emailController.text,
+        'address': addressController.text,
+        'clientId':clientId,
+        "createdDate": "${DateTime.now().toString().split(' ')[0]}",
+        "modifiedDate": "${DateTime.now().toString().split(' ')[0]}",
+        'status':true,
+        'clientUserId':clientUserId.toString(),
+      };
+
+      var response = await apiService.postRequest(url: url, data : data);
+
+      if (response.statusCode == 200) {
+        Get.back(); // Close dialog
+        Get.snackbar(
+          'Success',
+          'Client added successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // Clear form fields
+        clearFields();
+
+        // Refresh client list
       } else {
         Get.snackbar(
           'Error',
@@ -114,29 +185,24 @@ class SearchAddClientController extends GetxController{
   }
   
   // API call to search clients
-  void searchClients() async {
-    isSearching.value = true;
-    String url = "";
+  void getClients() async {
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
+
     try {
-      Map<String, dynamic> data = {
-        'name': searchNameController.text,
-        'mobile': searchMobileController.text,
-      };
-      
-      var response = await apiService.postRequest(url: url, data: data);
-      
+      var response = await apiService.getRequest(url: url);
+
       if (response.statusCode == 200) {
-        // clientList.value = response.body ?? [];
-        // if (clientList.isEmpty) {
-        //   Get.snackbar(
-        //     'Info',
-        //     'No clients found',
-        //     snackPosition: SnackPosition.BOTTOM,
-        //     backgroundColor: Colors.blue,
-        //     colorText: Colors.white,
-        //   );
-        // }
+        // Parse the response directly into the observable
+        customerList.value = customerResponseModelFromJson(response.body);
+
+        print("Parsed ${customerList.value?.data?.length ?? 0} customers");
+        print("API Success: ${customerList.value?.success}");
+        print(response.body.toString());
+
       } else {
+        customerList.value = null; // Clear data on error
         Get.snackbar(
           'Error',
           'Failed to search clients',
@@ -146,6 +212,8 @@ class SearchAddClientController extends GetxController{
         );
       }
     } catch (e) {
+      customerList.value = null; // Clear data on error
+      print("Error parsing customer data: $e");
       Get.snackbar(
         'Error',
         'An error occurred: $e',
@@ -153,8 +221,6 @@ class SearchAddClientController extends GetxController{
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-    } finally {
-      isSearching.value = false;
     }
   }
   
