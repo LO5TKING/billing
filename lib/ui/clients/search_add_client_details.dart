@@ -150,7 +150,10 @@ class SearchAddClientDetails extends StatelessWidget {
                             ),
                             Center(
                               child: InkWell(
-                                onTap: (){},
+                                onTap: (){
+                                  // Explicitly trigger filtering when search button is clicked
+                                  searchAddClientController.filterClients();
+                                },
                                 child: Container(
                                   height: 40,
                                   width: 100,
@@ -165,9 +168,14 @@ class SearchAddClientDetails extends StatelessWidget {
                                         )
                                       ]
                                   ),
-                                  child: Center(
-                                    child: shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)
-                                    ),
+                                  child: InkWell(
+                                    onTap: () {
+                                      searchAddClientController.filterClients();
+                                    },
+                                    child: Center(
+                                      child: shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)
+                                      ),
+                                  ),
                                   ),
                                 )
                             ),
@@ -202,7 +210,12 @@ class SearchAddClientDetails extends StatelessWidget {
                             ),
                           ),
                           InkWell(
-                            onTap: (){},
+                            onTap: (){
+                              // Clear search fields and reset the filter
+                              searchAddClientController.searchNameController.clear();
+                              searchAddClientController.searchMobileController.clear();
+                              searchAddClientController.filterClients();
+                            },
                             child: Container(
                               height: 40,
                               width: 100,
@@ -217,7 +230,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                     )
                                   ]
                               ),
-                              child: Center(child: shadowText(text: 'Cancel',textcolor: Colors.white,fontsize: 16)),
+                              child: Center(child: shadowText(text: 'Clear',textcolor: Colors.white,fontsize: 16)),
                             ),
                           ),
                         ],

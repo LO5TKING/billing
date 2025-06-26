@@ -25,16 +25,25 @@ class SearchAddClientController extends GetxController{
   RxBool isLoading = false.obs;
   ApiService apiService = ApiService();
   Rx<CustomerResponseModel?> customerList = Rx<CustomerResponseModel?>(null);
-  List<Datum> get clientList => customerList.value?.data ?? [];
+  RxList<Datum> filteredClientList = <Datum>[].obs;
+  List<Datum> get clientList => filteredClientList;
   RxBool addPurchaser = false.obs;
 
 
 
   @override
   void onInit() {
-    // TODO: implement onInit
     super.onInit();
     getClients();
+    
+    // Add listeners to search controllers
+    searchNameController.addListener(() {
+      filterClients();
+    });
+    
+    searchMobileController.addListener(() {
+      filterClients();
+    });
   }
 
   // Validation methods
@@ -196,13 +205,15 @@ class SearchAddClientController extends GetxController{
       if (response.statusCode == 200) {
         // Parse the response directly into the observable
         customerList.value = customerResponseModelFromJson(response.body);
+        
+        // Initialize filtered list with all clients
+        filteredClientList.value = customerList.value?.data ?? [];
 
         print("Parsed ${customerList.value?.data?.length ?? 0} customers");
         print("API Success: ${customerList.value?.success}");
-        print(response.body.toString());
-
       } else {
         customerList.value = null; // Clear data on error
+        filteredClientList.clear();
         Get.snackbar(
           'Error',
           'Failed to search clients',
@@ -213,6 +224,7 @@ class SearchAddClientController extends GetxController{
       }
     } catch (e) {
       customerList.value = null; // Clear data on error
+      filteredClientList.clear();
       print("Error parsing customer data: $e");
       Get.snackbar(
         'Error',
@@ -233,6 +245,42 @@ class SearchAddClientController extends GetxController{
     addressController.clear();
   }
 
+  // Filter clients based on search criteria
+  void filterClients() {
+    String nameQuery = searchNameController.text.toLowerCase().trim();
+    String mobileQuery = searchMobileController.text.toLowerCase().trim();
+    
+    if (nameQuery.isEmpty && mobileQuery.isEmpty) {
+      // If both search fields are empty, show all clients
+      filteredClientList.value = customerList.value?.data ?? [];
+      return;
+    }
+    
+    // Filter the list based on name or mobile number
+    List<Datum> filtered = (customerList.value?.data ?? []).where((client) {
+      bool nameMatch = nameQuery.isEmpty || 
+          (client.name?.toLowerCase().contains(nameQuery) ?? false);
+      
+      bool mobileMatch = mobileQuery.isEmpty || 
+          (client.mobileNo?.toLowerCase().contains(mobileQuery) ?? false);
+      
+      // If only name is provided, filter by name only
+      if (nameQuery.isNotEmpty && mobileQuery.isEmpty) {
+        return nameMatch;
+      }
+      
+      // If only mobile is provided, filter by mobile only
+      if (mobileQuery.isNotEmpty && nameQuery.isEmpty) {
+        return mobileMatch;
+      }
+      
+      // If both are provided, match both criteria
+      return nameMatch && mobileMatch;
+    }).toList();
+    
+    filteredClientList.value = filtered;
+  }
+  
   @override
   void onClose() {
     nameController.dispose();
