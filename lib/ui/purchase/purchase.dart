@@ -12,12 +12,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 
 import '../../app/config/constants_text.dart';
+import '../../model/customer_response_model.dart';
 import '../../utils/utility.dart';
 
 class Purchase extends StatelessWidget {
   PurchaseController purchaseController = Get.find<PurchaseController>();
   final ScrollController scrollController = ScrollController();
 
+  final Datum? customer;
+
+  Purchase({this.customer});
 
   @override
   Widget build(BuildContext context) {
@@ -527,7 +531,7 @@ class Purchase extends StatelessWidget {
                                                 ? null
                                                 : () {
                                               purchaseController
-                                                  .printPdfReceipt();
+                                                  .printPdfReceipt(customer);
                                             },
                                             child: purchaseController
                                                 .isPrinting.value

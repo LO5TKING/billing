@@ -260,7 +260,7 @@ class SearchAddClientDetails extends StatelessWidget {
                               FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: shadowText(
-                                  text: 'Reports',
+                                  text: 'Clients',
                                   fontsize: DesignConstants.fontSize16,
                                 ),
                               ),
@@ -336,7 +336,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                                         children: [
                                                           TableRow(
                                                             children: [
-                                                              tableCell(customer.custId?.toString() ?? (index + 1).toString()),
+                                                              tableCell((index + 1).toString()),
                                                               tableCell(customer.name ?? ""),
                                                               tableCell(customer.mobileNo ?? ""),
                                                               tableCell(customer.address ?? ""),

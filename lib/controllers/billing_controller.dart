@@ -61,6 +61,9 @@ class BillingController extends GetxController {
   String recognizedEditRate = '';
   String recognizedEditQuantity = '';
 
+  TextEditingController amountPaid = TextEditingController();
+  TextEditingController discountAmount = TextEditingController();
+
   Future<bool> _downloadModelWithTimeout() async {
     try {
       // Create a timeout future
@@ -513,7 +516,7 @@ class BillingController extends GetxController {
           return Column(
             children: [
               // Quantity handwriting box
-              Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -617,24 +620,24 @@ class BillingController extends GetxController {
                         }
                       },
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.blueGradient,
                           shape: BoxShape.circle,
                         ),
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         child: const Icon(Icons.check, color: Colors.white, size: 20),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text('Recognized: $recognizedEditQuantity',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
 
               // Rate handwriting box
-              Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -738,20 +741,20 @@ class BillingController extends GetxController {
                         }
                       },
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.blueGradient,
                           shape: BoxShape.circle,
                         ),
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         child: const Icon(Icons.check, color: Colors.white, size: 20),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text('Recognized: $recognizedEditRate',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           );
         },
@@ -794,6 +797,7 @@ class BillingController extends GetxController {
     double balanceAmount = 0;
     String discountType = 'Flat'; // 'Flat' or 'Percentage'
 
+    amountPaid.text = totalAmount.toString();
     Get.defaultDialog(
       title: 'Payment Details',
       content: StatefulBuilder(
@@ -818,23 +822,33 @@ class BillingController extends GetxController {
 
           return Container(
             width: Get.width * 0.8,
+            padding: EdgeInsets.only(left: 20),
             child: Column(
               children: [
                 // Total Amount
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹ ${calculatedTotal.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('Total Amount  ------------>', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 20,),
+                    Container(
+                        height: 40,
+                        width: 100,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black,width: 0.5),
+                          borderRadius: BorderRadius.circular(5)
+                        ),
+                        child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 // Discount Type Selection
                 Row(
                   children: [
-                    Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(width: 10),
+                    const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 10),
                     Row(
                       children: [
                         Radio(
@@ -848,7 +862,7 @@ class BillingController extends GetxController {
                             });
                           },
                         ),
-                        Text('Flat Amount'),
+                        const Text('Flat Amount'),
                       ],
                     ),
                     Row(
@@ -864,7 +878,7 @@ class BillingController extends GetxController {
                             });
                           },
                         ),
-                        Text('Percentage'),
+                        const Text('Percentage'),
                       ],
                     ),
                   ],
@@ -872,19 +886,21 @@ class BillingController extends GetxController {
 
                 // Discount Amount Input
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
-                      style: TextStyle(fontWeight: FontWeight.bold)
+                      discountType == 'Percentage' ? 'Discount %  ------------>' : 'Discount Amount  ------------>',
+                      style: const TextStyle(fontWeight: FontWeight.bold)
                     ),
+                    const SizedBox(width: 20,),
                     Container(
                       width: 100,
+                      height: 40,
                       child: TextField(
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          border: OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          border: const OutlineInputBorder(),
                           prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
                         ),
                         onChanged: (value) {
@@ -896,29 +912,42 @@ class BillingController extends GetxController {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 // Final Amount after discount
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹ ${finalAmount.toStringAsFixed(2)}',
-                         style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
+                    const Text('Final Amount  ------------>', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 20,),
+                    Container(
+                      height: 40,
+                      width: 100,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black,width: 0.5),
+                          borderRadius: BorderRadius.circular(5)
+                      ),
+                      child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
+                           style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
+                    ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 // Amount to be Paid Input
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('Amount Paid  ------------>', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 20,),
                     Container(
                       width: 100,
+                      height: 40,
                       child: TextField(
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                        decoration: InputDecoration(
+                        controller: amountPaid,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(
                           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                           border: OutlineInputBorder(),
                           prefixText: '₹ ',
@@ -932,15 +961,25 @@ class BillingController extends GetxController {
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 // Balance Amount
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹ ${balanceAmount.toStringAsFixed(2)}',
-                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                    const Text('Balance Amount  ------------>', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 20,),
+                    Container(
+                      height: 40,
+                      width: 100,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black,width: 0.5),
+                          borderRadius: BorderRadius.circular(5)
+                      ),
+                      child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
+                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                    ),
                   ],
                 ),
               ],
@@ -949,6 +988,7 @@ class BillingController extends GetxController {
         },
       ),
       textConfirm: 'Print Receipt',
+
       confirmTextColor: Colors.white,
       buttonColor: AppColors.blueGradient,
       onConfirm: () async {
@@ -1065,35 +1105,35 @@ class BillingController extends GetxController {
                     pw.TableRow(
                       children: [
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Sr',
                               textAlign: pw.TextAlign.center,
                               style:
                                   pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Particulars',
                               textAlign: pw.TextAlign.center,
                               style:
                                   pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Qty',
                               textAlign: pw.TextAlign.center,
                               style:
                                   pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Rate',
                               textAlign: pw.TextAlign.center,
                               style:
                                   pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Amt',
                               textAlign: pw.TextAlign.center,
                               style:
@@ -1108,29 +1148,29 @@ class BillingController extends GetxController {
                       return pw.TableRow(
                         children: [
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text('${idx + 1}',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: item['particulars'] != null
                                 ? pw.Image(pw.MemoryImage(item['particulars']),
                                     height: 30)
                                 : pw.Text(''),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(item['quantity'] ?? '',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(item['rate'] ?? '',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(
                               ((double.tryParse(item['quantity'] ?? '0') ?? 0) *
                                       (double.tryParse(item['rate'] ?? '0') ??
@@ -1233,8 +1273,8 @@ class BillingController extends GetxController {
         // Convert image to base64 if available
         String productName = '';
         if (item['particulars'] is Uint8List) {
-          // productName = _convertImageToBase64(item['particulars']);
-          productName = "trying test";
+          productName = _convertImageToBase64(item['particulars']);
+          // productName = "trying test";
         }
 
         orderDetails.add({
