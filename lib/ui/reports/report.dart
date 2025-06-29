@@ -74,6 +74,12 @@ class SearchAndReports extends StatelessWidget {
                                     keyboardType: TextInputType.text,
                                     onChanged: (value) {
                                       reportController.searchName.value = value;
+                                      reportController.setSearchFilters(
+                                        nameController.text,
+                                        mobileController.text,
+                                        reportController.fromDate.value,
+                                        reportController.toDate.value,
+                                      );
                                     },
                                     style: GoogleFonts.montserrat(
                                         fontWeight: FontWeight.w500,
@@ -264,7 +270,7 @@ class SearchAndReports extends StatelessWidget {
                                   reportController.fromDate.value,
                                   reportController.toDate.value,
                                 );
-                                reportController.getReports();
+                                // No need to call getReports() as filtering is done locally
                               },
                               child: Container(
                                 height: 40,
@@ -290,7 +296,7 @@ class SearchAndReports extends StatelessWidget {
                                 nameController.clear();
                                 mobileController.clear();
                                 reportController.clearFilters();
-                                reportController.getReports();
+                                // No need to call getReports() as filtering is done locally
                               },
                               child: Container(
                                 height: 40,
@@ -460,7 +466,7 @@ class SearchAndReports extends StatelessWidget {
                                     onPressed: reportController.currentPage.value > 1
                                       ? () {
                                           reportController.previousPage();
-                                          reportController.getReports();
+                                          // No need to call getReports() as pagination is done locally
                                         }
                                       : null,
                                   ),
@@ -475,7 +481,7 @@ class SearchAndReports extends StatelessWidget {
                                     onPressed: reportController.currentPage.value < reportController.totalPages.value
                                       ? () {
                                           reportController.nextPage();
-                                          reportController.getReports();
+                                          // No need to call getReports() as pagination is done locally
                                         }
                                       : null,
                                   ),

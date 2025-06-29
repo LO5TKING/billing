@@ -544,14 +544,8 @@ class Billing extends StatelessWidget {
                                                 strokeWidth: 2,
                                               ),
                                             )
-                                                : const Text(
-                                              'Print Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize:
-                                                  DesignConstants
-                                                      .fontSize16),
-                                            ))),
+                                                : const Icon(Icons.print,color: Colors.white,size: 40,)
+                                        )),
                                       ),
                                       const SizedBox(width: 10),
                                       Container(
@@ -571,13 +565,8 @@ class Billing extends StatelessWidget {
                                               billingController.itemList
                                                   .clear();
                                             },
-                                            child: const Text(
-                                              'Clear Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
+                                            child: const Icon(Icons.cleaning_services_sharp,color: Colors.white,size: 40,)
+                                        ),
                                       ),
                                       const SizedBox(width: 10),
                                       Container(
@@ -596,13 +585,28 @@ class Billing extends StatelessWidget {
                                             onPressed: () async {
                                               await billingController.saveReceiptAsPdf();
                                             },
-                                            child: const Text(
-                                              'Save Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
+                                            child: const Icon(Icons.save,color: Colors.white,size: 40,)
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        height: 40,
+                                        child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                              AppColors.blueGradient,
+                                              shape:
+                                              const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(
+                                                          5))),
+                                            ),
+                                            onPressed: () async {
+                                               await billingController.saveReceiptAsPdf();
+                                            },
+                                            child: const Icon(Icons.share,color: Colors.white,size: 40,)
+                                        ),
                                       ),
                                     ],
                                   ),
