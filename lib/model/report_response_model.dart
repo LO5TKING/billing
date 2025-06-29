@@ -46,12 +46,12 @@ class BillingReport {
   int? customerId;
   String? customerName;
   String? clientId;
-  int? totalAmount;
-  int? balanceAmount;
-  int? discount;
-  int? gst;
+  double totalAmount;
+  double? balanceAmount;
+  double? discount;
+  double? gst;
   String? discountType;
-  int? paidAmount;
+  double? paidAmount;
   String? paidAmountType;
   String? transactionNo;
   String? referenceNo;
@@ -75,7 +75,7 @@ class BillingReport {
     this.customerId,
     this.customerName,
     this.clientId,
-    this.totalAmount,
+    this.totalAmount = 0,
     this.balanceAmount,
     this.discount,
     this.gst,

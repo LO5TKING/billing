@@ -23,6 +23,8 @@ class ReportController extends GetxController {
   void getReports() async {
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+
+    print("clientId is $clientId & clientUserId is $clientUserId");
     String url = "https://roughbill.com/api/Report/GetBillingReport?ClientId=$clientId&ClientUserId=$clientUserId&pageNumber=1&pageSize=5";
 
     try {

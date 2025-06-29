@@ -23,6 +23,8 @@ import '../print/print_controller.dart';
 import 'package:image/image.dart' as img;
 import 'dart:convert';
 
+import '../utils/shared_pref.dart';
+
 class BillingController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
   List<Uint8List?> newItemList = [];
@@ -1259,6 +1261,7 @@ class BillingController extends GetxController {
       // Current date time
       final DateTime now = DateTime.now();
       final String formattedDate = now.toIso8601String();
+      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
 
       // Prepare order details from itemList
       List<Map<String, dynamic>> orderDetails = [];
@@ -1292,7 +1295,7 @@ class BillingController extends GetxController {
           "isDelete": false,
           "postedOn": formattedDate,
           "modifiedOn": formattedDate,
-          "clientUserId": 1
+          "clientUserId": clientUserId
         });
       }
 
@@ -1325,7 +1328,7 @@ class BillingController extends GetxController {
           "refundDate": null,
           "refundTransNo": "",
           "refundStatus": "",
-          "clientUserId": 1
+          "clientUserId": clientUserId
         },
         "orderDetails": orderDetails
       };
