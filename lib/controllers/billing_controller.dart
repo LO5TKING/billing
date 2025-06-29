@@ -821,7 +821,6 @@ class BillingController extends GetxController {
           // Calculate balance
           balanceAmount = finalAmount - amountToBePaid;
           balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
-
           return Container(
             width: Get.width * 0.8,
             padding: EdgeInsets.only(left: 20),
@@ -1256,7 +1255,7 @@ class BillingController extends GetxController {
 
       // Calculate total amount from items
       final double calculatedTotal = totalAmount;
-      final double balanceAmount = calculatedTotal - paidAmount;
+      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
 
       // Current date time
       final DateTime now = DateTime.now();
@@ -1379,9 +1378,3 @@ class BillingController extends GetxController {
     }
   }
 }
-
-
-
-
-
-  // Function to convert Uint8List to base64 string

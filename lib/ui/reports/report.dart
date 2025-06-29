@@ -8,108 +8,10 @@ import '../../app/config/design_constants.dart';
 import '../../utils/utility.dart';
 
 class SearchAndReports extends StatelessWidget {
-  final List<Map<String, String>> dummyData = [
-    {
-      "sr": "1",
-      "date": "30/08/22",
-      "time": "05:45",
-      "client": "ABC",
-      "amount": "5000",
-      "balance": "1000"
-    },
-    {
-      "sr": "2",
-      "date": "31/08/22",
-      "time": "04:15",
-      "client": "XYZ",
-      "amount": "2500",
-      "balance": "500"
-    },
-    {
-      "sr": "3",
-      "date": "01/09/22",
-      "time": "02:30",
-      "client": "PQR",
-      "amount": "1200",
-      "balance": "200"
-    },
-    {
-      "sr": "1",
-      "date": "30/08/22",
-      "time": "05:45",
-      "client": "ABC",
-      "amount": "5000",
-      "balance": "1000"
-    },
-    {
-      "sr": "2",
-      "date": "31/08/22",
-      "time": "04:15",
-      "client": "XYZ",
-      "amount": "2500",
-      "balance": "500"
-    },
-    {
-      "sr": "3",
-      "date": "01/09/22",
-      "time": "02:30",
-      "client": "PQR",
-      "amount": "1200",
-      "balance": "200"
-    },
-    {
-      "sr": "1",
-      "date": "30/08/22",
-      "time": "05:45",
-      "client": "ABC",
-      "amount": "5000",
-      "balance": "1000"
-    },
-    {
-      "sr": "2",
-      "date": "31/08/22",
-      "time": "04:15",
-      "client": "XYZ",
-      "amount": "2500",
-      "balance": "500"
-    },
-    {
-      "sr": "3",
-      "date": "01/09/22",
-      "time": "02:30",
-      "client": "PQR",
-      "amount": "1200",
-      "balance": "200"
-    },
-    {
-      "sr": "1",
-      "date": "30/08/22",
-      "time": "05:45",
-      "client": "ABC",
-      "amount": "5000",
-      "balance": "1000"
-    },
-    {
-      "sr": "2",
-      "date": "31/08/22",
-      "time": "04:15",
-      "client": "XYZ",
-      "amount": "2500",
-      "balance": "500"
-    },
-    {
-      "sr": "3",
-      "date": "01/09/22",
-      "time": "02:30",
-      "client": "PQR",
-      "amount": "1200",
-      "balance": "200"
-    },
-    // Add more rows as needed
-  ];
-
-  ReportController reportController = Get.put(ReportController());
-
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController mobileController = TextEditingController();
+  final ReportController reportController = Get.put(ReportController());
+  
   SearchAndReports({super.key});
 
   @override
@@ -168,13 +70,17 @@ class SearchAndReports extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: TextFormField(
-                                    keyboardType: TextInputType.emailAddress,
-                                    onChanged: (value) {},
+                                    controller: nameController,
+                                    keyboardType: TextInputType.text,
+                                    onChanged: (value) {
+                                      reportController.searchName.value = value;
+                                    },
                                     style: GoogleFonts.montserrat(
                                         fontWeight: FontWeight.w500,
                                         fontSize: DesignConstants.fontSize12,
                                         color: Colors.black),
                                     decoration: InputDecoration(
+                                      hintText: 'Search by name',
                                       fillColor: Colors.white,
                                       focusedBorder: OutlineInputBorder(
                                           borderSide: const BorderSide(
@@ -212,13 +118,17 @@ class SearchAndReports extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: TextFormField(
+                                    controller: mobileController,
                                     keyboardType: TextInputType.number,
-                                    onChanged: (value) {},
+                                    onChanged: (value) {
+                                      reportController.searchMobile.value = value;
+                                    },
                                     style: GoogleFonts.montserrat(
                                         fontWeight: FontWeight.w500,
                                         fontSize: DesignConstants.fontSize12,
                                         color: Colors.black),
                                     decoration: InputDecoration(
+                                      hintText: 'Search by mobile',
                                       fillColor: Colors.white,
                                       focusedBorder: OutlineInputBorder(
                                           borderSide: const BorderSide(
@@ -248,63 +158,93 @@ class SearchAndReports extends StatelessWidget {
                                 text: 'Date From',
                                 fontsize: DesignConstants.fontSize16,
                                 fontWeight: FontWeight.w400),
-                            Container(
-                              height: 40,
-                              width: 100,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: Colors.white),
-                              child: Card(
-                                elevation: 5,
-                                color: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  side: const BorderSide(
-                                    color: Colors.grey,
+                            InkWell(
+                              onTap: () async {
+                                final DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: reportController.fromDate.value ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (picked != null) {
+                                  reportController.fromDate.value = picked;
+                                }
+                              },
+                              child: Container(
+                                height: 40,
+                                width: 100,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    color: Colors.white),
+                                child: Card(
+                                  elevation: 5,
+                                  color: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    side: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    shadowText(
-                                        text: '08/12/24',
-                                        fontsize: 12,
-                                        fontWeight: FontWeight.w400),
-                                    const Icon(Icons.calendar_month),
-                                  ],
+                                  child: Obx(() => Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      shadowText(
+                                          text: reportController.fromDate.value != null
+                                              ? '${reportController.fromDate.value!.day}/${reportController.fromDate.value!.month}/${reportController.fromDate.value!.year}'
+                                              : 'Select',
+                                          fontsize: 12,
+                                          fontWeight: FontWeight.w400),
+                                      const Icon(Icons.calendar_month),
+                                    ],
+                                  )),
                                 ),
                               ),
                             ),
                             shadowText(
-                                text: 'To',
-                                fontsize: DesignConstants.fontSize16,
-                                fontWeight: FontWeight.w400),
-                            Container(
-                              height: 40,
-                              width: 100,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: Colors.white),
-                              child: Card(
-                                elevation: 5,
-                                color: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  side: const BorderSide(
-                                    color: Colors.grey,
+                                 text: 'To',
+                                 fontsize: DesignConstants.fontSize16,
+                                 fontWeight: FontWeight.w400),
+                            InkWell(
+                              onTap: () async {
+                                final DateTime? picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: reportController.toDate.value ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (picked != null) {
+                                  reportController.toDate.value = picked;
+                                }
+                              },
+                              child: Container(
+                                height: 40,
+                                width: 100,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    color: Colors.white),
+                                child: Card(
+                                  elevation: 5,
+                                  color: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    side: const BorderSide(
+                                      color: Colors.grey,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    shadowText(
-                                        text: '08/12/24',
-                                        fontsize: 12,
-                                        fontWeight: FontWeight.w400),
-                                    const Icon(Icons.calendar_month),
-                                  ],
+                                  child: Obx(() => Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      shadowText(
+                                          text: reportController.toDate.value != null
+                                              ? '${reportController.toDate.value!.day}/${reportController.toDate.value!.month}/${reportController.toDate.value!.year}'
+                                              : 'Select',
+                                          fontsize: 12,
+                                          fontWeight: FontWeight.w400),
+                                      const Icon(Icons.calendar_month),
+                                    ],
+                                  )),
                                 ),
                               ),
                             ),
@@ -317,7 +257,15 @@ class SearchAndReports extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             InkWell(
-                              onTap: () {},
+                              onTap: () {
+                                reportController.setSearchFilters(
+                                  nameController.text,
+                                  mobileController.text,
+                                  reportController.fromDate.value,
+                                  reportController.toDate.value,
+                                );
+                                reportController.getReports();
+                              },
                               child: Container(
                                 height: 40,
                                 width: 100,
@@ -338,7 +286,12 @@ class SearchAndReports extends StatelessWidget {
                               ),
                             ),
                             InkWell(
-                              onTap: () {},
+                              onTap: () {
+                                nameController.clear();
+                                mobileController.clear();
+                                reportController.clearFilters();
+                                reportController.getReports();
+                              },
                               child: Container(
                                 height: 40,
                                 width: 100,
@@ -353,7 +306,7 @@ class SearchAndReports extends StatelessWidget {
                                     ]),
                                 child: Center(
                                     child: shadowText(
-                                        text: 'Cancel',
+                                        text: 'Clear',
                                         textcolor: Colors.white,
                                         fontsize: 16)),
                               ),
@@ -433,51 +386,103 @@ class SearchAndReports extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 15),
                                     Expanded(
-                                      child: SingleChildScrollView(
-                                        child: Column(
-                                          children: dummyData.map((row) {
-                                            return Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 5), // Padding between rows
-                                              child: Card(
-                                                elevation: 6, // Elevation for the row's card
-                                                color: Colors.white, // Card background color
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(10), // Card border radius
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(8.0),
-                                                  child: Table(
-                                                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                                    children: [
-                                                      TableRow(
-                                                        children: [
-                                                          tableCell(row["sr"] ?? ""),
-                                                          tableCell(row["date"] ?? ""),
-                                                          tableCell(row["time"] ?? ""),
-                                                          tableCell(row["client"] ?? ""),
-                                                          tableCell(row["amount"] ?? ""),
-                                                          tableCell(row["balance"] ?? ""),
-                                                          payButton('Pay'),
-                                                        ],
+                                      child: Obx(() => reportController.isLoading.value
+                                        ? const Center(
+                                            child: CircularProgressIndicator(),
+                                          )
+                                        : reportController.reportList.value?.billingReports == null || 
+                                          reportController.reportList.value!.billingReports!.isEmpty
+                                          ? const Center(
+                                              child: Text('No reports found'),
+                                            )
+                                          : SingleChildScrollView(
+                                              child: Column(
+                                                children: List.generate(
+                                                  reportController.reportList.value!.billingReports!.length,
+                                                  (index) {
+                                                    final report = reportController.reportList.value!.billingReports![index];
+                                                    final dateTime = DateTime.parse(report.paymentDate!.toString());
+                                                    final date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+                                                    final time = '${dateTime.hour}:${dateTime.minute}';
+                                                    
+                                                    return Padding(
+                                                      padding: const EdgeInsets.symmetric(vertical: 5),
+                                                      child: Card(
+                                                        elevation: 6,
+                                                        color: Colors.white,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(10),
+                                                        ),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.all(8.0),
+                                                          child: Table(
+                                                            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                            children: [
+                                                              TableRow(
+                                                                children: [
+                                                                  tableCell('${index + 1}'),
+                                                                  tableCell(date),
+                                                                  tableCell(time),
+                                                                  tableCell(report.customerName ?? ''),
+                                                                  tableCell('₹${report.totalAmount?.toStringAsFixed(2) ?? '0.00'}'),
+                                                                  tableCell('₹${report.balanceAmount?.toStringAsFixed(2) ?? '0.00'}'),
+                                                                  report.paymentStatus == 'Pending' ? payButton('Pay') : tableCell('Paid'),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ],
-                                                  ),
+                                                    );
+                                                  },
                                                 ),
                                               ),
-                                            );
-                                          }).toList(),
-                                        ),
+                                            ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Obx(() => reportController.reportList.value?.totalPages != null && 
+                                    reportController.reportList.value!.totalPages! > 1
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.arrow_back),
+                                    onPressed: reportController.currentPage.value > 1
+                                      ? () {
+                                          reportController.previousPage();
+                                          reportController.getReports();
+                                        }
+                                      : null,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Page ${reportController.currentPage.value} of ${reportController.totalPages.value}',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  IconButton(
+                                    icon: const Icon(Icons.arrow_forward),
+                                    onPressed: reportController.currentPage.value < reportController.totalPages.value
+                                      ? () {
+                                          reportController.nextPage();
+                                          reportController.getReports();
+                                        }
+                                      : null,
+                                  ),
+                                ],
+                              )
+                            : const SizedBox(),
+                          ),
                 ],
               ),
             ),
