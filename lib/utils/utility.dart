@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -36,3 +37,14 @@ Widget noShadowText({required String text, double? fontsize, Color? textcolor, F
     ),
   );
 }
+
+// Future<void> shareReceipt() async {
+//   File? pdfFile = await saveReceiptAsPdf(); // Save and get the PDF file
+//
+//   if (pdfFile != null && await pdfFile.exists()) {
+//     final XFile xfile = XFile(pdfFile.path);
+//     await Share.shareXFiles([xfile], text: 'Here is your receipt!');
+//   } else {
+//     Get.snackbar('Error', 'Unable to share receipt');
+//   }
+// }

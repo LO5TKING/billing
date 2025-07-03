@@ -25,7 +25,7 @@ import 'dart:convert';
 
 import '../utils/shared_pref.dart';
 
-class BillingController extends GetxController {
+class BillingControllerNew extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
   List<Uint8List?> newItemList = [];
 
