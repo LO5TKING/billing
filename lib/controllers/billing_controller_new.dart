@@ -518,7 +518,7 @@ class BillingControllerNew extends GetxController {
           return Column(
             children: [
               // Quantity handwriting box
-              Text('Quantity $recognizedEditQuantity', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
+              Text('Quantity $recognizedEditQuantity', style: const TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -638,7 +638,7 @@ class BillingControllerNew extends GetxController {
               const SizedBox(height: 20),
 
               // Rate handwriting box
-              Text('Rate $recognizedEditRate', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
+              Text('Rate $recognizedEditRate', style: const TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -820,7 +820,7 @@ class BillingControllerNew extends GetxController {
           balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
           return Container(
             width: Get.width * 0.8,
-            padding: EdgeInsets.only(left: 20),
+            padding: const EdgeInsets.only(left: 20),
             child: Column(
               children: [
                 // Total Amount
