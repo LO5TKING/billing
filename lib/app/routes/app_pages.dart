@@ -1,15 +1,27 @@
 import 'package:billing/ui/splash_screen.dart';
+import 'package:billing/ui/billing/billing.dart';
+import 'package:billing/ui/billing/billing_new.dart';
 import 'package:get/get.dart';
 import '../binding/home_binding.dart';
 
 class AppPages {
 
   static const String splash = "/splash";
+  static const String billing = "/billing";
+  static const String billingNew = "/billing_new";
 
   static List<GetPage> routes = [
     GetPage(
       name: splash,
       page: () => const SplashScreen(),
+    ),
+    GetPage(
+      name: billing,
+      page: () => Billing(customer: Get.arguments?['customer']),
+    ),
+    GetPage(
+      name: billingNew,
+      page: () => BillingNew(customer: Get.arguments?['customer']),
     ),
   ];
 }

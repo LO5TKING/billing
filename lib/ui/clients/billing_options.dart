@@ -1,5 +1,6 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
+import 'package:billing/controllers/billing_controller_new.dart';
 import 'package:billing/controllers/purchase_controller.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/clients/search_add_client_details.dart';
@@ -21,6 +22,7 @@ import '../order/order.dart';
 
 class BillingOptions extends StatelessWidget {
   BillingController billingController = Get.put(BillingController());
+  BillingControllerNew billingControllerNew = Get.put(BillingControllerNew());
   OrderController orderController = Get.put(OrderController());
   PurchaseController purchaseController = Get.put(PurchaseController());
 

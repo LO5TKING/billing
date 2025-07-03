@@ -98,7 +98,7 @@ class BillingControllerNew extends GetxController {
     super.onInit();
 
     // Request storage permission at app start
-    await requestStoragePermissionOnStart();
+    // await requestStoragePermissionOnStart();
 
     // Initialize PrintController
     printController = Get.put(PrintController());

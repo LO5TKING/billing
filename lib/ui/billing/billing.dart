@@ -5,6 +5,7 @@ import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller.dart';
 import 'package:billing/model/customer_response_model.dart';
 import 'package:billing/print/print_page.dart';
+import 'package:billing/utils/draggable_fab.dart';
 import 'package:billing/utils/one_pointer_widget.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide Ink;
@@ -647,6 +648,13 @@ class Billing extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+              // Add draggable floating action button
+              DraggableFab(
+                targetRoute: '/billing_new',
+                arguments: {'customer': customer},
+                backgroundColor: AppColors.blueGradient,
+                icon: Icons.receipt,
               ),
             ],
           ),
