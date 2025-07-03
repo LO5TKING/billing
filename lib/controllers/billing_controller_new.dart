@@ -518,7 +518,7 @@ class BillingControllerNew extends GetxController {
           return Column(
             children: [
               // Quantity handwriting box
-              const Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Quantity $recognizedEditQuantity', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -634,12 +634,11 @@ class BillingControllerNew extends GetxController {
                 ],
               ),
               const SizedBox(height: 10),
-              Text('Recognized: $recognizedEditQuantity',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+
               const SizedBox(height: 20),
 
               // Rate handwriting box
-              const Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Rate $recognizedEditRate', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -755,8 +754,6 @@ class BillingControllerNew extends GetxController {
                 ],
               ),
               const SizedBox(height: 10),
-              Text('Recognized: $recognizedEditRate',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           );
         },
