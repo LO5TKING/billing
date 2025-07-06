@@ -120,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             onPressed: () async {
                               bool isLoogedIn = await SharedPrefs.getBool(ConstantsText.isloggedIn) ?? false;
                               if(isLoogedIn){
-                                Get.to(() => BillingOptions());
+                                Get.toNamed('/billing_options');
                               }else{
                                 Get.to(() => LoginScreen());
                               }

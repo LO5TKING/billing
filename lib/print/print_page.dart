@@ -14,7 +14,10 @@ class PrintDialog extends StatelessWidget {
   const PrintDialog({Key? key, required this.data}) : super(key: key);
 
   static Future<void> show(List<Map<String, dynamic>> data) async {
-    final printController = Get.put(PrintController());
+    // Use Get.find instead of Get.put for PrintController
+    final PrintController printController = Get.isRegistered<PrintController>() 
+        ? Get.find<PrintController>() 
+        : Get.put(PrintController());
     final splashController = Get.find<SplashScreenController>();
 
     try {

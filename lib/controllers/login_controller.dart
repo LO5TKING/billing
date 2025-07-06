@@ -73,7 +73,7 @@ class LoginController extends GetxController {
         await SharedPrefs.setBool(ConstantsText.isloggedIn,true);
 
         // Login successful
-        Get.offAll(() => BillingOptions());
+        Get.offAllNamed('/billing_options');
       } else {
         // Login failed
         final responseData = response.body;

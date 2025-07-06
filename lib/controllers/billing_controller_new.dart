@@ -93,22 +93,23 @@ class BillingControllerNew extends GetxController {
     }
   }
 
+  // Initialize PrintController using lazyPut to prevent multiple instances
   @override
   void onInit() async {
     super.onInit();
 
-    // Request storage permission at app start
-    // await requestStoragePermissionOnStart();
-
-    // Initialize PrintController
-    printController = Get.put(PrintController());
-
+    // Initialize PrintController using lazyPut to prevent multiple instances
+    if (!Get.isRegistered<PrintController>()) {
+      Get.lazyPut(() => PrintController(), fenix: true);
+    }
+    printController = Get.find<PrintController>();
+    
     // Start the date time update timer
     _updateDateTime();
     _dateTimeTimer =
         Timer.periodic(const Duration(seconds: 1), (_) => _updateDateTime());
 
-    try {
+    /*try {
       clearPadAndSignature();
 
       // Check if model is already downloaded (including local cache check)
@@ -187,7 +188,7 @@ class BillingControllerNew extends GetxController {
         ),
         barrierDismissible: false,
       );
-    }
+    }*/
   }
 
   @override

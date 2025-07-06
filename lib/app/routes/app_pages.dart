@@ -1,6 +1,7 @@
 import 'package:billing/ui/splash_screen.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/billing/billing_new.dart';
+import 'package:billing/ui/clients/billing_options.dart';
 import 'package:get/get.dart';
 import '../binding/home_binding.dart';
 
@@ -9,6 +10,7 @@ class AppPages {
   static const String splash = "/splash";
   static const String billing = "/billing";
   static const String billingNew = "/billing_new";
+  static const String billingOptions = "/billing_options";
 
   static List<GetPage> routes = [
     GetPage(
@@ -22,6 +24,10 @@ class AppPages {
     GetPage(
       name: billingNew,
       page: () => BillingNew(customer: Get.arguments?['customer']),
+    ),
+    GetPage(
+      name: billingOptions,
+      page: () => BillingOptions(),
     ),
   ];
 }

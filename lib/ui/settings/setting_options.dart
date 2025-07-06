@@ -182,7 +182,7 @@ class SettingOptions extends StatelessWidget {
           case 8:
             Get.to(() =>  const TermsAndConditionSettings());
           default:
-            Get.to(() =>   BillingOptions());
+            Get.toNamed('/billing_options');
         }
       },
       child: ListTile(

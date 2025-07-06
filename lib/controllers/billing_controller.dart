@@ -100,8 +100,11 @@ class BillingController extends GetxController {
     // Request storage permission at app start
     await requestStoragePermissionOnStart();
 
-    // Initialize PrintController
-    printController = Get.put(PrintController());
+    // Initialize PrintController using lazyPut to prevent multiple instances
+    if (!Get.isRegistered<PrintController>()) {
+      Get.lazyPut(() => PrintController(), fenix: true);
+    }
+    printController = Get.find<PrintController>();
 
     // Start the date time update timer
     _updateDateTime();
