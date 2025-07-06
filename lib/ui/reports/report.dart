@@ -270,7 +270,7 @@ class SearchAndReports extends StatelessWidget {
                                   reportController.fromDate.value,
                                   reportController.toDate.value,
                                 );
-                                // No need to call getReports() as filtering is done locally
+                                // API call is made in setSearchFilters method
                               },
                               child: Container(
                                 height: 40,
@@ -296,7 +296,7 @@ class SearchAndReports extends StatelessWidget {
                                 nameController.clear();
                                 mobileController.clear();
                                 reportController.clearFilters();
-                                // No need to call getReports() as filtering is done locally
+                                // API call is made in clearFilters method
                               },
                               child: Container(
                                 height: 40,
@@ -466,7 +466,7 @@ class SearchAndReports extends StatelessWidget {
                                     onPressed: reportController.currentPage.value > 1
                                       ? () {
                                           reportController.previousPage();
-                                          // No need to call getReports() as pagination is done locally
+                                          // API call is made in previousPage method
                                         }
                                       : null,
                                   ),
@@ -481,7 +481,7 @@ class SearchAndReports extends StatelessWidget {
                                     onPressed: reportController.currentPage.value < reportController.totalPages.value
                                       ? () {
                                           reportController.nextPage();
-                                          // No need to call getReports() as pagination is done locally
+                                          // API call is made in nextPage method
                                         }
                                       : null,
                                   ),
