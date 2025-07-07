@@ -25,6 +25,9 @@ class ReportController extends GetxController {
   RxString searchMobile = ''.obs;
   Rx<DateTime?> fromDate = Rx<DateTime?>(null);
   Rx<DateTime?> toDate = Rx<DateTime?>(null);
+  
+  // Total balance amount
+  RxDouble totalBalanceAmount = 0.0.obs;
 
   @override
   void onInit() {
@@ -66,18 +69,39 @@ class ReportController extends GetxController {
         if (reportList.value != null && reportList.value!.totalPages != null) {
           totalPages.value = reportList.value!.totalPages!;
         }
+        
+        // Calculate total balance amount
+        calculateTotalBalanceAmount();
       } else {
         reportList.value = null;
         originalReportList.value = null;
+        totalBalanceAmount.value = 0.0;
         Get.snackbar('Error', 'Failed to load reports');
       }
     } catch (e) {
       reportList.value = null;
       originalReportList.value = null;
+      totalBalanceAmount.value = 0.0;
       Get.snackbar('Error', 'An error occurred: $e');
     } finally {
       isLoading.value = false;
     }
+  }
+  
+  // Calculate total balance amount from reports
+  void calculateTotalBalanceAmount() {
+    if (reportList.value == null || reportList.value!.billingReports == null) {
+      totalBalanceAmount.value = 0.0;
+      return;
+    }
+    
+    double total = 0.0;
+    for (var report in reportList.value!.billingReports!) {
+      if (report.balanceAmount != null) {
+        total += report.balanceAmount!;
+      }
+    }
+    totalBalanceAmount.value = total;
   }
   
   // Helper method to format date for API

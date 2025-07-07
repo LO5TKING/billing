@@ -446,6 +446,43 @@ class SearchAndReports extends StatelessWidget {
                                             ),
                                       ),
                                     ),
+                                    Obx(() => reportController.reportList.value != null &&
+                                        reportController.reportList.value!.billingReports != null &&
+                                        reportController.reportList.value!.billingReports!.isNotEmpty
+                                        ? Container(
+                                      alignment: Alignment.bottomRight,
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.blueGradient,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.3),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          shadowText(
+                                            text: 'Total Balance Amount: ',
+                                            textcolor: Colors.white,
+                                            fontsize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          shadowText(
+                                            text: '₹${reportController.totalBalanceAmount.value.toStringAsFixed(2)}',
+                                            textcolor: Colors.white,
+                                            fontsize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                        : const SizedBox(),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -489,6 +526,8 @@ class SearchAndReports extends StatelessWidget {
                               )
                             : const SizedBox(),
                           ),
+                          // Display Total Balance Amount
+                          const SizedBox(height: 20),
                 ],
               ),
             ),
