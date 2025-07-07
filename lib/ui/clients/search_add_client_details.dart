@@ -8,6 +8,7 @@ import '../../app/config/color_constants.dart';
 import '../../app/config/design_constants.dart';
 import '../../controllers/search_add_client_controller.dart';
 import '../../model/customer_response_model.dart';
+import '../../utils/edit_dialog.dart';
 import '../../utils/utility.dart';
 
 class SearchAddClientDetails extends StatelessWidget {
@@ -311,7 +312,9 @@ class SearchAddClientDetails extends StatelessWidget {
                                       const SizedBox(height: 15),
                                       Expanded(
                                         child: Obx(() => SingleChildScrollView(
-                                          child: searchAddClientController.clientList.isEmpty
+                                          child: searchAddClientController.loadingClient.value ?
+                                              const Center(child: CircularProgressIndicator(),) :
+                                          searchAddClientController.clientList.isEmpty
                                               ? Center(
                                             child: Container(
                                               padding: const EdgeInsets.all(DesignConstants.padding20),
@@ -324,45 +327,123 @@ class SearchAddClientDetails extends StatelessWidget {
                                               : Column(
                                             children: searchAddClientController.clientList.asMap().entries.map((entry) {
                                               int index = entry.key;
-                                              Datum customer = entry.value; // Now using Datum object
+                                              Datum customer = entry.value;
+
                                               return Padding(
                                                 padding: const EdgeInsets.symmetric(vertical: 5),
-                                                child: Card(
-                                                  elevation: 6,
-                                                  color: Colors.white,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(10),
-                                                  ),
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      // Handle row tap here
-                                                      print('Tapped on ${customer.name}');
-                                                      Get.to(() => Billing(customer: customer));
-                                                      // You can navigate to another screen, show dialog, etc.
-                                                      // Example: Get.to(() => ClientDetailScreen(client: customer));
-                                                    },
-                                                    borderRadius: BorderRadius.circular(10),
-                                                    child: Padding(
-                                                      padding: const EdgeInsets.all(8.0),
-                                                      child: Table(
-                                                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                                        children: [
-                                                          TableRow(
-                                                            children: [
-                                                              tableCell((index + 1).toString()),
-                                                              tableCell(customer.name ?? ""),
-                                                              tableCell(customer.mobileNo ?? ""),
-                                                              tableCell(customer.address ?? ""),
-                                                            ],
-                                                          ),
-                                                        ],
+                                                child: Dismissible(
+                                                  key: ValueKey(index), // Make sure `id` is unique, otherwise use `index`
+                                                  direction: DismissDirection.horizontal,
+                                                  background: swipeRightBackground(),
+                                                  secondaryBackground: swipeLeftBackground(),
+                                                  confirmDismiss: (direction) async {
+                                                    if (direction == DismissDirection.startToEnd) {
+                                                      // Swipe right: Delete
+                                                      bool confirm = await showDialog(
+                                                        context: Get.context!,
+                                                        builder: (_) => AlertDialog(
+                                                          title: Text("Confirm Delete"),
+                                                          content: Text("Are you sure you want to delete this client?"),
+                                                          actions: [
+                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text("Cancel")),
+                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text("Delete")),
+                                                          ],
+                                                        ),
+                                                      );
+                                                      if (confirm) {
+                                                        searchAddClientController.deleteClients(customer.custId.toString() ?? "0");
+                                                        searchAddClientController.clientList.removeAt(index);
+                                                        searchAddClientController.update(); // Or use setState if not using GetX
+                                                      }
+                                                      return confirm;
+                                                    } else {
+                                                      // Swipe left: Edit
+                                                      showDialog(
+                                                        context: Get.context!,
+                                                        builder: (_) => EditCustomerDialog(
+                                                          customer: customer,
+                                                          onSave: (updatedCustomer) {
+                                                            searchAddClientController.clientList[index] = updatedCustomer;
+                                                            searchAddClientController.update(); // Or setState
+                                                          },
+                                                        ),
+                                                      );
+                                                      return false;
+                                                    }
+                                                  },
+                                                  child: Card(
+                                                    elevation: 6,
+                                                    color: Colors.white,
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                    child: InkWell(
+                                                      onTap: () {
+                                                        Get.to(() => Billing(customer: customer));
+                                                      },
+                                                      borderRadius: BorderRadius.circular(10),
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.all(8.0),
+                                                        child: Table(
+                                                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                          children: [
+                                                            TableRow(
+                                                              children: [
+                                                                tableCell((index + 1).toString()),
+                                                                tableCell(customer.name ?? ""),
+                                                                tableCell(customer.mobileNo ?? ""),
+                                                                tableCell(customer.address ?? ""),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
                                                 ),
                                               );
                                             }).toList(),
-                                          ),
+                                          )
+
+
+                                          // Column(
+                                          //   children: searchAddClientController.clientList.asMap().entries.map((entry) {
+                                          //     int index = entry.key;
+                                          //     Datum customer = entry.value; // Now using Datum object
+                                          //     return Padding(
+                                          //       padding: const EdgeInsets.symmetric(vertical: 5),
+                                          //       child: Card(
+                                          //         elevation: 6,
+                                          //         color: Colors.white,
+                                          //         shape: RoundedRectangleBorder(
+                                          //           borderRadius: BorderRadius.circular(10),
+                                          //         ),
+                                          //         child: InkWell(
+                                          //           onTap: () {
+                                          //             Get.to(() => Billing(customer: customer));
+                                          //             // You can navigate to another screen, show dialog, etc.
+                                          //             // Example: Get.to(() => ClientDetailScreen(client: customer));
+                                          //           },
+                                          //           borderRadius: BorderRadius.circular(10),
+                                          //           child: Padding(
+                                          //             padding: const EdgeInsets.all(8.0),
+                                          //             child: Table(
+                                          //               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                          //               children: [
+                                          //                 TableRow(
+                                          //                   children: [
+                                          //                     tableCell((index + 1).toString()),
+                                          //                     tableCell(customer.name ?? ""),
+                                          //                     tableCell(customer.mobileNo ?? ""),
+                                          //                     tableCell(customer.address ?? ""),
+                                          //                   ],
+                                          //                 ),
+                                          //               ],
+                                          //             ),
+                                          //           ),
+                                          //         ),
+                                          //       ),
+                                          //     );
+                                          //   }).toList(),
+                                          // ),
                                         )),
                                       ),
                                     ],
@@ -386,6 +467,38 @@ class SearchAddClientDetails extends StatelessWidget {
       ),
     );
   }
+
+  Widget swipeRightBackground() {
+    return Container(
+      alignment: Alignment.centerLeft,
+      color: Colors.red,
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Icon(Icons.delete, color: Colors.white),
+          SizedBox(width: 8),
+          Text("Delete", style: TextStyle(color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget swipeLeftBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      color: Colors.blue,
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text("Edit", style: TextStyle(color: Colors.white)),
+          SizedBox(width: 8),
+          Icon(Icons.edit, color: Colors.white),
+        ],
+      ),
+    );
+  }
+
 
   void addClientDialogBox(){
     Get.dialog(

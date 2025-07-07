@@ -28,6 +28,8 @@ class SearchAddClientController extends GetxController{
   RxList<Datum> filteredClientList = <Datum>[].obs;
   List<Datum> get clientList => filteredClientList;
   RxBool addPurchaser = false.obs;
+  RxBool loadingClient = true.obs;
+
 
 
 
@@ -134,6 +136,73 @@ class SearchAddClientController extends GetxController{
     }
   }
 
+  void updateClientPostApi({
+    int? custId,
+    String? name,
+    String? mobileNo,
+    String? gstNo,
+    String? emailId,
+    String? address,
+
+  }) async {
+      isLoading.value = true;
+      String url = "https://roughbill.com/api/Customer/update";
+      String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+
+      try {
+        Map<String, dynamic> data = {
+          'custId':custId,
+          'name': name,
+          'mobileNo': mobileNo,
+          'gstNo': gstNo,
+          'emailId': emailId,
+          'address': address,
+          'clientId':clientId,
+          "createdDate": "${DateTime.now().toString().split(' ')[0]}",
+          "modifiedDate": "${DateTime.now().toString().split(' ')[0]}",
+          'status':true,
+          'clientUserId':clientUserId.toString(),
+        };
+
+        var response = await apiService.postRequest(url: url, data : data);
+
+        if (response.statusCode == 200) {
+          Get.back(); // Close dialog
+          Get.snackbar(
+            'Success',
+            'Client added successfully',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+
+          // Clear form fields
+          clearFields();
+
+          // Refresh client list
+        } else {
+          Get.snackbar(
+            'Error',
+            'Failed to add client',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      } catch (e) {
+        Get.snackbar(
+          'Error',
+          'An error occurred: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      } finally {
+        isLoading.value = false;
+      }
+  }
+
   void addPurchaserPostApi() async {
     isLoading.value = true;
     String url = "https://roughbill.com/api/Purchaser/add";
@@ -195,6 +264,7 @@ class SearchAddClientController extends GetxController{
   
   // API call to search clients
   void getClients() async {
+    loadingClient.value = true;
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
     String url = "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
@@ -209,8 +279,7 @@ class SearchAddClientController extends GetxController{
         // Initialize filtered list with all clients
         filteredClientList.value = customerList.value?.data ?? [];
 
-        print("Parsed ${customerList.value?.data?.length ?? 0} customers");
-        print("API Success: ${customerList.value?.success}");
+        loadingClient.value = false;
       } else {
         customerList.value = null; // Clear data on error
         filteredClientList.clear();
@@ -234,6 +303,31 @@ class SearchAddClientController extends GetxController{
         colorText: Colors.white,
       );
     }
+  }
+
+  void deleteClients(String? custId) async {
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Customer/delete?custId=$custId&clientId=$clientId&ClientUserId=$clientUserId";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if(response.statusCode == 200){
+        Get.snackbar(
+          'Success',
+          'Customer Deleted Successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    }catch (e){
+      print("error in deleteing customer is $e");
+    }
+
+
+
   }
   
   // Clear all form fields

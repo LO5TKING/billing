@@ -331,20 +331,20 @@ class SearchAndReports extends StatelessWidget {
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Card(
                       elevation: 20,
                       color: Colors.white,
                       child: Container(
-                        width: Get.width * 0.9,
+                        width: Get.width * 0.95,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: DesignConstants.padding10,
+                            horizontal: DesignConstants.padding5,
                             vertical: DesignConstants.padding20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +396,7 @@ class SearchAndReports extends StatelessWidget {
                                         ? const Center(
                                             child: CircularProgressIndicator(),
                                           )
-                                        : reportController.reportList.value?.billingReports == null || 
+                                        : reportController.reportList.value?.billingReports == null ||
                                           reportController.reportList.value!.billingReports!.isEmpty
                                           ? const Center(
                                               child: Text('No reports found'),
@@ -410,7 +410,7 @@ class SearchAndReports extends StatelessWidget {
                                                     final dateTime = DateTime.parse(report.paymentDate!.toString());
                                                     final date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
                                                     final time = '${dateTime.hour}:${dateTime.minute}';
-                                                    
+
                                                     return Padding(
                                                       padding: const EdgeInsets.symmetric(vertical: 5),
                                                       child: Card(
