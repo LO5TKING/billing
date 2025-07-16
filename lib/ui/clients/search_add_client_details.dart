@@ -38,7 +38,7 @@ class SearchAddClientDetails extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text("Add Purchaser",style: TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.bold),),
+                        const Text("Add Purchaser",style: TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.bold),),
                         Switch(
                             value: searchAddClientController.addPurchaser.value,
                             onChanged: (value){
@@ -298,7 +298,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                           children: [
                                             // Table header
                                             TableRow(
-                                              decoration: BoxDecoration(),
+                                              decoration: const BoxDecoration(),
                                               children: [
                                                 tableHeader('Sr No.'),
                                                 tableHeader('Name'),
@@ -332,7 +332,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                               return Padding(
                                                 padding: const EdgeInsets.symmetric(vertical: 5),
                                                 child: Dismissible(
-                                                  key: ValueKey(index), // Make sure `id` is unique, otherwise use `index`
+                                                  key: ValueKey(customer.custId), // Make sure `id` is unique, otherwise use `index`
                                                   direction: DismissDirection.horizontal,
                                                   background: swipeRightBackground(),
                                                   secondaryBackground: swipeLeftBackground(),
@@ -342,11 +342,11 @@ class SearchAddClientDetails extends StatelessWidget {
                                                       bool confirm = await showDialog(
                                                         context: Get.context!,
                                                         builder: (_) => AlertDialog(
-                                                          title: Text("Confirm Delete"),
-                                                          content: Text("Are you sure you want to delete this client?"),
+                                                          title: const Text("Confirm Delete"),
+                                                          content: const Text("Are you sure you want to delete this client?"),
                                                           actions: [
-                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text("Cancel")),
-                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text("Delete")),
+                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: const Text("Cancel")),
+                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: const Text("Delete")),
                                                           ],
                                                         ),
                                                       );
@@ -402,48 +402,6 @@ class SearchAddClientDetails extends StatelessWidget {
                                               );
                                             }).toList(),
                                           )
-
-
-                                          // Column(
-                                          //   children: searchAddClientController.clientList.asMap().entries.map((entry) {
-                                          //     int index = entry.key;
-                                          //     Datum customer = entry.value; // Now using Datum object
-                                          //     return Padding(
-                                          //       padding: const EdgeInsets.symmetric(vertical: 5),
-                                          //       child: Card(
-                                          //         elevation: 6,
-                                          //         color: Colors.white,
-                                          //         shape: RoundedRectangleBorder(
-                                          //           borderRadius: BorderRadius.circular(10),
-                                          //         ),
-                                          //         child: InkWell(
-                                          //           onTap: () {
-                                          //             Get.to(() => Billing(customer: customer));
-                                          //             // You can navigate to another screen, show dialog, etc.
-                                          //             // Example: Get.to(() => ClientDetailScreen(client: customer));
-                                          //           },
-                                          //           borderRadius: BorderRadius.circular(10),
-                                          //           child: Padding(
-                                          //             padding: const EdgeInsets.all(8.0),
-                                          //             child: Table(
-                                          //               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                          //               children: [
-                                          //                 TableRow(
-                                          //                   children: [
-                                          //                     tableCell((index + 1).toString()),
-                                          //                     tableCell(customer.name ?? ""),
-                                          //                     tableCell(customer.mobileNo ?? ""),
-                                          //                     tableCell(customer.address ?? ""),
-                                          //                   ],
-                                          //                 ),
-                                          //               ],
-                                          //             ),
-                                          //           ),
-                                          //         ),
-                                          //       ),
-                                          //     );
-                                          //   }).toList(),
-                                          // ),
                                         )),
                                       ),
                                     ],
@@ -472,8 +430,8 @@ class SearchAddClientDetails extends StatelessWidget {
     return Container(
       alignment: Alignment.centerLeft,
       color: Colors.red,
-      padding: EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: const Row(
         children: [
           Icon(Icons.delete, color: Colors.white),
           SizedBox(width: 8),
@@ -487,8 +445,8 @@ class SearchAddClientDetails extends StatelessWidget {
     return Container(
       alignment: Alignment.centerRight,
       color: Colors.blue,
-      padding: EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text("Edit", style: TextStyle(color: Colors.white)),

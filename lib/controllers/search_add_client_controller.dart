@@ -308,10 +308,16 @@ class SearchAddClientController extends GetxController{
   void deleteClients(String? custId) async {
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
-    String url = "https://roughbill.com/api/Customer/delete?custId=$custId&clientId=$clientId&ClientUserId=$clientUserId";
+    String url = "https://roughbill.com/api/Customer/delete";
 
+    Map<String,dynamic> data = {
+      "custId": custId,
+      "clientId": clientId,
+      "clientUserId": clientUserId
+    };
     try {
-      var response = await apiService.getRequest(url: url);
+
+      var response = await apiService.postRequest(url: url,data: data);
 
       if(response.statusCode == 200){
         Get.snackbar(
