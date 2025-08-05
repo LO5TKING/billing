@@ -7,7 +7,9 @@ import '../../app/config/design_constants.dart';
 import '../../utils/utility.dart';
 
 class AddGuest extends StatelessWidget {
-  const AddGuest({super.key});
+  AddGuest({super.key});
+
+  TextEditingController nameController = TextEditingController(text: "Guest");
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +61,10 @@ class AddGuest extends StatelessWidget {
                                 ),
                                 child: TextFormField(
                                   keyboardType: TextInputType.emailAddress,
-                                  onChanged: (value){},
+                                  onChanged: (value){
+
+                                  },
+                                  controller: nameController,
                                   style: GoogleFonts.montserrat(
                                       fontWeight: FontWeight.w500,
                                       fontSize: DesignConstants.fontSize12,

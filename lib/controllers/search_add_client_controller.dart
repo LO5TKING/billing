@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:billing/app/config/constants_text.dart';
 import 'package:billing/model/customer_response_model.dart';
+import 'package:billing/model/purchaser_response_model.dart';
 import 'package:billing/utils/constants.dart';
 import 'package:billing/utils/shared_pref.dart';
 import 'package:flutter/material.dart';
@@ -24,9 +25,13 @@ class SearchAddClientController extends GetxController{
   
   RxBool isLoading = false.obs;
   ApiService apiService = ApiService();
-  Rx<CustomerResponseModel?> customerList = Rx<CustomerResponseModel?>(null);
+  Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
   RxList<Datum> filteredClientList = <Datum>[].obs;
   List<Datum> get clientList => filteredClientList;
+
+  Rx<PurchaserResponseModel?> purchaseResponse = Rx<PurchaserResponseModel?>(null);
+  RxList<PurchaserData> filteredpurchaseList = <PurchaserData>[].obs;
+  List<PurchaserData> get purchaseList => filteredpurchaseList;
   RxBool addPurchaser = false.obs;
   RxBool loadingClient = true.obs;
 
@@ -36,7 +41,7 @@ class SearchAddClientController extends GetxController{
   @override
   void onInit() {
     super.onInit();
-    getClients();
+    addPurchaser.value? getPurchaser() : getClients();
     
     // Add listeners to search controllers
     searchNameController.addListener(() {
@@ -274,14 +279,14 @@ class SearchAddClientController extends GetxController{
 
       if (response.statusCode == 200) {
         // Parse the response directly into the observable
-        customerList.value = customerResponseModelFromJson(response.body);
+        customerResponse.value = customerResponseModelFromJson(response.body);
         
         // Initialize filtered list with all clients
-        filteredClientList.value = customerList.value?.data ?? [];
+        filteredClientList.value = customerResponse.value?.data ?? [];
 
         loadingClient.value = false;
       } else {
-        customerList.value = null; // Clear data on error
+        customerResponse.value = null; // Clear data on error
         filteredClientList.clear();
         Get.snackbar(
           'Error',
@@ -292,8 +297,50 @@ class SearchAddClientController extends GetxController{
         );
       }
     } catch (e) {
-      customerList.value = null; // Clear data on error
+      customerResponse.value = null; // Clear data on error
       filteredClientList.clear();
+      print("Error parsing customer data: $e");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  void getPurchaser() async {
+    loadingClient.value = true;
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Purchaser/getPurchaser?clientId=$clientId&ClientUserId=$clientUserId";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        // Parse the response directly into the observable
+        purchaseResponse.value = purchaserResponseModelFromJson(response.body);
+
+        // Initialize filtered list with all clients
+        filteredpurchaseList.value = purchaseResponse.value?.data ?? [];
+
+        loadingClient.value = false;
+      } else {
+        purchaseResponse.value = null; // Clear data on error
+        filteredpurchaseList.clear();
+        Get.snackbar(
+          'Error',
+          'Failed to search purchaser',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      purchaseResponse.value = null; // Clear data on error
+      filteredpurchaseList.clear();
       print("Error parsing customer data: $e");
       Get.snackbar(
         'Error',
@@ -352,12 +399,12 @@ class SearchAddClientController extends GetxController{
     
     if (nameQuery.isEmpty && mobileQuery.isEmpty) {
       // If both search fields are empty, show all clients
-      filteredClientList.value = customerList.value?.data ?? [];
+      filteredClientList.value = customerResponse.value?.data ?? [];
       return;
     }
     
     // Filter the list based on name or mobile number
-    List<Datum> filtered = (customerList.value?.data ?? []).where((client) {
+    List<Datum> filtered = (customerResponse.value?.data ?? []).where((client) {
       bool nameMatch = nameQuery.isEmpty || 
           (client.name?.toLowerCase().contains(nameQuery) ?? false);
       

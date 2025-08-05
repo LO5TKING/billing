@@ -23,7 +23,7 @@ class AppPages {
     ),
     GetPage(
       name: billingNew,
-      page: () => BillingNew(customer: Get.arguments?['customer']),
+      page: () => BillingNew(customer: Get.arguments?['customer'],),
     ),
     GetPage(
       name: billingOptions,

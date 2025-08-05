@@ -43,6 +43,10 @@ class BillingControllerNew extends GetxController {
   String recognizedRate = '';
   String recognizedQuantity = '';
   RxBool showButtons = false.obs;
+  RxBool loadingClient = true.obs;
+  Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
+  RxList<Datum> filteredClientList = <Datum>[].obs;
+  List<Datum> get clientList => filteredClientList;
 
   ApiService apiService = ApiService();
 
@@ -1375,6 +1379,48 @@ class BillingControllerNew extends GetxController {
         "Error",
         "Exception occurred: $e",
         snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void getClients() async {
+    loadingClient.value = true;
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        // Parse the response directly into the observable
+        customerResponse.value = customerResponseModelFromJson(response.body);
+
+        // Initialize filtered list with all clients
+        filteredClientList.value = customerResponse.value?.data ?? [];
+
+        loadingClient.value = false;
+      } else {
+        customerResponse.value = null; // Clear data on error
+        filteredClientList.clear();
+        Get.snackbar(
+          'Error',
+          'Failed to search clients',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      customerResponse.value = null; // Clear data on error
+      filteredClientList.clear();
+      print("Error parsing customer data: $e");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }

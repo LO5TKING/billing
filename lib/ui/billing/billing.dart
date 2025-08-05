@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
+import 'package:billing/app/routes/app_pages.dart';
 import 'package:billing/controllers/billing_controller.dart';
 import 'package:billing/model/customer_response_model.dart';
 import 'package:billing/print/print_page.dart';
@@ -23,7 +24,9 @@ class Billing extends StatelessWidget {
 
   final Datum? customer;
 
-  Billing({this.customer});
+  final List<Datum>? clientList;
+
+  Billing({this.customer,this.clientList});
 
   final ScrollController scrollController = ScrollController();
 
@@ -93,7 +96,7 @@ class Billing extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Mob : ********00',
+                                        'Mob : ${customer?.mobileNo}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -569,7 +572,7 @@ class Billing extends StatelessWidget {
                                               billingController.itemList
                                                   .clear();
                                             },
-                                            child: const Icon(Icons.cleaning_services_sharp,color: Colors.white,size: 40,)
+                                            child: const Icon(Icons.clear,color: Colors.white,size: 40,)
                                         ),
                                       ),
                                       const SizedBox(width: 10),
@@ -651,8 +654,8 @@ class Billing extends StatelessWidget {
               ),
               // Add draggable floating action button
               DraggableFab(
-                targetRoute: '/billing_new',
-                arguments: {'customer': customer},
+                targetRoute: AppPages.billingNew,
+                arguments: {'customer': customer,'clientList' : clientList},
                 backgroundColor: AppColors.blueGradient,
                 icon: Icons.receipt,
               ),

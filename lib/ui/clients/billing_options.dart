@@ -27,13 +27,13 @@ class BillingOptions extends StatelessWidget {
   late final OrderController orderController;
   late final PurchaseController purchaseController;
 
-  BillingOptions({super.key});
+  BillingOptions({super.key}){
+    _initControllers();
+
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Initialize controllers only when needed
-    _initControllers();
-    
     return SafeArea(
       child: Scaffold(
         backgroundColor: AppColors.peachColor,
@@ -93,7 +93,7 @@ class BillingOptions extends StatelessWidget {
                                   text: 'Guest',
                                   icon: Icons.person,
                                   onItemTap: () {
-                                    Get.to(() => const AddGuest());
+                                    Get.to(() => AddGuest());
                                   }),
                             ],
                           ),
@@ -252,14 +252,14 @@ class BillingOptions extends StatelessWidget {
       } else {
         billingControllerNew = Get.find<BillingControllerNew>();
       }
-      
+
       if (!Get.isRegistered<OrderController>()) {
         Get.lazyPut<OrderController>(() => OrderController(), fenix: true);
         orderController = Get.find<OrderController>();
       } else {
         orderController = Get.find<OrderController>();
       }
-      
+
       if (!Get.isRegistered<PurchaseController>()) {
         Get.lazyPut<PurchaseController>(() => PurchaseController(), fenix: true);
         purchaseController = Get.find<PurchaseController>();

@@ -12,10 +12,16 @@ import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_re
 
 import '../../app/config/constants_text.dart';
 import '../../controllers/order_controller.dart';
+import '../../model/customer_response_model.dart';
 import '../../utils/utility.dart';
 
 class Order extends StatelessWidget {
   OrderController orderController = Get.find<OrderController>();
+
+  final Datum? customer;
+
+  Order({this.customer});
+
   final ScrollController scrollController = ScrollController();
 
 
@@ -84,7 +90,7 @@ class Order extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'To : Customer',
+                                        'To : ${customer?.name}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -95,7 +101,7 @@ class Order extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Mob : ********00',
+                                        'Mob : ${customer?.mobileNo}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,

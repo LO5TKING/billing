@@ -1,4 +1,6 @@
 
+import 'package:billing/ui/auth/login_screen.dart';
+import 'package:billing/utils/shared_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -35,6 +37,33 @@ Widget noShadowText({required String text, double? fontsize, Color? textcolor, F
       color: textcolor ?? Colors.black,
       fontWeight: fontWeight ?? FontWeight.bold,
     ),
+  );
+}
+
+void showLogoutDialog() {
+  Get.dialog(
+    AlertDialog(
+      title: Text('Logout'),
+      content: Text('Are you sure you want to logout?'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Get.back(); // Close the dialog
+          },
+          child: Text('No'),
+        ),
+        TextButton(
+          onPressed: () {
+            Get.back(); // Close the dialog
+            // Perform your logout logic here
+            SharedPrefs.clear();
+            Get.off(() => LoginScreen());
+          },
+          child: Text('Yes'),
+        ),
+      ],
+    ),
+    barrierDismissible: false,
   );
 }
 

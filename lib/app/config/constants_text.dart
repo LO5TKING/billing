@@ -13,5 +13,12 @@ class ConstantsText{
   static const clientId = 'clientId';
   static const customerId = 'customerId';
   static const clientUserId = 'clientUserId';
-  static const isloggedIn = "isLoggedIn";
+  static const isloggedIn = 'isloggedIn';
+  static const companyName = "companyname";
+  static const personName = "personname";
+  static const mobileNumber = "mobilenumber";
+  static const addresss = "addresss";
+  static const gstNumber = "gstnumber";
+  static const emailId = "emailid";
+  static const shopNo = "shopnno";
 }

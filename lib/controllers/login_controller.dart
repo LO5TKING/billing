@@ -71,6 +71,13 @@ class LoginController extends GetxController {
         await SharedPrefs.setInt(ConstantsText.clientUserId,loginResponse.clientUserId ?? 0);
         await SharedPrefs.setString(ConstantsText.clientId,loginResponse.clientId ?? "0");
         await SharedPrefs.setBool(ConstantsText.isloggedIn,true);
+        await SharedPrefs.setString(ConstantsText.companyName,loginResponse.companyName ?? "");
+        await SharedPrefs.setString(ConstantsText.personName,loginResponse.personName ?? "");
+        await SharedPrefs.setString(ConstantsText.mobileNumber,loginResponse.mobileNo ?? "");
+        await SharedPrefs.setString(ConstantsText.addresss,loginResponse.area ?? "");
+        await SharedPrefs.setString(ConstantsText.gstNumber,loginResponse.gstNo ?? "");
+        await SharedPrefs.setString(ConstantsText.emailId,loginResponse.emailId ?? "");
+        await SharedPrefs.setString(ConstantsText.shopNo,loginResponse.shopNo ?? "");
 
         // Login successful
         Get.offAllNamed('/billing_options');

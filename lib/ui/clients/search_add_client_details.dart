@@ -1,4 +1,5 @@
 import 'package:billing/ui/billing/billing.dart';
+import 'package:billing/ui/order/order.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
@@ -38,12 +39,13 @@ class SearchAddClientDetails extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Text("Add Purchaser",style: TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.bold),),
+                        Text(searchAddClientController.addPurchaser.value ? "Purchaser" : "Customer",style: TextStyle(color: Colors.black,fontSize: 22,fontWeight: FontWeight.bold),),
                         Switch(
                             value: searchAddClientController.addPurchaser.value,
                             onChanged: (value){
                               searchAddClientController.addPurchaser.value = value;
-                        }),
+                              value? searchAddClientController.getPurchaser() : searchAddClientController.getClients();
+                            }),
                       ],
                     ),
                   ),
@@ -314,6 +316,16 @@ class SearchAddClientDetails extends StatelessWidget {
                                         child: Obx(() => SingleChildScrollView(
                                           child: searchAddClientController.loadingClient.value ?
                                               const Center(child: CircularProgressIndicator(),) :
+                                          searchAddClientController.addPurchaser.value ?
+                                          Center(
+                                            child: Container(
+                                              padding: const EdgeInsets.all(DesignConstants.padding20),
+                                              child: shadowText(
+                                                  text: 'No purchaser found. Try searching or add a new purchaser.',
+                                                  fontsize: DesignConstants.fontSize14
+                                              ),
+                                            ),
+                                          ) :
                                           searchAddClientController.clientList.isEmpty
                                               ? Center(
                                             child: Container(
@@ -376,8 +388,33 @@ class SearchAddClientDetails extends StatelessWidget {
                                                     color: Colors.white,
                                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                                     child: InkWell(
-                                                      onTap: () {
-                                                        Get.to(() => Billing(customer: customer));
+                                                      onLongPress: () {
+                                                        Get.dialog(
+                                                          AlertDialog(
+                                                            title: Text("Navigation"),
+                                                            content: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                ListTile(
+                                                                  title: Text("Bill"),
+                                                                  onTap: () {
+                                                                    Get.back();
+                                                                    Get.to(() => Billing(customer: customer,clientList: searchAddClientController.clientList,));// Close the dialog
+                                                                    print("Navigate to Bill");
+                                                                  },
+                                                                ),
+                                                                ListTile(
+                                                                  title: Text("Order"),
+                                                                  onTap: () {
+                                                                    Get.back();
+                                                                    Get.to(() => Order(customer: customer));// Close the dialog
+                                                                    print("Navigate to Order");
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
                                                       },
                                                       borderRadius: BorderRadius.circular(10),
                                                       child: Padding(

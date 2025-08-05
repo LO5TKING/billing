@@ -73,7 +73,7 @@ class SettingOptions extends StatelessWidget {
                             ListView.builder(
                               shrinkWrap: true, // This will make the ListView adjust its height based on content
                               physics: const NeverScrollableScrollPhysics(), // Prevent ListView from scrolling inside another scrollable widget
-                              itemCount: 9, // Number of list items you have
+                              itemCount: 10, // Number of list items you have
                               itemBuilder: (context, index) {
                                 return Column(
                                   children: [
@@ -83,7 +83,7 @@ class SettingOptions extends StatelessWidget {
                                       text: _getTextForIndex(index), // Use a function to get text dynamically
                                       context: context,
                                     ),
-                                    if (index != 8) // Add divider only between items, not after the last one
+                                    if (index != 9) // Add divider only between items, not after the last one
                                       const Divider(
                                         color: Colors.grey,
                                         thickness: 0.5,
@@ -127,6 +127,8 @@ class SettingOptions extends StatelessWidget {
         return Icons.phone;
       case 8:
         return Icons.branding_watermark_sharp;
+      case 9:
+        return Icons.logout;
       default:
         return Icons.info;
     }
@@ -153,6 +155,8 @@ class SettingOptions extends StatelessWidget {
         return 'Contact Us';
       case 8:
         return 'Terms and Conditions';
+      case 9:
+        return 'Logout';
       default:
         return '';
     }
@@ -181,6 +185,8 @@ class SettingOptions extends StatelessWidget {
             Get.to(() =>  const ContactUsSettings());
           case 8:
             Get.to(() =>  const TermsAndConditionSettings());
+          case 9:
+            showLogoutDialog();
           default:
             Get.toNamed('/billing_options');
         }

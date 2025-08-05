@@ -802,6 +802,7 @@ class BillingController extends GetxController {
     amountPaid.text = totalAmount.toString();
     Get.defaultDialog(
       title: 'Payment Details',
+      barrierDismissible: false,
       content: StatefulBuilder(
         builder: (context, setState) {
           // Calculate amounts based on current values
@@ -989,7 +990,6 @@ class BillingController extends GetxController {
         },
       ),
       textConfirm: 'Print Receipt',
-
       confirmTextColor: Colors.white,
       buttonColor: AppColors.blueGradient,
       onConfirm: () async {
