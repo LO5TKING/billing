@@ -270,8 +270,9 @@ class SearchAddClientDetails extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: DesignConstants.padding10,
-                              vertical: DesignConstants.padding20),
+                            horizontal: DesignConstants.padding10,
+                            vertical: DesignConstants.padding20,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -282,9 +283,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                   fontsize: DesignConstants.fontSize16,
                                 ),
                               ),
-                              const SizedBox(
-                                height: DesignConstants.padding20,
-                              ),
+                              const SizedBox(height: DesignConstants.padding20),
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
@@ -300,7 +299,6 @@ class SearchAddClientDetails extends StatelessWidget {
                                         child: Table(
                                           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                                           children: [
-                                            // Table header
                                             TableRow(
                                               decoration: const BoxDecoration(),
                                               children: [
@@ -315,241 +313,261 @@ class SearchAddClientDetails extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 15),
                                       Expanded(
-                                        child: Obx(() => SingleChildScrollView(
-                                          child: searchAddClientController.loadingClient.value ?
-                                              const Center(child: CircularProgressIndicator(),) :
-                                          searchAddClientController.addPurchaser.value ?
-                                          searchAddClientController.purchaseList.isEmpty ?
-                                          Center(
-                                            child: Container(
-                                              padding: const EdgeInsets.all(DesignConstants.padding20),
-                                              child: shadowText(
-                                                  text: 'No purchaser found. Try searching or add a new purchaser.',
-                                                  fontsize: DesignConstants.fontSize14
+                                        child: Obx(
+                                              () => SingleChildScrollView(
+                                            child: searchAddClientController.loadingClient.value
+                                                ? const Center(child: CircularProgressIndicator())
+                                                : searchAddClientController.addPurchaser.value
+                                                ? (searchAddClientController.purchaseList.isEmpty
+                                                ? Center(
+                                              child: Container(
+                                                padding: const EdgeInsets.all(DesignConstants.padding20),
+                                                child: shadowText(
+                                                  text:
+                                                  'No purchaser found. Try searching or add a new purchaser.',
+                                                  fontsize: DesignConstants.fontSize14,
+                                                ),
                                               ),
-                                            ),
-                                          )  :
-                                          Column(
-                                            children: searchAddClientController.purchaseList.asMap().entries.map((entry) {
-                                              int index = entry.key;
-                                              PurchaserData customer = entry.value;
+                                            )
+                                                : Column(
+                                              children: searchAddClientController
+                                                  .purchaseList.asMap().entries.map((entry) {
+                                                int index = entry.key;
+                                                PurchaserData customer = entry.value;
 
-                                              return Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 5),
-                                                child: Dismissible(
-                                                  key: ValueKey(customer.purchaserId), // Make sure `id` is unique, otherwise use `index`
-                                                  direction: DismissDirection.horizontal,
-                                                  background: swipeRightBackground(),
-                                                  secondaryBackground: swipeLeftBackground(),
-                                                  confirmDismiss: (direction) async {
-                                                    if (direction == DismissDirection.startToEnd) {
-                                                      // Swipe right: Delete
-                                                      bool confirm = await showDialog(
-                                                        context: Get.context!,
-                                                        builder: (_) => AlertDialog(
-                                                          title: const Text("Confirm Delete"),
-                                                          content: const Text("Are you sure you want to delete this client?"),
-                                                          actions: [
-                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: const Text("Cancel")),
-                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: const Text("Delete")),
-                                                          ],
-                                                        ),
-                                                      );
-                                                      if (confirm) {
-                                                        searchAddClientController.deletePurchaser(customer.purchaserId);
-                                                        searchAddClientController.purchaseList.removeAt(index);
-                                                        searchAddClientController.update(); // Or use setState if not using GetX
-                                                      }
-                                                      return confirm;
-                                                    }
-                                                    else {
-                                                      // Swipe left: Edit
-                                                      showDialog(
-                                                        context: Get.context!,
-                                                        builder: (_) => EditCustomerDialog(
-                                                          purchaser: customer,
-                                                          onSave: (updatedCustomer) {
-                                                            searchAddClientController.clientList[index] = updatedCustomer;
-                                                            searchAddClientController.update(); // Or setState
-                                                          },
-                                                        ),
-                                                      );
-                                                      return false;
-                                                    }
-                                                  },
-                                                  child: Card(
-                                                    elevation: 6,
-                                                    color: Colors.white,
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                    child: InkWell(
-                                                      onLongPress: () {
-                                                        Get.dialog(
-                                                          AlertDialog(
-                                                            title: Text("Navigation"),
-                                                            content: Column(
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children: [
-                                                                ListTile(
-                                                                  title: Text("Purchase"),
-                                                                  onTap: () {
-                                                                    Get.back();
-                                                                    Get.to(() => Purchase(customer: customer));// Close the dialog
-                                                                    print("Navigate to Bill");
-                                                                  },
-                                                                ),
-                                                                // ListTile(
-                                                                //   title: Text("Order"),
-                                                                //   onTap: () {
-                                                                //     Get.back();
-                                                                //     Get.to(() => Order(customer: customer));// Close the dialog
-                                                                //     print("Navigate to Order");
-                                                                //   },
-                                                                // ),
-                                                              ],
-                                                            ),
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 5),
+                                                  child: Dismissible(
+                                                    key: ValueKey(customer.purchaserId),
+                                                    direction: DismissDirection.horizontal,
+                                                    background: swipeRightBackground(),
+                                                    secondaryBackground: swipeLeftBackground(),
+                                                    confirmDismiss: (direction) async {
+                                                      if (direction == DismissDirection.startToEnd) {
+                                                        bool confirm = await showDialog(
+                                                          context: Get.context!,
+                                                          builder: (_) => AlertDialog(
+                                                            title: const Text("Confirm Delete"),
+                                                            content: const Text(
+                                                                "Are you sure you want to delete this client?"),
+                                                            actions: [
+                                                              TextButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(Get.context!).pop(false),
+                                                                  child: const Text("Cancel")),
+                                                              TextButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(Get.context!).pop(true),
+                                                                  child: const Text("Delete")),
+                                                            ],
                                                           ),
                                                         );
-                                                      },
-                                                      borderRadius: BorderRadius.circular(10),
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.all(8.0),
-                                                        child: Table(
-                                                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                                          children: [
-                                                            TableRow(
-                                                              children: [
-                                                                tableCell((index + 1).toString()),
-                                                                tableCell(customer.purchaserName ?? ""),
-                                                                tableCell(customer.mobileNo ?? ""),
-                                                                tableCell(customer.address ?? ""),
-                                                              ],
+                                                        if (confirm) {
+                                                          searchAddClientController
+                                                              .deletePurchaser(customer.purchaserId);
+                                                          searchAddClientController.purchaseList.removeAt(index);
+                                                          searchAddClientController.update();
+                                                        }
+                                                        return confirm;
+                                                      } else {
+                                                        showDialog(
+                                                          context: Get.context!,
+                                                          builder: (_) => EditCustomerDialog(
+                                                            purchaser: customer,
+                                                            onSave: (updatedCustomer) {
+                                                              // keep purchaser list in sync
+                                                              searchAddClientController.purchaseList[index] =
+                                                                  updatedCustomer;
+                                                              searchAddClientController.update();
+                                                            },
+                                                          ),
+                                                        );
+                                                        return false;
+                                                      }
+                                                    },
+                                                    child: Card(
+                                                      elevation: 6,
+                                                      color: Colors.white,
+                                                      shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(10)),
+                                                      child: InkWell(
+                                                        onLongPress: () {
+                                                          Get.dialog(
+                                                            AlertDialog(
+                                                              title: Text("Navigation"),
+                                                              content: Column(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children: [
+                                                                  ListTile(
+                                                                    title: Text("Purchase"),
+                                                                    onTap: () {
+                                                                      Get.back();
+                                                                      Get.to(() => Purchase(customer: customer));
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ],
+                                                          );
+                                                        },
+                                                        borderRadius: BorderRadius.circular(10),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.all(8.0),
+                                                          child: Table(
+                                                            defaultVerticalAlignment:
+                                                            TableCellVerticalAlignment.middle,
+                                                            children: [
+                                                              TableRow(
+                                                                children: [
+                                                                  tableCell((index + 1).toString()),
+                                                                  tableCell(customer.purchaserName ?? ""),
+                                                                  tableCell(customer.mobileNo ?? ""),
+                                                                  tableCell(customer.address ?? ""),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ),
                                                     ),
                                                   ),
+                                                );
+                                              }).toList(),
+                                            ))
+                                                : (searchAddClientController.clientList.isEmpty
+                                                ? Center(
+                                              child: Container(
+                                                padding: const EdgeInsets.all(DesignConstants.padding20),
+                                                child: shadowText(
+                                                  text:
+                                                  'No clients found. Try searching or add a new client.',
+                                                  fontsize: DesignConstants.fontSize14,
                                                 ),
-                                              );
-                                            }).toList(),
-                                          )
-
-
-                                              :
-                                          searchAddClientController.clientList.isEmpty
-                                              ? Center(
-                                            child: Container(
-                                              padding: const EdgeInsets.all(DesignConstants.padding20),
-                                              child: shadowText(
-                                                  text: 'No clients found. Try searching or add a new client.',
-                                                  fontsize: DesignConstants.fontSize14
                                               ),
-                                            ),
-                                          )
-                                              : Column(
-                                            children: searchAddClientController.clientList.asMap().entries.map((entry) {
-                                              int index = entry.key;
-                                              Datum customer = entry.value;
+                                            )
+                                                : Column(
+                                              children: searchAddClientController.clientList
+                                                  .asMap()
+                                                  .entries
+                                                  .map((entry) {
+                                                int index = entry.key;
+                                                Datum customer = entry.value;
 
-                                              return Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 5),
-                                                child: Dismissible(
-                                                  key: ValueKey(customer.custId), // Make sure `id` is unique, otherwise use `index`
-                                                  direction: DismissDirection.horizontal,
-                                                  background: swipeRightBackground(),
-                                                  secondaryBackground: swipeLeftBackground(),
-                                                  confirmDismiss: (direction) async {
-                                                    if (direction == DismissDirection.startToEnd) {
-                                                      // Swipe right: Delete
-                                                      bool confirm = await showDialog(
-                                                        context: Get.context!,
-                                                        builder: (_) => AlertDialog(
-                                                          title: const Text("Confirm Delete"),
-                                                          content: const Text("Are you sure you want to delete this client?"),
-                                                          actions: [
-                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: const Text("Cancel")),
-                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: const Text("Delete")),
-                                                          ],
-                                                        ),
-                                                      );
-                                                      if (confirm) {
-                                                        searchAddClientController.deleteClients(customer.custId.toString() ?? "0");
-                                                        searchAddClientController.clientList.removeAt(index);
-                                                        searchAddClientController.update(); // Or use setState if not using GetX
-                                                      }
-                                                      return confirm;
-                                                    } else {
-                                                      // Swipe left: Edit
-                                                      showDialog(
-                                                        context: Get.context!,
-                                                        builder: (_) => EditCustomerDialog(
-                                                          customer: customer,
-                                                          onSave: (updatedCustomer) {
-                                                            searchAddClientController.clientList[index] = updatedCustomer;
-                                                            searchAddClientController.update(); // Or setState
-                                                          },
-                                                        ),
-                                                      );
-                                                      return false;
-                                                    }
-                                                  },
-                                                  child: Card(
-                                                    elevation: 6,
-                                                    color: Colors.white,
-                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                    child: InkWell(
-                                                      onLongPress: () {
-                                                        Get.dialog(
-                                                          AlertDialog(
-                                                            title: Text("Navigation"),
-                                                            content: Column(
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children: [
-                                                                ListTile(
-                                                                  title: Text("Bill"),
-                                                                  onTap: () {
-                                                                    Get.back();
-                                                                    Get.to(() => Billing(customer: customer,clientList: searchAddClientController.clientList,));// Close the dialog
-                                                                    print("Navigate to Bill");
-                                                                  },
-                                                                ),
-                                                                ListTile(
-                                                                  title: Text("Order"),
-                                                                  onTap: () {
-                                                                    Get.back();
-                                                                    Get.to(() => Order(customer: customer,clientList: searchAddClientController.clientList,));// Close the dialog
-                                                                    print("Navigate to Order");
-                                                                  },
-                                                                ),
-                                                              ],
-                                                            ),
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 5),
+                                                  child: Dismissible(
+                                                    key: ValueKey(customer.custId),
+                                                    direction: DismissDirection.horizontal,
+                                                    background: swipeRightBackground(),
+                                                    secondaryBackground: swipeLeftBackground(),
+                                                    confirmDismiss: (direction) async {
+                                                      if (direction == DismissDirection.startToEnd) {
+                                                        bool confirm = await showDialog(
+                                                          context: Get.context!,
+                                                          builder: (_) => AlertDialog(
+                                                            title: const Text("Confirm Delete"),
+                                                            content: const Text(
+                                                                "Are you sure you want to delete this client?"),
+                                                            actions: [
+                                                              TextButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(Get.context!).pop(false),
+                                                                  child: const Text("Cancel")),
+                                                              TextButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(Get.context!).pop(true),
+                                                                  child: const Text("Delete")),
+                                                            ],
                                                           ),
                                                         );
-                                                      },
-                                                      borderRadius: BorderRadius.circular(10),
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.all(8.0),
-                                                        child: Table(
-                                                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                                          children: [
-                                                            TableRow(
-                                                              children: [
-                                                                tableCell((index + 1).toString()),
-                                                                tableCell(customer.name ?? ""),
-                                                                tableCell(customer.mobileNo ?? ""),
-                                                                tableCell(customer.address ?? ""),
-                                                              ],
+                                                        if (confirm) {
+                                                          searchAddClientController.deleteClients(
+                                                              customer.custId?.toString() ?? "0");
+                                                          searchAddClientController.clientList.removeAt(index);
+                                                          searchAddClientController.update();
+                                                        }
+                                                        return confirm;
+                                                      } else {
+                                                        showDialog(
+                                                          context: Get.context!,
+                                                          builder: (_) => EditCustomerDialog(
+                                                            customer: customer,
+                                                            onSave: (updatedCustomer) {
+                                                              searchAddClientController.clientList[index] =
+                                                                  updatedCustomer;
+                                                              searchAddClientController.update();
+                                                            },
+                                                          ),
+                                                        );
+                                                        return false;
+                                                      }
+                                                    },
+                                                    child: Card(
+                                                      elevation: 6,
+                                                      color: Colors.white,
+                                                      shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(10)),
+                                                      child: InkWell(
+                                                        onLongPress: () {
+                                                          Get.dialog(
+                                                            AlertDialog(
+                                                              title: Text("Navigation"),
+                                                              content: Column(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children: [
+                                                                  ListTile(
+                                                                    title: Text("Bill"),
+                                                                    onTap: () {
+                                                                      Get.back();
+                                                                      Get.to(() => Billing(
+                                                                        customer: customer,
+                                                                        clientList: searchAddClientController
+                                                                            .clientList,
+                                                                      ));
+                                                                    },
+                                                                  ),
+                                                                  ListTile(
+                                                                    title: Text("Order"),
+                                                                    onTap: () {
+                                                                      Get.back();
+                                                                      Get.to(() => Order(
+                                                                        customer: customer,
+                                                                        clientList: searchAddClientController
+                                                                            .clientList,
+                                                                      ));
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ],
+                                                          );
+                                                        },
+                                                        borderRadius: BorderRadius.circular(10),
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.all(8.0),
+                                                          child: Table(
+                                                            defaultVerticalAlignment:
+                                                            TableCellVerticalAlignment.middle,
+                                                            children: [
+                                                              TableRow(
+                                                                children: [
+                                                                  tableCell((index + 1).toString()),
+                                                                  tableCell(customer.name ?? ""),
+                                                                  tableCell(customer.mobileNo ?? ""),
+                                                                  tableCell(customer.address ?? ""),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                       ),
                                                     ),
                                                   ),
-                                                ),
-                                              );
-                                            }).toList(),
-                                          )
-                                        )),
+                                                );
+                                              }).toList(),
+                                            )),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),

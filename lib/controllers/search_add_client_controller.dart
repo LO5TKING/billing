@@ -353,14 +353,15 @@ class SearchAddClientController extends GetxController{
 
         loadingClient.value = false;
       } else {
+        loadingClient.value = false;
         customerResponse.value = null; // Clear data on error
         filteredClientList.clear();
         Get.snackbar(
           'Error',
           'Failed to search clients',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+          backgroundColor: Colors.grey,
+          colorText: Colors.black,
         );
       }
     } catch (e) {
@@ -395,14 +396,15 @@ class SearchAddClientController extends GetxController{
 
         loadingClient.value = false;
       } else {
+        loadingClient.value = false;
         purchaseResponse.value = null; // Clear data on error
         filteredpurchaseList.clear();
         Get.snackbar(
           'Error',
           'Failed to search purchaser',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+          backgroundColor: Colors.grey,
+          colorText: Colors.black,
         );
       }
     } catch (e) {
