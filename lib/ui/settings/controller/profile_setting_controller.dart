@@ -66,7 +66,7 @@ class ProfileSettingController extends GetxController{
         "photo": "rahulgupta_profile.jpg",
         "createdDate": "${DateTime.now().toString().split(' ')[0]}",
         "modifiedDate": "${DateTime.now().toString().split(' ')[0]}",
-        "deviceLimit": 7,
+        "deviceLimit": 2,
         "status": true,
         "clientId":clientId ,
         "password": password.text
