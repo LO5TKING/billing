@@ -1,3 +1,5 @@
+import 'package:billing/ui/order/order.dart';
+import 'package:billing/ui/order/order_new.dart';
 import 'package:billing/ui/splash_screen.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/billing/billing_new.dart';
@@ -11,6 +13,8 @@ class AppPages {
   static const String billing = "/billing";
   static const String billingNew = "/billing_new";
   static const String billingOptions = "/billing_options";
+  static const String order = "/order";
+  static const String orderNew = "/orderNew";
 
   static List<GetPage> routes = [
     GetPage(
@@ -28,6 +32,14 @@ class AppPages {
     GetPage(
       name: billingOptions,
       page: () => BillingOptions(),
+    ),
+    GetPage(
+      name: order,
+      page: () => Order(customer: Get.arguments?['customer']),
+    ),
+    GetPage(
+      name: orderNew,
+      page: () => OrderNew(customer: Get.arguments?['customer']),
     ),
   ];
 }

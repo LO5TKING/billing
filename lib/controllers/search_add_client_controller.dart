@@ -41,7 +41,7 @@ class SearchAddClientController extends GetxController{
   @override
   void onInit() {
     super.onInit();
-    addPurchaser.value? getPurchaser() : getClients();
+    getClients();
     
     // Add listeners to search controllers
     searchNameController.addListener(() {
@@ -208,6 +208,73 @@ class SearchAddClientController extends GetxController{
       }
   }
 
+  void updatePurchaserPostApi({
+    int? purId,
+    String? name,
+    String? mobileNo,
+    String? gstNo,
+    String? emailId,
+    String? address,
+
+  }) async {
+    isLoading.value = true;
+    String url = "https://roughbill.com/api/Purchaser/update";
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+
+    try {
+      Map<String, dynamic> data = {
+        'purchaserId':purId,
+        'purchaserName': name,
+        'mobileNo': mobileNo,
+        'gstNo': gstNo,
+        'emailId': emailId,
+        'address': address,
+        'clientId':clientId,
+        "createdDate": "${DateTime.now().toString().split(' ')[0]}",
+        "modifiedDate": "${DateTime.now().toString().split(' ')[0]}",
+        'status':true,
+        'clientUserId':clientUserId.toString(),
+      };
+
+      var response = await apiService.postRequest(url: url, data : data);
+
+      if (response.statusCode == 200) {
+        Get.back(); // Close dialog
+        Get.snackbar(
+          'Success',
+          'Client added successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // Clear form fields
+        clearFields();
+
+        // Refresh client list
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to add client',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   void addPurchaserPostApi() async {
     isLoading.value = true;
     String url = "https://roughbill.com/api/Purchaser/add";
@@ -314,7 +381,7 @@ class SearchAddClientController extends GetxController{
     loadingClient.value = true;
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
-    String url = "https://roughbill.com/api/Purchaser/getPurchaser?clientId=$clientId&ClientUserId=$clientUserId";
+    String url = "https://roughbill.com/api/Purchaser/pruchaserget?clientId=$clientId&ClientUserId=$clientUserId";
 
     try {
       var response = await apiService.getRequest(url: url);
@@ -376,7 +443,38 @@ class SearchAddClientController extends GetxController{
         );
       }
     }catch (e){
-      print("error in deleteing customer is $e");
+      print("error in deleting customer is $e");
+    }
+
+
+
+  }
+
+  void deletePurchaser(int? custId) async {
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Purchaser/delete";
+
+    Map<String,dynamic> data = {
+      "purchaserId": custId,
+      "clientId": clientId,
+      "clientUserId": (clientUserId)
+    };
+    try {
+
+      var response = await apiService.postRequest(url: url,data: data);
+
+      if(response.statusCode == 200){
+        Get.snackbar(
+          'Success',
+          'Customer Deleted Successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    }catch (e){
+      print("error in deleting purchaser is $e");
     }
 
 

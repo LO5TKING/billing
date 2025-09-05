@@ -1,14 +1,16 @@
 import 'package:billing/controllers/search_add_client_controller.dart';
+import 'package:billing/model/purchaser_response_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../model/customer_response_model.dart';
 
 class EditCustomerDialog extends StatefulWidget {
-  final Datum customer;
-  final void Function(Datum updatedCustomer) onSave;
+  final Datum? customer;
+  final PurchaserData? purchaser;
+  final void Function(dynamic updatedCustomer) onSave;
 
-  EditCustomerDialog({required this.customer, required this.onSave});
+  EditCustomerDialog({this.customer, required this.onSave,this.purchaser});
 
   @override
   _EditCustomerDialogState createState() => _EditCustomerDialogState();
@@ -27,11 +29,11 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
   @override
   void initState() {
     super.initState();
-    nameCtrl = TextEditingController(text: widget.customer.name);
-    mobileCtrl = TextEditingController(text: widget.customer.mobileNo);
-    gstCtrl = TextEditingController(text: widget.customer.gstNo ?? '');
-    emailCtrl = TextEditingController(text: widget.customer.emailId ?? '');
-    addressCtrl = TextEditingController(text: widget.customer.address);
+    nameCtrl = TextEditingController(text: widget.customer?.name);
+    mobileCtrl = TextEditingController(text: widget.customer?.mobileNo);
+    gstCtrl = TextEditingController(text: widget.customer?.gstNo ?? '');
+    emailCtrl = TextEditingController(text: widget.customer?.emailId ?? '');
+    addressCtrl = TextEditingController(text: widget.customer?.address);
   }
 
   @override
@@ -62,27 +64,51 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text("Cancel")),
         ElevatedButton(
-          onPressed: () {
-            searchAddClientController.updateClientPostApi(
-              custId: widget.customer.custId,
-              name: nameCtrl.text,
-              mobileNo: mobileCtrl.text,
-              gstNo: gstCtrl.text,
-              emailId: emailCtrl.text,
-              address: addressCtrl.text,
-            );
-            Datum updated = Datum(
-              custId: widget.customer.custId,
-              name: nameCtrl.text,
-              mobileNo: mobileCtrl.text,
-              gstNo: gstCtrl.text,
-              emailId: emailCtrl.text,
-              address: addressCtrl.text,
-            );
-            widget.onSave(updated);
-            // Navigator.of(context).pop();
-          },
-          child: Text("Save"),
+        onPressed: () {
+    // Call appropriate API
+    if (searchAddClientController.addPurchaser.value) {
+    searchAddClientController.updatePurchaserPostApi(
+    purId: widget.customer?.custId,
+    name: nameCtrl.text,
+    mobileNo: mobileCtrl.text,
+    gstNo: gstCtrl.text,
+    emailId: emailCtrl.text,
+    address: addressCtrl.text,
+    );
+    } else {
+    searchAddClientController.updateClientPostApi(
+    custId: widget.customer?.custId,
+    name: nameCtrl.text,
+    mobileNo: mobileCtrl.text,
+    gstNo: gstCtrl.text,
+    emailId: emailCtrl.text,
+    address: addressCtrl.text,
+    );
+    }
+
+    // Build data based on condition
+    final updated = searchAddClientController.addPurchaser.value
+    ? PurchaserData(
+    purchaserId: widget.customer?.custId,
+    purchaserName: nameCtrl.text,
+    mobileNo: mobileCtrl.text,
+    gstNo: gstCtrl.text,
+    emailId: emailCtrl.text,
+    address: addressCtrl.text,
+    )
+        : Datum(
+    custId: widget.customer?.custId,
+    name: nameCtrl.text,
+    mobileNo: mobileCtrl.text,
+    gstNo: gstCtrl.text,
+    emailId: emailCtrl.text,
+    address: addressCtrl.text,
+    );
+
+    widget.onSave(updated);
+    // Navigator.of(context).pop();
+    },
+    child: Text("Save"),
         ),
       ],
     );

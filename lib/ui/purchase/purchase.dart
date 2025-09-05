@@ -2,6 +2,7 @@ import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller.dart';
 import 'package:billing/controllers/purchase_controller.dart';
+import 'package:billing/model/purchaser_response_model.dart';
 import 'package:billing/print/print_page.dart';
 import 'package:billing/utils/one_pointer_widget.dart';
 import 'package:flutter/gestures.dart';
@@ -19,7 +20,7 @@ class Purchase extends StatelessWidget {
   PurchaseController purchaseController = Get.find<PurchaseController>();
   final ScrollController scrollController = ScrollController();
 
-  final Datum? customer;
+  final PurchaserData? customer;
 
   Purchase({this.customer});
 

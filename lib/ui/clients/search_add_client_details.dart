@@ -1,5 +1,7 @@
+import 'package:billing/model/purchaser_response_model.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/order/order.dart';
+import 'package:billing/ui/purchase/purchase.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
@@ -317,6 +319,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                           child: searchAddClientController.loadingClient.value ?
                                               const Center(child: CircularProgressIndicator(),) :
                                           searchAddClientController.addPurchaser.value ?
+                                          searchAddClientController.purchaseList.isEmpty ?
                                           Center(
                                             child: Container(
                                               padding: const EdgeInsets.all(DesignConstants.padding20),
@@ -325,7 +328,114 @@ class SearchAddClientDetails extends StatelessWidget {
                                                   fontsize: DesignConstants.fontSize14
                                               ),
                                             ),
-                                          ) :
+                                          )  :
+                                          Column(
+                                            children: searchAddClientController.purchaseList.asMap().entries.map((entry) {
+                                              int index = entry.key;
+                                              PurchaserData customer = entry.value;
+
+                                              return Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 5),
+                                                child: Dismissible(
+                                                  key: ValueKey(customer.purchaserId), // Make sure `id` is unique, otherwise use `index`
+                                                  direction: DismissDirection.horizontal,
+                                                  background: swipeRightBackground(),
+                                                  secondaryBackground: swipeLeftBackground(),
+                                                  confirmDismiss: (direction) async {
+                                                    if (direction == DismissDirection.startToEnd) {
+                                                      // Swipe right: Delete
+                                                      bool confirm = await showDialog(
+                                                        context: Get.context!,
+                                                        builder: (_) => AlertDialog(
+                                                          title: const Text("Confirm Delete"),
+                                                          content: const Text("Are you sure you want to delete this client?"),
+                                                          actions: [
+                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: const Text("Cancel")),
+                                                            TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: const Text("Delete")),
+                                                          ],
+                                                        ),
+                                                      );
+                                                      if (confirm) {
+                                                        searchAddClientController.deletePurchaser(customer.purchaserId);
+                                                        searchAddClientController.purchaseList.removeAt(index);
+                                                        searchAddClientController.update(); // Or use setState if not using GetX
+                                                      }
+                                                      return confirm;
+                                                    }
+                                                    else {
+                                                      // Swipe left: Edit
+                                                      showDialog(
+                                                        context: Get.context!,
+                                                        builder: (_) => EditCustomerDialog(
+                                                          purchaser: customer,
+                                                          onSave: (updatedCustomer) {
+                                                            searchAddClientController.clientList[index] = updatedCustomer;
+                                                            searchAddClientController.update(); // Or setState
+                                                          },
+                                                        ),
+                                                      );
+                                                      return false;
+                                                    }
+                                                  },
+                                                  child: Card(
+                                                    elevation: 6,
+                                                    color: Colors.white,
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                    child: InkWell(
+                                                      onLongPress: () {
+                                                        Get.dialog(
+                                                          AlertDialog(
+                                                            title: Text("Navigation"),
+                                                            content: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                ListTile(
+                                                                  title: Text("Purchase"),
+                                                                  onTap: () {
+                                                                    Get.back();
+                                                                    Get.to(() => Purchase(customer: customer));// Close the dialog
+                                                                    print("Navigate to Bill");
+                                                                  },
+                                                                ),
+                                                                // ListTile(
+                                                                //   title: Text("Order"),
+                                                                //   onTap: () {
+                                                                //     Get.back();
+                                                                //     Get.to(() => Order(customer: customer));// Close the dialog
+                                                                //     print("Navigate to Order");
+                                                                //   },
+                                                                // ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      borderRadius: BorderRadius.circular(10),
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.all(8.0),
+                                                        child: Table(
+                                                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                          children: [
+                                                            TableRow(
+                                                              children: [
+                                                                tableCell((index + 1).toString()),
+                                                                tableCell(customer.purchaserName ?? ""),
+                                                                tableCell(customer.mobileNo ?? ""),
+                                                                tableCell(customer.address ?? ""),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          )
+
+
+                                              :
                                           searchAddClientController.clientList.isEmpty
                                               ? Center(
                                             child: Container(
@@ -407,7 +517,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                                                   title: Text("Order"),
                                                                   onTap: () {
                                                                     Get.back();
-                                                                    Get.to(() => Order(customer: customer));// Close the dialog
+                                                                    Get.to(() => Order(customer: customer,clientList: searchAddClientController.clientList,));// Close the dialog
                                                                     print("Navigate to Order");
                                                                   },
                                                                 ),

@@ -1,18 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:ui';
-import 'package:billing/model/purchaser_response_model.dart';
+import 'package:billing/networks/api_service.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:billing/app/config/color_constants.dart';
-import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart' hide Ink;
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app/config/constants_text.dart';
@@ -20,18 +17,27 @@ import '../model/customer_response_model.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
-import 'package:image/image.dart' as img;
+import '../utils/shared_pref.dart';
 
-class PurchaseController extends GetxController {
+class OrderControllerNew extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
+  // Method to toggle checkbox state
+  void toggleCheckbox(int index) {
+    if (index >= 0 && index < itemList.length) {
+      itemList[index]['checked'] = !(itemList[index]['checked'] ?? false);
+      update();
+    }
+  }
   List<Uint8List?> newItemList = [];
+  // List to store rate ink objects for each item
+  RxList<Ink> rateInkList = <Ink>[].obs;
 
   final DigitalInkRecognizerModelManager modelManager =
   DigitalInkRecognizerModelManager();
   final String language = 'en-US';
   late final DigitalInkRecognizer digitalInkRecognizer =
   DigitalInkRecognizer(languageCode: language);
-  final Ink rateInk = Ink();
+  late Ink rateInk = Ink();
   final Ink quantityInk = Ink();
   final Ink descriptionInk = Ink();
   List<StrokePoint> ratePoints = [];
@@ -39,11 +45,19 @@ class PurchaseController extends GetxController {
   List<StrokePoint> quantityPoints = [];
   String recognizedRate = '';
   String recognizedQuantity = '';
+  // Current item index for rate input
+  RxInt currentRateItemIndex = (-1).obs;
   RxBool showButtons = false.obs;
-
   // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
+
+  RxBool loadingClient = true.obs;
+  Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
+  RxList<Datum> filteredClientList = <Datum>[].obs;
+  List<Datum> get clientList => filteredClientList;
+
+  ApiService apiService = ApiService();
 
   // Inject the PrintController
   late PrintController printController;
@@ -52,12 +66,8 @@ class PurchaseController extends GetxController {
 
   final RxString formattedDateTime = ''.obs;
   Timer? _dateTimeTimer;
-
-
-  final Ink editRateInk = Ink();
-  final Ink editQuantityInk = Ink();
-  String recognizedEditRate = '';
-  String recognizedEditQuantity = '';
+  TextEditingController amountPaid = TextEditingController();
+  TextEditingController discountAmount = TextEditingController();
 
   Future<bool> _downloadModelWithTimeout() async {
     try {
@@ -97,6 +107,9 @@ class PurchaseController extends GetxController {
     }
     printController = Get.find<PrintController>();
     
+    // Request storage permission at app start
+    // await requestStoragePermissionOnStart();
+
     // Start the date time update timer
     _updateDateTime();
     _dateTimeTimer =
@@ -106,56 +119,56 @@ class PurchaseController extends GetxController {
       clearPadAndSignature();
 
       // Check if model is already downloaded (including local cache check)
-      bool downloadedModel = await isModelDownloaded();
+      // bool downloadedModel = await isModelDownloaded();
 
-      if (downloadedModel) {
-        // Model is already downloaded, do nothing
-        return;
-      }
+      // if (downloadedModel) {
+      //   // Model is already downloaded, do nothing
+      //   return;
+      // }
 
       // Only show loading for new downloads
-      isModelLoading(true);
-      downloadStatus('Downloading recognition model...');
+      // isModelLoading(true);
+      // downloadStatus('Downloading recognition model...');
 
-      try {
-        // Try to download with timeout
-        bool success = await _downloadModelWithTimeout();
-        if (success) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('model_downloaded_$language', true);
-        } else {
-          throw 'Failed to download model';
-        }
-      } catch (e) {
-        print('Model download error: $e');
-        // Show error dialog only for download failures
-        Get.dialog(
-          AlertDialog(
-            title: const Text('Model Download Error'),
-            content: Text(
-                'Could not download the handwriting recognition model: $e\n\nYou can still use the app, but handwriting recognition might not work properly.'),
-            actions: [
-              TextButton(
-                child: const Text('Retry'),
-                onPressed: () {
-                  Get.back();
-                  onInit(); // Retry initialization
-                },
-              ),
-              TextButton(
-                child: const Text('Continue Anyway'),
-                onPressed: () {
-                  Get.back();
-                },
-              ),
-            ],
-          ),
-          barrierDismissible: false,
-        );
-      } finally {
-        isModelLoading(false);
-        downloadStatus('');
-      }
+      // try {
+      //   // Try to download with timeout
+      //   bool success = await _downloadModelWithTimeout();
+      //   if (success) {
+      //     final prefs = await SharedPreferences.getInstance();
+      //     await prefs.setBool('model_downloaded_$language', true);
+      //   } else {
+      //     throw 'Failed to download model';
+      //   }
+      // } catch (e) {
+      //   print('Model download error: $e');
+      //   // Show error dialog only for download failures
+      //   Get.dialog(
+      //     AlertDialog(
+      //       title: const Text('Model Download Error'),
+      //       content: Text(
+      //           'Could not download the handwriting recognition model: $e\n\nYou can still use the app, but handwriting recognition might not work properly.'),
+      //       actions: [
+      //         TextButton(
+      //           child: const Text('Retry'),
+      //           onPressed: () {
+      //             Get.back();
+      //             onInit(); // Retry initialization
+      //           },
+      //         ),
+      //         TextButton(
+      //           child: const Text('Continue Anyway'),
+      //           onPressed: () {
+      //             Get.back();
+      //           },
+      //         ),
+      //       ],
+      //     ),
+      //     barrierDismissible: false,
+      //   );
+      // } finally {
+      //   isModelLoading(false);
+      //   downloadStatus('');
+      // }
     } catch (e) {
       // Show error dialog only for critical initialization errors
       Get.dialog(
@@ -205,6 +218,91 @@ class PurchaseController extends GetxController {
     descriptionPoints.clear();
     recognizedRate = '';
     recognizedQuantity = '';
+    update();
+  }
+  
+  // Method to set the current item for rate input
+  void setCurrentRateItem(int index) {
+    if (index >= 0 && index < itemList.length) {
+      // Only clear ink if we're switching to a different item
+      if (currentRateItemIndex.value != index) {
+        // Clear the rate ink for new input
+        if (index < rateInkList.length) {
+          rateInkList[index].strokes.clear();
+        }
+        rateInk.strokes.clear();
+        ratePoints.clear();
+      }
+      
+      currentRateItemIndex.value = index;
+      update();
+    }
+  }
+  
+  // Method to update an item's rate after recognition
+  Future<void> updateItemRate(int index) async {
+    if (index >= 0 && index < itemList.length) {
+      // Use the item-specific ink object for recognition
+      Ink inkToUse = (index >= 0 && index < rateInkList.length) 
+          ? rateInkList[index] 
+          : rateInk;
+      
+      // Check if there are any strokes to recognize
+      if (inkToUse.strokes.isEmpty) {
+        // If no strokes, don't update the rate and show a message
+        Get.snackbar("Info", "No rate input detected. Please write a rate first.");
+        return;
+      }
+      
+      // Temporarily set the rateInk to the item's ink for recognition
+      Ink tempInk = rateInk;
+      rateInk = inkToUse;
+      
+      await recogniseRateText();
+      
+      // Restore the original rateInk
+      rateInk = tempInk;
+      
+      if (recognizedRate.isNotEmpty) {
+        // Update the item's rate
+        itemList[index]['rate'] = recognizedRate;
+        // Clear the rate input only on successful recognition
+        if (index < rateInkList.length) {
+          rateInkList[index].strokes.clear();
+        }
+        rateInk.strokes.clear();
+        ratePoints.clear();
+        // Reset current index
+        currentRateItemIndex.value = -1;
+        update();
+      } else {
+        // Don't clear ink strokes on failed recognition so user can try again
+        // Just show an error message
+        Get.snackbar("Error", "Rate Not Recognized. Please try again.");
+        // Keep the current item selected so user can retry
+      }
+    }
+  }
+  
+  // Method to cancel rate editing and restore previous state
+  void cancelRateEdit([int? index]) {
+    // Use provided index if available, otherwise use current index
+    int currentIndex = index ?? currentRateItemIndex.value;
+    
+    // Clear the specific ink for the current rate box
+    if (currentIndex >= 0 && currentIndex < rateInkList.length) {
+      // Make sure to clear all strokes from this specific ink
+      rateInkList[currentIndex] = Ink(); // Replace with a new empty Ink object
+    }
+    
+    // Always clear the temporary ink used for recognition
+    rateInk = Ink(); // Replace with a new empty Ink object
+    ratePoints.clear();
+    
+    // Reset current index to exit edit mode
+    currentRateItemIndex.value = -1;
+    
+    // Force UI update
     update();
   }
 
@@ -293,24 +391,35 @@ class PurchaseController extends GetxController {
             .replaceAll('B', '3')
             .replaceAll('S', '5')
             .replaceAll('Z', '2')
-            .replaceAll('T', '7');
+            .replaceAll('T', '7')
+            .replaceAll(',', '.'); // Replace comma with period for decimal
 
+        // Improved regex to better handle decimal points
         recognizedRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
+        
+        // Handle multiple decimal points - keep only the first one
+        if (recognizedRate.contains('.')) {
+          final parts = recognizedRate.split('.');
+          if (parts.length > 2) {
+            recognizedRate = parts[0] + '.' + parts.sublist(1).join('');
+          }
+        }
 
-        // If no digits are found after cleaning, set as 'No'
+        // If no digits are found after cleaning, show error but don't clear ink
         if (recognizedRate.isEmpty) {
-          rateInk.strokes.clear();
-          ratePoints.clear();
           Get.snackbar("Error", "Rate Not Recognized");
-
+          // Don't clear ink strokes so user can try again
           // recognizedRate = 'No';
         }
       } else {
-        recognizedRate = 'No candidates recognized';
+        Get.snackbar("Error", "No text recognized. Please try again.");
       }
 
       update();
-    } catch (e) {}
+    } catch (e) {
+      print('Error in recogniseRateText: $e');
+      Get.snackbar("Error", "Failed to recognize text");
+    }
   }
 
   Future<void> recogniseQuantityText() async {
@@ -360,8 +469,8 @@ class PurchaseController extends GetxController {
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
     // Increase the size by 50% for better visibility
-    width = width * 1.5;
-    height = height * 1.5;
+    width = width * 1;
+    height = height * 1.7;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(
@@ -424,22 +533,26 @@ class PurchaseController extends GetxController {
   }
 
   Future<void> addItem() async {
-    await recogniseRateText();
     await recogniseQuantityText();
 
     Uint8List? particularImage = await convertToPngBytes(
-      Get.width * 0.8, // Keep the width proportional
+      Get.width, // Keep the width proportional
       85, // Reduced height from 100 to 85 for less vertical space
     );
     if (particularImage != null &&
-        recognizedQuantity.isNotEmpty &&
-        recognizedRate.isNotEmpty) {
+        recognizedQuantity.isNotEmpty) {
+      // Add a new item with empty rate
       itemList.add({
         'particulars': particularImage,
         'quantity': recognizedQuantity,
-        'rate': recognizedRate,
+        'rate': "0", // Default rate is 0
+        'checked': false, // Initialize checkbox state
       });
+      
+      // Add a new Ink object for this item's rate
+      rateInkList.add(Ink());
 
+      // Scroll to the newly added item
       update();
     } else {
       Get.snackbar("Error", "Field is Empty");
@@ -490,282 +603,44 @@ class PurchaseController extends GetxController {
 
   void clearPadAndSignature() {
     clearPad();
+    currentRateItemIndex.value = -1; // Reset current rate item index
+    update();
   }
 
   void editItem(int index) {
     final item = itemList[index];
 
-    // Reset the edit ink objects and recognized values
-    editRateInk.strokes.clear();
-    editQuantityInk.strokes.clear();
-    recognizedEditRate = item['rate'];
-    recognizedEditQuantity = item['quantity'];
-
     Get.defaultDialog(
       title: 'Edit Item',
       barrierDismissible: false,
-      content: StatefulBuilder(
-        builder: (context, setState) {
-          return Column(
-            children: [
-              // Quantity handwriting box
-              Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    height: 75,
-                    width: Get.width * 0.6,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.blueGradient),
-                    ),
-                    child: ClipRRect(
-                      child: Builder(  // Add Builder widget here
-                        builder: (quantityContext) => Listener(
-                          onPointerDown: (event) {
-                            if (event.kind == PointerDeviceKind.stylus ||
-                                event.kind == PointerDeviceKind.touch) {
-                              editQuantityInk.strokes.add(Stroke());
-                              setState(() {});
-                            }
-                          },
-                          onPointerMove: (event) {
-                            if (event.kind == PointerDeviceKind.stylus ||
-                                event.kind == PointerDeviceKind.touch) {
-                              final RenderObject? object = quantityContext.findRenderObject();  // Use quantityContext
-                              final localPosition =
-                              (object as RenderBox?)?.globalToLocal(event.position);
-                              if (localPosition != null &&
-                                  editQuantityInk.strokes.isNotEmpty) {
-                                editQuantityInk.strokes.last.points.add(
-                                  StrokePoint(
-                                    x: localPosition.dx,
-                                    y: localPosition.dy,
-                                    t: DateTime.now().millisecondsSinceEpoch,
-                                  ),
-                                );
-                                setState(() {});
-                              }
-                            }
-                          },
-                          onPointerUp: (event) {
-                            setState(() {});
-                          },
-                          child: CustomPaint(
-                            painter: SignatureStyle(ink: editQuantityInk),
-                            size: Size.infinite,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: -0,
-                    right: -0,
-                    child: GestureDetector(
-                      onTap: () {
-                        editQuantityInk.strokes.clear();
-                        setState(() {});
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -0,
-                    right: -0,
-                    child: GestureDetector(
-                      onTap: () async {
-                        try {
-                          final candidates = await digitalInkRecognizer.recognize(editQuantityInk);
-                          if (candidates.isNotEmpty) {
-                            var text = candidates[0].text;
-                            text = text
-                                .toUpperCase()
-                                .replaceAll('O', '0')
-                                .replaceAll('I', '1')
-                                .replaceAll('L', '1')
-                                .replaceAll('U', '4')
-                                .replaceAll('A', '4')
-                                .replaceAll('Z', '2')
-                                .replaceAll('\\', '1')
-                                .replaceAll('/', '1')
-                                .replaceAll('H', '4')
-                                .replaceAll('B', '3')
-                                .replaceAll('S', '5')
-                                .replaceAll('Z', '2')
-                                .replaceAll('T', '7');
-
-                            recognizedEditQuantity = text.replaceAll(RegExp(r'[^0-9.]'), '');
-                            if (recognizedEditQuantity.isEmpty) {
-                              Get.snackbar("Error", "Quantity Not Recognized");
-                            }
-                          } else {
-                            Get.snackbar("Error", "No candidates recognized");
-                          }
-                          setState(() {});
-                        } catch (e) {
-                          Get.snackbar("Error", "Recognition failed: $e");
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blueGradient,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: EdgeInsets.all(4),
-                        child: const Icon(Icons.check, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Text('Recognized: $recognizedEditQuantity',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
-
-              // Rate handwriting box
-              Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    height: 75,
-                    width: Get.width * 0.6,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.blueGradient),
-                    ),
-                    child: ClipRRect(
-                      child: Builder(  // Add Builder widget here
-                        builder: (rateContext) => Listener(
-                          onPointerDown: (event) {
-                            if (event.kind == PointerDeviceKind.stylus ||
-                                event.kind == PointerDeviceKind.touch) {
-                              editRateInk.strokes.add(Stroke());
-                              setState(() {});
-                            }
-                          },
-                          onPointerMove: (event) {
-                            if (event.kind == PointerDeviceKind.stylus ||
-                                event.kind == PointerDeviceKind.touch) {
-                              final RenderObject? object = rateContext.findRenderObject();  // Use rateContext
-                              final localPosition =
-                              (object as RenderBox?)?.globalToLocal(event.position);
-                              if (localPosition != null &&
-                                  editRateInk.strokes.isNotEmpty) {
-                                editRateInk.strokes.last.points.add(
-                                  StrokePoint(
-                                    x: localPosition.dx,
-                                    y: localPosition.dy,
-                                    t: DateTime.now().millisecondsSinceEpoch,
-                                  ),
-                                );
-                                setState(() {});
-                              }
-                            }
-                          },
-                          onPointerUp: (event) {
-                            setState(() {});
-                          },
-                          child: CustomPaint(
-                            painter: SignatureStyle(ink: editRateInk),
-                            size: Size.infinite,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: -0,
-                    right: -0,
-                    child: GestureDetector(
-                      onTap: () {
-                        editRateInk.strokes.clear();
-                        setState(() {});
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -0,
-                    right: -0,
-                    child: GestureDetector(
-                      onTap: () async {
-                        try {
-                          final candidates = await digitalInkRecognizer.recognize(editRateInk);
-                          if (candidates.isNotEmpty) {
-                            var text = candidates[0].text;
-                            text = text
-                                .toUpperCase()
-                                .replaceAll('O', '0')
-                                .replaceAll('I', '1')
-                                .replaceAll('L', '1')
-                                .replaceAll('U', '4')
-                                .replaceAll('A', '4')
-                                .replaceAll('Z', '2')
-                                .replaceAll('\\', '1')
-                                .replaceAll('/', '1')
-                                .replaceAll('H', '4')
-                                .replaceAll('B', '3')
-                                .replaceAll('S', '5')
-                                .replaceAll('Z', '2')
-                                .replaceAll('T', '7');
-
-                            recognizedEditRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
-                            if (recognizedEditRate.isEmpty) {
-                              Get.snackbar("Error", "Rate Not Recognized");
-                            }
-                          } else {
-                            Get.snackbar("Error", "No candidates recognized");
-                          }
-                          setState(() {});
-                        } catch (e) {
-                          Get.snackbar("Error", "Recognition failed: $e");
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.blueGradient,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: EdgeInsets.all(4),
-                        child: const Icon(Icons.check, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Text('Recognized: $recognizedEditRate',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          );
-        },
+      content: Column(
+        children: [
+          TextField(
+            keyboardType: TextInputType.number,
+            controller: TextEditingController(text: item['quantity']),
+            decoration: const InputDecoration(labelText: 'quantity'),
+            onChanged: (value) {
+              itemList[index]['quantity'] = value;
+            },
+          ),
+          TextField(
+            keyboardType: TextInputType.number,
+            controller: TextEditingController(text: item['rate']),
+            decoration: const InputDecoration(labelText: 'rate'),
+            onChanged: (value) {
+              itemList[index]['rate'] = value;
+            },
+          ),
+        ],
       ),
       textConfirm: 'Save',
       textCancel: 'Cancel',
-      onCancel: () {
+      onCancel: (){
         Get.back();
       },
       onConfirm: () {
-        if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
-          itemList[index]['quantity'] = recognizedEditQuantity;
-          itemList[index]['rate'] = recognizedEditRate;
-          update();
-          Get.back();
-        } else {
-          Get.snackbar("Error", "Quantity and Rate cannot be empty");
-        }
+        update();
+        Get.back();
       },
     );
   }
@@ -776,7 +651,8 @@ class PurchaseController extends GetxController {
   }
 
   // Add a method to print PDF receipts
-  Future<void> printPdfReceipt(PurchaserData? customer) async {
+
+  Future<void> printPdfReceipt(Datum? customer) async {
     if (isPrinting.value) return; // Prevent multiple prints
 
     if (itemList.isEmpty) {
@@ -790,6 +666,7 @@ class PurchaseController extends GetxController {
     double balanceAmount = 0;
     String discountType = 'Flat'; // 'Flat' or 'Percentage'
 
+    amountPaid.text = totalAmount.toString();
     Get.defaultDialog(
       title: 'Payment Details',
       content: StatefulBuilder(
@@ -811,140 +688,166 @@ class PurchaseController extends GetxController {
           // Calculate balance
           balanceAmount = finalAmount - amountToBePaid;
           balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
-
           return Container(
             width: Get.width * 0.8,
-            child: Column(
+            padding: const EdgeInsets.all(20),
+            child: Table(
+              columnWidths: const {
+                0: FixedColumnWidth(150),   // Fixed label width
+                1: FixedColumnWidth(150),      // Remaining space for inputs/values
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
+
                 // Total Amount
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹ ${calculatedTotal.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                SizedBox(height: 10),
+                TableRow(children: [
+                  const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    height: 40,
+                    alignment: Alignment.centerLeft,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ]),
 
-                // Discount Type Selection
-                Row(
-                  children: [
-                    Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    SizedBox(width: 10),
-                    Row(
-                      children: [
-                        Radio(
-                          value: 'Flat',
-                          groupValue: discountType,
-                          onChanged: (value) {
-                            setState(() {
-                              discountType = value.toString();
-                              // Reset discount amount when changing type
-                              discountAmount = 0;
-                            });
-                          },
-                        ),
-                        Text('Flat Amount'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Radio(
-                          value: 'Percentage',
-                          groupValue: discountType,
-                          onChanged: (value) {
-                            setState(() {
-                              discountType = value.toString();
-                              // Reset discount amount when changing type
-                              discountAmount = 0;
-                            });
-                          },
-                        ),
-                        Text('Percentage'),
-                      ],
-                    ),
-                  ],
-                ),
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                // Discount Amount Input
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
-                        style: TextStyle(fontWeight: FontWeight.bold)
-                    ),
-                    Container(
-                      width: 100,
-                      child: TextField(
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          border: OutlineInputBorder(),
-                          prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            discountAmount = double.tryParse(value) ?? 0;
-                          });
-                        },
+                // Discount Type
+                TableRow(children: [
+                  const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'Flat',
+                            groupValue: discountType,
+                            onChanged: (value) {
+                              setState(() {
+                                discountType = value.toString();
+                                discountAmount = 0;
+                              });
+                            },
+                          ),
+                          const Text('Flat Amount'),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-
-                // Final Amount after discount
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹ ${finalAmount.toStringAsFixed(2)}',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
-                  ],
-                ),
-                SizedBox(height: 10),
-
-                // Amount to be Paid Input
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Container(
-                      width: 100,
-                      child: TextField(
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          border: OutlineInputBorder(),
-                          prefixText: '₹ ',
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            amountToBePaid = double.tryParse(value) ?? 0;
-                          });
-                        },
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'Percentage',
+                            groupValue: discountType,
+                            onChanged: (value) {
+                              setState(() {
+                                discountType = value.toString();
+                                discountAmount = 0;
+                              });
+                            },
+                          ),
+                          const Text('Percentage'),
+                        ],
                       ),
+                    ],
+                  )
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Discount Amount
+                TableRow(children: [
+                  Text(
+                    discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextField(
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          discountAmount = double.tryParse(value) ?? 0;
+                        });
+                      },
                     ),
-                  ],
-                ),
-                SizedBox(height: 10),
+                  ),
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Final Amount
+                TableRow(children: [
+                  const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
+                  ),
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Amount Paid
+                TableRow(children: [
+                  const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextField(
+                      controller: amountPaid,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        prefixText: '₹ ',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          amountToBePaid = double.tryParse(value) ?? 0;
+                        });
+                      },
+                    ),
+                  )
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
                 // Balance Amount
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('₹ ${balanceAmount.toStringAsFixed(2)}',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                  ],
-                ),
+                TableRow(children: [
+                  const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                  ),
+                ]),
               ],
             ),
           );
         },
       ),
       textConfirm: 'Print Receipt',
+
       confirmTextColor: Colors.white,
       buttonColor: AppColors.blueGradient,
       onConfirm: () async {
@@ -966,13 +869,13 @@ class PurchaseController extends GetxController {
           double actualDiscountAmount = discountType == 'Percentage' ?
           (totalAmount * discountAmount / 100) : discountAmount;
 
-          // await submitBillingData(
-          //     customerId: customer?.custId,
-          //     customerName: customer?.name,
-          //     clientId: customer?.clientId
-          //
-          //
-          // );
+          await submitBillingData(
+              customerId: customer?.custId,
+              customerName: customer?.name,
+              clientId: customer?.clientId
+
+
+          );
           await printController.printPdfReceipt(
               itemList,
               discountAmount: actualDiscountAmount,
@@ -980,7 +883,7 @@ class PurchaseController extends GetxController {
           );
 
           Get.snackbar('Success', 'Receipt sent to printer');
-          // await shopDetailApi(); // Update bill count
+          await shopDetailApi(); // Update bill count
         } catch (e) {
           Get.snackbar("Error", "Failed to print: $e");
         } finally {
@@ -993,6 +896,26 @@ class PurchaseController extends GetxController {
       },
     );
   }
+
+  /*Future<void> printPdfReceipt(Datum? customer) async {
+    if (isPrinting.value) return; // Prevent multiple prints
+
+    if (itemList.isEmpty) {
+      Get.snackbar('Error', 'No items to print');
+      return;
+    }
+
+    try {
+      isPrinting.value = true;
+      await printController.printPdfReceipt(itemList);
+
+      Get.snackbar('Success', 'Receipt sent to printer');
+    } catch (e) {
+      Get.snackbar("Error", "Failed to print: $e");
+    } finally {
+      isPrinting.value = false;
+    }
+  }*/
 
   void _updateDateTime() {
     final now = DateTime.now();
@@ -1160,6 +1083,217 @@ class PurchaseController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to save receipt: $e');
+    }
+  }
+
+  Future<void>shopDetailApi() async {
+    String url = "https://roughbill.com/api/ShopDetail/BillCount";
+    var detail = {
+      'ShopName': "${ConstantsText.shopName}",
+      'BillPrint': "1",
+    };
+
+    final response = await apiService.postRequest(url: url, data: detail);
+
+    if (response.statusCode == 200) {
+      print('Shop Detail Api Success: ${response.body}');
+    } else {
+      print('Error ${response.statusCode}: ${response.body}');
+    }
+
+
+  }
+
+  void getClients() async {
+    loadingClient.value = true;
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        // Parse the response directly into the observable
+        customerResponse.value = customerResponseModelFromJson(response.body);
+
+        // Initialize filtered list with all clients
+        filteredClientList.value = customerResponse.value?.data ?? [];
+
+        loadingClient.value = false;
+      } else {
+        customerResponse.value = null; // Clear data on error
+        filteredClientList.clear();
+        Get.snackbar(
+          'Error',
+          'Failed to search clients',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      customerResponse.value = null; // Clear data on error
+      filteredClientList.clear();
+      print("Error parsing customer data: $e");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  String _convertImageToBase64(Uint8List? imageBytes) {
+    if (imageBytes == null) return '';
+    return base64Encode(imageBytes);
+  }
+
+  Future<void> submitBillingData({
+    String orderNo = '',
+    int? customerId = 0,
+    String? customerName = '',
+    String? clientId = '',
+    double discount = 0,
+    double gst = 0,
+    String discountType = 'Flat',
+    double paidAmount = 0,
+    String paidAmountType = 'Cash',
+    String transactionNo = '',
+    String referenceNo = '',
+    String paymentStatus = 'Pending',
+  }) async {
+    try {
+      // Show loading indicator
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      // Calculate total amount from items
+      final double calculatedTotal = totalAmount;
+      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+
+      // Current date time
+      final DateTime now = DateTime.now();
+      final String formattedDate = now.toIso8601String();
+      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+
+      // Prepare order details from itemList
+      List<Map<String, dynamic>> orderDetails = [];
+      orderNo = DateTime.now().millisecondsSinceEpoch.toString();
+
+      for (int i = 0; i < itemList.length; i++) {
+        final item = itemList[i];
+        final double qty = double.tryParse(item['quantity'] ?? '0') ?? 0;
+        final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
+        final double totalPrice = qty * rate;
+
+        // Convert image to base64 if available
+        String productName = '';
+        if (item['particulars'] is Uint8List) {
+          productName = _convertImageToBase64(item['particulars']);
+          // productName = "trying test";
+        }
+
+        orderDetails.add({
+          "orderNo": orderNo,
+          "orderDetailsId": 0,
+          "billingId": 0,
+          "customerId": customerId,
+          "clientId": clientId,
+          "customerName": customerName,
+          "productName": productName,
+          "quantity": qty,
+          "pricePerQuantity": rate,
+          "totalPrice": totalPrice,
+          "productType": "",
+          "isDelete": false,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "clientUserId": clientUserId
+        });
+      }
+
+      // Prepare billing data
+      Map<String, dynamic> billingData = {
+        "oBilling": {
+          "billingId": 0,
+          "orderNo": orderNo,
+          "customerId": customerId,
+          "customerName": customerName,
+          "clientId": clientId,
+          "totalAmount": calculatedTotal,
+          "balanceAmount": balanceAmount,
+          "discount": discount,
+          "gst": gst,
+          "discountType": discountType,
+          "paidAmount": paidAmount,
+          "paidAmountType": paidAmountType,
+          "transactionNo": transactionNo,
+          "referenceNo": referenceNo,
+          "paymentStatus": paymentStatus,
+          "paymentDate": formattedDate,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "isDelete": false,
+          "isRefund": false,
+          "refundAmount": 0,
+          "refundRemark": "",
+          "refundType": "",
+          "refundDate": null,
+          "refundTransNo": "",
+          "refundStatus": "",
+          "clientUserId": clientUserId
+        },
+        "orderDetails": orderDetails
+      };
+
+      // Make API call
+      final response = await apiService.postRequest(
+        url: "https://roughbill.com/api/Order/addorder",
+        data: billingData,
+      );
+
+      // Close loading dialog
+      Get.back();
+
+      if (response.statusCode == 200) {
+        // Success
+        Get.snackbar(
+          "Success",
+          "Billing data submitted successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // Call shop detail API to update bill count
+        await shopDetailApi();
+
+        // Clear items after successful submission
+        itemList.clear();
+        update();
+      } else {
+        // Error
+        Get.snackbar(
+          "Error",
+          "Failed to submit billing data: ${response.body}",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      // Show error
+      Get.snackbar(
+        "Error",
+        "Exception occurred: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 }

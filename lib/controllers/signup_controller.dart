@@ -90,6 +90,8 @@ class SignUpController extends GetxController{
       "shopNo": "",
       "signU": "",
       "photo": "",
+      "state":"",
+      "country":"",
       "createdDate": "${DateTime.now().toString().split(' ')[0]}",
       "modifiedDate": "${DateTime.now().toString().split(' ')[0]}",
       "deviceLimit": 0,

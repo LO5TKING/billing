@@ -671,12 +671,12 @@ class OrderController extends GetxController {
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
   }
 
-  Future<void> saveReceiptAsPdf() async {
+  Future<File?> saveReceiptAsPdf() async {
     try {
       final pdf = pw.Document();
 
       // Load Ganesh logo as Uint8List
-      final ByteData logoData = await rootBundle.load('assets/sai.png');
+      final ByteData logoData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = logoData.buffer.asUint8List();
 
       pdf.addPage(
@@ -713,35 +713,35 @@ class OrderController extends GetxController {
                     pw.TableRow(
                       children: [
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Sr',
                               textAlign: pw.TextAlign.center,
                               style:
                               pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Particulars',
                               textAlign: pw.TextAlign.center,
                               style:
                               pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Qty',
                               textAlign: pw.TextAlign.center,
                               style:
                               pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Rate',
                               textAlign: pw.TextAlign.center,
                               style:
                               pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Amt',
                               textAlign: pw.TextAlign.center,
                               style:
@@ -756,29 +756,29 @@ class OrderController extends GetxController {
                       return pw.TableRow(
                         children: [
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text('${idx + 1}',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: item['particulars'] != null
                                 ? pw.Image(pw.MemoryImage(item['particulars']),
                                 height: 30)
                                 : pw.Text(''),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(item['quantity'] ?? '',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(item['rate'] ?? '',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(
                               ((double.tryParse(item['quantity'] ?? '0') ?? 0) *
                                   (double.tryParse(item['rate'] ?? '0') ??
@@ -815,22 +815,24 @@ class OrderController extends GetxController {
       var status = await Permission.manageExternalStorage.request();
 
       if (status.isGranted) {
-        // Get the Downloads directory
         final downloadsDir = Directory('/storage/emulated/0/Download');
         if (!await downloadsDir.exists()) {
           await downloadsDir.create(recursive: true);
         }
 
         final file = File(
-            '${downloadsDir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.pdf');
+          '${downloadsDir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
         await file.writeAsBytes(await pdf.save());
         Get.snackbar('Success', 'Receipt saved to Downloads folder');
+        return file;
       } else if (status.isPermanentlyDenied) {
         await openAppSettings();
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to save receipt: $e');
     }
+    return null;
   }
 
   Future<void>shopDetailApi() async {

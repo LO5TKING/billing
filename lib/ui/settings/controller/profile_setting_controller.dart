@@ -1,3 +1,4 @@
+import 'package:billing/model/registration_response_model.dart';
 import 'package:billing/networks/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,7 +25,16 @@ class ProfileSettingController extends GetxController{
 
   RxBool loading = false.obs;
 
+  Rx<RegistrationDetailResponseModel?> profileData = Rx<RegistrationDetailResponseModel?>(null);
+  RxBool loadingProfile = true.obs;
+
   ApiService apiService = ApiService();
+
+  @override
+  void onInit() {
+    super.onInit();
+    getProfileData();
+  }
 
 
   Future<void> profileUpdate() async {
@@ -67,6 +77,7 @@ class ProfileSettingController extends GetxController{
 
       if(response.statusCode == 200){
         loading.value = false;
+        await getProfileData();
         Get.snackbar(
           'Success',
           'Customer Updated Successfully',
@@ -79,6 +90,53 @@ class ProfileSettingController extends GetxController{
       print("error in Customer Updated is $e");
     } finally{
       loading.value = false;
+    }
+
+  }
+
+  Future<RegistrationDetailResponseModel?> getProfileData() async {
+    loadingProfile.value = true;
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Registration/getregistrationdetail?clientId=$clientId&clientUserId=$clientUserId";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        // Parse the response directly into the observable
+        profileData.value = registrationDetailResponseModelFromJson(response.body);
+
+        loadingProfile.value = false;
+        companyName.text = profileData.value?.companyName ?? "";
+        personName.text = profileData.value?.personName ?? "";
+        mobileNumber.text = profileData.value?.mobileNo ?? "";
+        address.text = profileData.value?.area ?? "";
+        gstNumber.text = profileData.value?.gstNo ?? "";
+        emailId.text = profileData.value?.emailId ?? "";
+        password.text = profileData.value?.password ?? "";
+
+        return profileData.value;
+      } else {
+        profileData.value = null; // Clear data on error
+        Get.snackbar(
+          'Error',
+          'Failed to fetch profile details',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      profileData.value = null; // Clear data on error
+      print("Error parsing customer data: $e");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
 
   }

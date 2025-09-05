@@ -1,6 +1,7 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller_new.dart';
+import 'package:billing/controllers/order_controller_new.dart';
 import 'package:billing/controllers/purchase_controller.dart';
 import 'package:billing/ui/billing/billing.dart';
 import 'package:billing/ui/clients/search_add_client_details.dart';
@@ -25,6 +26,7 @@ class BillingOptions extends StatelessWidget {
   late final BillingController billingController;
   late final BillingControllerNew billingControllerNew;
   late final OrderController orderController;
+  late final OrderControllerNew orderControllerNew;
   late final PurchaseController purchaseController;
 
   BillingOptions({super.key}){
@@ -258,6 +260,12 @@ class BillingOptions extends StatelessWidget {
         orderController = Get.find<OrderController>();
       } else {
         orderController = Get.find<OrderController>();
+      }
+      if (!Get.isRegistered<OrderControllerNew>()) {
+        Get.lazyPut<OrderControllerNew>(() => OrderControllerNew(), fenix: true);
+        orderControllerNew = Get.find<OrderControllerNew>();
+      } else {
+        orderControllerNew = Get.find<OrderControllerNew>();
       }
 
       if (!Get.isRegistered<PurchaseController>()) {

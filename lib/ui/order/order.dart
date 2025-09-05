@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller.dart';
@@ -9,18 +11,22 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 // import 'package:pdf/pdf.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
+import '../../app/routes/app_pages.dart';
 import '../../controllers/order_controller.dart';
 import '../../model/customer_response_model.dart';
+import '../../utils/draggable_fab.dart';
 import '../../utils/utility.dart';
 
 class Order extends StatelessWidget {
   OrderController orderController = Get.find<OrderController>();
 
   final Datum? customer;
+  final List<Datum>? clientList;
 
-  Order({this.customer});
+  Order({this.customer,this.clientList});
 
   final ScrollController scrollController = ScrollController();
 
@@ -32,8 +38,9 @@ class Order extends StatelessWidget {
         return SafeArea(
           child: Stack(
             children: [
-              GestureDetector(
-                // Add a GestureDetector to handle clicks outside the rate box
+              Scaffold(
+                backgroundColor:AppColors.peachColor,
+              body: GestureDetector(
                 onTap: () {
                   // If a rate box is currently being edited, cancel the edit
                   if (orderController.currentRateItemIndex.value >= 0) {
@@ -42,9 +49,7 @@ class Order extends StatelessWidget {
                     orderController.cancelRateEdit(currentIndex);
                   }
                 },
-                child: Scaffold(
-                  backgroundColor:AppColors.peachColor,
-                body: Container(
+                child: Container(
                   width: Get.width,
                   height: Get.height * 0.97,
                   margin: const EdgeInsets.only(left: 5.0, right: 5, top: 5),
@@ -223,23 +228,23 @@ class Order extends StatelessWidget {
                                       },
                                       children:  [
                                         TableRow(
-                                          decoration: BoxDecoration(
+                                          decoration: const BoxDecoration(
                                               color: AppColors.blueGradient
                                           ),
                                           children: [
                                             TableCell(
                                               child: Padding(
-                                                padding: EdgeInsets.all(8.0),
+                                                padding: const EdgeInsets.all(8.0),
                                                 child: Text( orderController.showButtons.value
                                                     ? ""
                                                     : "Sr. No.",
                                                     textAlign: TextAlign.center,
-                                                    style: TextStyle(
+                                                    style: const TextStyle(
                                                         color: Colors.white,
                                                         fontWeight: FontWeight.bold)),
                                               ),
                                             ),
-                                            TableCell(
+                                            const TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text('PARTICULARS',
@@ -249,7 +254,7 @@ class Order extends StatelessWidget {
                                                         fontWeight: FontWeight.bold)),
                                               ),
                                             ),
-                                            TableCell(
+                                            const TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text('QTY.',
@@ -259,7 +264,7 @@ class Order extends StatelessWidget {
                                                         fontWeight: FontWeight.bold)),
                                               ),
                                             ),
-                                            TableCell(
+                                            const TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text('RATE',
@@ -269,7 +274,7 @@ class Order extends StatelessWidget {
                                                         fontWeight: FontWeight.bold)),
                                               ),
                                             ),
-                                            TableCell(
+                                            const TableCell(
                                               child: Padding(
                                                 padding: EdgeInsets.all(8.0),
                                                 child: Text('AMOUNT',
@@ -421,7 +426,7 @@ class Order extends StatelessWidget {
                                                               top: 22.0,right: 10,),
                                                           child: Row(
                                                             children: [
-                                                              Spacer(),
+                                                              const Spacer(),
                                                               if (!index.isNegative)
                                                                 GestureDetector(
                                                                   onTap: () async {
@@ -434,12 +439,12 @@ class Order extends StatelessWidget {
                                                                     child: const Icon(Icons.check_circle_outline, color: AppColors.blueGradient),
                                                                   ),
                                                                 ),
-                                                              Spacer(),
+                                                              const Spacer(),
                                                               Text(
                                                                 '${amountDisplay}',
                                                                 textAlign: TextAlign.right,
                                                               ),
-                                                              Spacer(),
+                                                              const Spacer(),
                                                             ],
                                                           ),
                                                         ),
@@ -668,14 +673,7 @@ class Order extends StatelessWidget {
                                                 strokeWidth: 2,
                                               ),
                                             )
-                                                : const Text(
-                                              'Print Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize:
-                                                  DesignConstants
-                                                      .fontSize16),
-                                            ))),
+                                                : const Icon(Icons.print,color: Colors.white,size: 40,))),
                                       ),
                                       const SizedBox(width: 10),
                                       Container(
@@ -695,13 +693,7 @@ class Order extends StatelessWidget {
                                               orderController.itemList
                                                   .clear();
                                             },
-                                            child: const Text(
-                                              'Clear Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
+                                            child: const Icon(Icons.clear,color: Colors.white,size: 40,)),
                                       ),
                                       const SizedBox(width: 10),
                                       Container(
@@ -720,13 +712,32 @@ class Order extends StatelessWidget {
                                             onPressed: () async {
                                               await orderController.saveReceiptAsPdf();
                                             },
-                                            child: const Text(
-                                              'Save Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
+                                            child: const Icon(Icons.save,color: Colors.white,size: 40,)),
+                                      ),
+                                      Container(
+                                        height: 40,
+                                        child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                              AppColors.blueGradient,
+                                              shape:
+                                              const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(
+                                                          5))),
+                                            ),
+                                            onPressed: () async {
+                                              File? pdfFile = await orderController.saveReceiptAsPdf();
+                                              if (pdfFile != null && await pdfFile.exists()) {
+                                                final XFile xfile = XFile(pdfFile.path);
+                                                // SharePlus.instance.share([xfile], text: 'Here is your receipt!');
+                                                SharePlus.instance.share(ShareParams(files: [xfile],text: "Here is your receipt!"));
+                                              } else {
+                                                Get.snackbar('Error', 'Unable to share receipt');
+                                              }
+                                            },
+                                            child: const Icon(Icons.share,color: Colors.white,size: 40,)),
                                       ),
                                     ],
                                   ),
@@ -758,7 +769,15 @@ class Order extends StatelessWidget {
                   ),
                 ),
               ),
-              ),],
+                            ),
+              DraggableFab(
+                targetRoute: AppPages.orderNew,
+                arguments: {'customer': customer,'clientList' : clientList},
+                backgroundColor: AppColors.blueGradient,
+                icon: Icons.receipt,
+              ),
+            ],
+
           ),
         );
       },
