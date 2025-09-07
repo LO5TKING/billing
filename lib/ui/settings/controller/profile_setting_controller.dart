@@ -46,7 +46,7 @@ class ProfileSettingController extends GetxController{
     String? mobileNumber = SharedPrefs.getString(ConstantsText.mobileNumber);
     String? shopNumber = SharedPrefs.getString(ConstantsText.shopNo);
     String? gstNumer = SharedPrefs.getString(ConstantsText.gstNumber);
-    String url = "https://roughbill.com/api/Registration/Update/$clientId";
+    String url = "https://roughbill.com/api/Registration/Update";
 
     Map<String,dynamic> data =
       {

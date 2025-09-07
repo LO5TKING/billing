@@ -455,7 +455,7 @@ class SearchAddClientController extends GetxController{
   void deletePurchaser(int? custId) async {
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
-    String url = "https://roughbill.com/api/Purchaser/delete";
+    String url = "https://roughbill.com/api/Purchaser/deletepurchaser";
 
     Map<String,dynamic> data = {
       "purchaserId": custId,
