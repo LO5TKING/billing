@@ -31,12 +31,6 @@ class _OrderNewState extends State<OrderNew> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) {
-        orderControllerNew.getClients();
-        customerListWidget();
-      },
-    );
   }
 
   @override
@@ -884,11 +878,21 @@ class _OrderNewState extends State<OrderNew> {
                   ),
                 ),
               ),
-              DraggableFab(
-                targetRoute: AppPages.order,
-                arguments: {'customer': widget.customer},
-                backgroundColor: AppColors.blueGradient,
-                icon: Icons.receipt_long,
+              Positioned(
+                left: 20,
+                bottom: 20,
+                child: GestureDetector(
+                  onLongPress: () async{
+                    await orderControllerNew.getClients();
+                    customerListWidget();
+                  },
+                  child: DraggableFab(
+                    targetRoute: AppPages.order,
+                    arguments: {'customer': widget.customer},
+                    backgroundColor: AppColors.blueGradient,
+                    icon: Icons.receipt_long,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1155,8 +1159,6 @@ class _OrderNewState extends State<OrderNew> {
     );
   }
 
-  /// Helper function to determine if the touch event is inside the bounding box
-  /// Added buffer to better handle touch events near the edges
   bool isTouchInsideBox(Offset localPosition, double widthFactor) {
     // Add a small buffer to ensure we capture events near the edges
     const double buffer = 5.0;
@@ -1175,40 +1177,81 @@ class _OrderNewState extends State<OrderNew> {
         localPosition.dy <= boxHeight + buffer;
   }
 
-  void customerListWidget() {
+  void customerListWidget(){
+    final TextEditingController searchController = TextEditingController();
+    RxList<Datum> filteredClientList = <Datum>[].obs;
+
+    filteredClientList.assignAll(orderControllerNew.clientList);
+
+    void filterClients(String query) {
+      if (query.isEmpty) {
+        filteredClientList.assignAll(orderControllerNew.clientList);
+      } else {
+        filteredClientList.assignAll(
+            orderControllerNew.clientList.where((client) =>
+            client.name?.toLowerCase().contains(query.toLowerCase()) ?? false
+            ).toList()
+        );
+      }
+    }
+
     Get.dialog(
       barrierDismissible: false,
-      Obx(
-        () => orderControllerNew.loadingClient.value
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : AlertDialog(
-                title: const Text("Select Client"),
-                content: Container(
-                  height: 300,
-                  width: 300,
-                  child: ListView.builder(
-                    itemCount: orderControllerNew.clientList.length ?? 0,
-                    itemBuilder: (context, index) {
-                      return InkWell(
-                        onTap: () {
-                          selectedClient.value =
-                              orderControllerNew.clientList[index] ?? Datum();
-                          Get.back();
-                        },
-                        child: Text(
-                          orderControllerNew.clientList[index].name ?? "",
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      );
-                    },
-                  ),
+      Obx(() => orderControllerNew.loadingClient.value ?
+      const Center(child: CircularProgressIndicator(),):
+      AlertDialog(
+        title: const Text("Select Client", textAlign: TextAlign.center,),
+        alignment: Alignment.center,
+        content: Container(
+          height: 500,
+          width: 500,
+          child: Column(
+            children: [
+              // Search TextField
+              TextField(
+                controller: searchController,
+                onChanged: filterClients,
+                decoration: const InputDecoration(
+                  hintText: "Search clients...",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 10),
+              // ListView with filtered results
+              Expanded(
+                child: Obx(() => ListView.builder(
+                  itemCount: filteredClientList.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        selectedClient.value = filteredClientList[index];
+                        Get.back();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.blueMarieTime, width: 1)
+                        ),
+                        child: Text(
+                          filteredClientList[index].name ?? "",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24,),
+                        ),
+                      ),
+                    );
+                  },
+                )),
+              ),
+            ],
+          ),
+        ),
+      ),
       ),
     );
   }
+
 }
 
 class SignatureStyle extends CustomPainter {

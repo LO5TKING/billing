@@ -987,44 +987,6 @@ class _BillingNewState extends State<BillingNew> {
     );
   }
 
-  // void customerListWidget(){
-  //   Get.dialog(
-  //     barrierDismissible: false,
-  //     Obx( () => billingControllerNew.loadingClient.value ?
-  //     const Center(child: CircularProgressIndicator(),):
-  //     AlertDialog(
-  //       title: const Text("Select Client",textAlign: TextAlign.center,),
-  //       alignment: Alignment.center,
-  //       content: Container(
-  //         height: 500,
-  //         width: 500,
-  //         child: ListView.builder(
-  //           itemCount: billingControllerNew.clientList.length ?? 0,
-  //           itemBuilder: (context, index) {
-  //             return InkWell(
-  //               onTap: () {
-  //                 selectedClient.value = billingControllerNew.clientList[index] ?? Datum();
-  //                 Get.back();
-  //               },
-  //               child: Container(
-  //                 margin: const EdgeInsets.all(10),
-  //                 padding: const EdgeInsets.all(10),
-  //                 decoration: BoxDecoration(
-  //                     border: Border.all(color: AppColors.blueMarieTime,width: 1)
-  //                 ),
-  //                 child: Text(billingControllerNew.clientList[index].name ?? "",
-  //                   textAlign: TextAlign.center,
-  //                   style: const TextStyle(fontSize: 24,),),
-  //               ),
-  //             );
-  //           },
-  //         ),
-  //       ),
-  //     ),
-  //     ),
-  //   );
-  // }
-
   /// Helper function to determine if the touch event is inside the bounding box
   bool isTouchInsideBox(Offset localPosition, double widthFactor) {
     return localPosition.dx >= 0 &&

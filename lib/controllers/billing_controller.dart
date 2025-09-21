@@ -985,53 +985,94 @@ class BillingController extends GetxController {
           );
         },
       ),
-      textConfirm: 'Print Receipt',
-      confirmTextColor: Colors.white,
-      buttonColor: AppColors.blueGradient,
-      onConfirm: () async {
-        try {
-          Get.back(); // Close dialog
-          isPrinting.value = true;
+      actions: [
+        GestureDetector(
+          onTap: () async {
+            await submitBillingData(
+                customerId: customer?.custId,
+                customerName: customer?.name,
+                clientId: customer?.clientId
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)),
+            child: const Text(
+              "Save Reciept",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () async {
+            try {
+              Get.back(); // Close dialog
+              isPrinting.value = true;
 
-          // Calculate final amount based on discount
-          double finalAmount = totalAmount;
-          if (discountType == 'Percentage' && discountAmount > 0) {
-            finalAmount = totalAmount - (totalAmount * discountAmount / 100);
-          } else if (discountType == 'Flat') {
-            finalAmount = totalAmount - discountAmount;
-          }
-          finalAmount = finalAmount < 0 ? 0 : finalAmount;
+              // Calculate final amount based on discount
+              double finalAmount = totalAmount;
+              if (discountType == 'Percentage' && discountAmount > 0) {
+                finalAmount = totalAmount - (totalAmount * discountAmount / 100);
+              } else if (discountType == 'Flat') {
+                finalAmount = totalAmount - discountAmount;
+              }
+              finalAmount = finalAmount < 0 ? 0 : finalAmount;
 
-          // Pass discount information to print controller
-          // Calculate actual discount amount in flat value
-          double actualDiscountAmount = discountType == 'Percentage' ?
+              // Pass discount information to print controller
+              // Calculate actual discount amount in flat value
+              double actualDiscountAmount = discountType == 'Percentage' ?
               (totalAmount * discountAmount / 100) : discountAmount;
 
-          await submitBillingData(
-              customerId: customer?.custId,
-              customerName: customer?.name,
-            clientId: customer?.clientId
+              await submitBillingData(
+                  customerId: customer?.custId,
+                  customerName: customer?.name,
+                  clientId: customer?.clientId
 
 
-          );
-          await printController.printPdfReceipt(
-            itemList,
-            discountAmount: actualDiscountAmount,
-            amountPaid: amountToBePaid
-          );
+              );
+              await printController.printPdfReceipt(
+                  itemList,
+                  discountAmount: actualDiscountAmount,
+                  amountPaid: amountToBePaid
+              );
 
-          Get.snackbar('Success', 'Receipt sent to printer');
-          await shopDetailApi(); // Update bill count
-        } catch (e) {
-          Get.snackbar("Error", "Failed to print: $e");
-        } finally {
-          isPrinting.value = false;
-        }
-      },
-      textCancel: 'Cancel',
-      onCancel: () {
-        // Just close the dialog
-      },
+              Get.snackbar('Success', 'Receipt sent to printer');
+              await shopDetailApi(); // Update bill count
+            } catch (e) {
+              Get.snackbar("Error", "Failed to print: $e");
+            } finally {
+              isPrinting.value = false;
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)),
+            child: const Text(
+              "Print Receipt",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            Get.back();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)),
+            child: const Text(
+              "Cancel",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

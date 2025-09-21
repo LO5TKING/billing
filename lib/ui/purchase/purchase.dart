@@ -75,8 +75,7 @@ class Purchase extends StatelessWidget {
                                       ),
                                     )),
                                   ),
-                                  Obx( () =>
-                                    Container(
+                                  Container(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
@@ -87,18 +86,18 @@ class Purchase extends StatelessWidget {
                                             color: AppColors.appBgColor,
                                           ),
                                         )),
-                                  ),
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignConstants.padding5),
-                                      child: Text(
-                                        'Mob : ${customer?.mobileNo ?? "N.A"}',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.appBgColor,
-                                        ),
-                                      )),
+
+                                    Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: DesignConstants.padding5),
+                                        child: Text(
+                                          'Mob : ${customer?.mobileNo ?? "N.A"}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.appBgColor,
+                                          ),
+                                        )),
                                 ],
                               ),
                             ),

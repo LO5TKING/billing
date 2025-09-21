@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -15,10 +16,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app/config/constants_text.dart';
+import '../model/customer_response_model.dart';
 import '../utils/activity_indicator.dart';
 import 'package:flutter/services.dart'; // Import this package
 import '../print/print_controller.dart';
 import 'package:image/image.dart' as img;
+
+import '../utils/shared_pref.dart';
 
 class OrderController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
@@ -53,6 +57,10 @@ class OrderController extends GetxController {
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
   ApiService apiService = ApiService();
+  RxBool loadingClient = true.obs;
+  Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
+  RxList<Datum> filteredClientList = <Datum>[].obs;
+  List<Datum> get clientList => filteredClientList;
 
   // Inject the PrintController
   late PrintController printController;
@@ -61,6 +69,8 @@ class OrderController extends GetxController {
 
   final RxString formattedDateTime = ''.obs;
   Timer? _dateTimeTimer;
+  TextEditingController amountPaid = TextEditingController();
+  TextEditingController discountAmount = TextEditingController();
 
   Future<bool> _downloadModelWithTimeout() async {
     try {
@@ -643,8 +653,56 @@ class OrderController extends GetxController {
     update();
   }
 
+  Future<void> getClients() async {
+    loadingClient.value = true;
+    String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        // Parse the response directly into the observable
+        customerResponse.value = customerResponseModelFromJson(response.body);
+
+        // Initialize filtered list with all clients
+        filteredClientList.value = customerResponse.value?.data ?? [];
+
+        loadingClient.value = false;
+      } else {
+        customerResponse.value = null; // Clear data on error
+        filteredClientList.clear();
+        Get.snackbar(
+          'Error',
+          'Failed to search clients',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      customerResponse.value = null; // Clear data on error
+      filteredClientList.clear();
+      print("Error parsing customer data: $e");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
   // Add a method to print PDF receipts
-  Future<void> printPdfReceipt() async {
+
+  String _convertImageToBase64(Uint8List? imageBytes) {
+    if (imageBytes == null) return '';
+    return base64Encode(imageBytes);
+  }
+
+  Future<void> printPdfReceipt(Datum? customer) async {
     if (isPrinting.value) return; // Prevent multiple prints
 
     if (itemList.isEmpty) {
@@ -652,17 +710,439 @@ class OrderController extends GetxController {
       return;
     }
 
-    try {
-      isPrinting.value = true;
-      await printController.printPdfReceipt(itemList);
+    // Variables for the dialog
+    double discountAmount = 0;
+    double amountToBePaid = totalAmount;
+    double balanceAmount = 0;
+    String discountType = 'Flat'; // 'Flat' or 'Percentage'
 
-      Get.snackbar('Success', 'Receipt sent to printer');
+    amountPaid.text = totalAmount.toString();
+    Get.defaultDialog(
+      title: 'Payment Details',
+      barrierDismissible: false,
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          // Calculate amounts based on current values
+          double calculatedTotal = totalAmount;
+          double finalAmount = calculatedTotal;
+
+          // Apply discount based on type
+          if (discountType == 'Percentage' && discountAmount > 0) {
+            finalAmount = calculatedTotal - (calculatedTotal * discountAmount / 100);
+          } else if (discountType == 'Flat') {
+            finalAmount = calculatedTotal - discountAmount;
+          }
+
+          // Ensure final amount is not negative
+          finalAmount = finalAmount < 0 ? 0 : finalAmount;
+
+          // Calculate balance
+          balanceAmount = finalAmount - amountToBePaid;
+          balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
+          return Container(
+            width: Get.width * 0.8,
+            padding: const EdgeInsets.all(20),
+            child: Table(
+              columnWidths: const {
+                0: FixedColumnWidth(150),   // Fixed label width
+                1: FixedColumnWidth(150),      // Remaining space for inputs/values
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              children: [
+
+                // Total Amount
+                TableRow(children: [
+                  const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    height: 40,
+                    alignment: Alignment.centerLeft,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Discount Type
+                TableRow(children: [
+                  const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'Flat',
+                            groupValue: discountType,
+                            onChanged: (value) {
+                              setState(() {
+                                discountType = value.toString();
+                                discountAmount = 0;
+                              });
+                            },
+                          ),
+                          const Text('Flat Amount'),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Radio(
+                            value: 'Percentage',
+                            groupValue: discountType,
+                            onChanged: (value) {
+                              setState(() {
+                                discountType = value.toString();
+                                discountAmount = 0;
+                              });
+                            },
+                          ),
+                          const Text('Percentage'),
+                        ],
+                      ),
+                    ],
+                  )
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Discount Amount
+                TableRow(children: [
+                  Text(
+                    discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextField(
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          discountAmount = double.tryParse(value) ?? 0;
+                        });
+                      },
+                    ),
+                  ),
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Final Amount
+                TableRow(children: [
+                  const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
+                  ),
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Amount Paid
+                TableRow(children: [
+                  const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextField(
+                      controller: amountPaid,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        prefixText: '₹ ',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          amountToBePaid = double.tryParse(value) ?? 0;
+                        });
+                      },
+                    ),
+                  )
+                ]),
+
+                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                // Balance Amount
+                TableRow(children: [
+                  const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Container(
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                  ),
+                ]),
+              ],
+            ),
+          );
+        },
+      ),
+      actions: [
+        GestureDetector(
+          onTap: () async {
+            await submitBillingData(
+                customerId: customer?.custId,
+                customerName: customer?.name,
+                clientId: customer?.clientId
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)
+            ),
+            child: Text("Save Reciept",style: TextStyle(color: Colors.black),),),
+        ),
+        GestureDetector(
+          onTap: ()async {
+            try {
+              Get.back(); // Close dialog
+              isPrinting.value = true;
+
+              // Calculate final amount based on discount
+              double finalAmount = totalAmount;
+              if (discountType == 'Percentage' && discountAmount > 0) {
+                finalAmount = totalAmount - (totalAmount * discountAmount / 100);
+              } else if (discountType == 'Flat') {
+                finalAmount = totalAmount - discountAmount;
+              }
+              finalAmount = finalAmount < 0 ? 0 : finalAmount;
+
+              // Pass discount information to print controller
+              // Calculate actual discount amount in flat value
+              double actualDiscountAmount = discountType == 'Percentage' ?
+              (totalAmount * discountAmount / 100) : discountAmount;
+
+              await submitBillingData(
+                  customerId: customer?.custId,
+                  customerName: customer?.name,
+                  clientId: customer?.clientId
+
+
+              );
+              await printController.printPdfReceipt(
+                  itemList,
+                  discountAmount: actualDiscountAmount,
+                  amountPaid: amountToBePaid
+              );
+
+              Get.snackbar('Success', 'Receipt sent to printer');
+              await shopDetailApi(); // Update bill count
+            } catch (e) {
+              Get.snackbar("Error", "Failed to print: $e");
+            } finally {
+              isPrinting.value = false;
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)
+            ),
+            child: Text("Print Receipt",style: TextStyle(color: Colors.black),),),
+        ),
+        GestureDetector(
+          onTap: (){
+            Get.back();
+          },
+          child: Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)
+            ),
+            child: Text("Cancel",style: TextStyle(color: Colors.black),),),
+        ),
+      ],
+    );
+  }
+  Future<void> submitBillingData({
+    String orderNo = '',
+    int? customerId = 0,
+    String? customerName = '',
+    String? clientId = '',
+    double discount = 0,
+    double gst = 0,
+    String discountType = 'Flat',
+    double paidAmount = 0,
+    String paidAmountType = 'Cash',
+    String transactionNo = '',
+    String referenceNo = '',
+    String paymentStatus = 'Pending',
+  }) async {
+    try {
+      // Show loading indicator
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      // Calculate total amount from items
+      final double calculatedTotal = totalAmount;
+      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+
+      // Current date time
+      final DateTime now = DateTime.now();
+      final String formattedDate = now.toIso8601String();
+      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+
+      // Prepare order details from itemList
+      List<Map<String, dynamic>> orderDetails = [];
+      orderNo = DateTime.now().millisecondsSinceEpoch.toString();
+
+      for (int i = 0; i < itemList.length; i++) {
+        final item = itemList[i];
+        final double qty = double.tryParse(item['quantity'] ?? '0') ?? 0;
+        final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
+        final double totalPrice = qty * rate;
+
+        // Convert image to base64 if available
+        String productName = '';
+        if (item['particulars'] is Uint8List) {
+          productName = _convertImageToBase64(item['particulars']);
+          // productName = "trying test";
+        }
+
+        orderDetails.add({
+          "orderNo": orderNo,
+          "orderDetailsId": 0,
+          "billingId": 0,
+          "customerId": customerId,
+          "clientId": clientId,
+          "customerName": customerName,
+          "productName": productName,
+          "quantity": qty,
+          "pricePerQuantity": rate,
+          "totalPrice": totalPrice,
+          "productType": "",
+          "isDelete": false,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "clientUserId": clientUserId
+        });
+      }
+
+      // Prepare billing data
+      Map<String, dynamic> billingData = {
+        "oBilling": {
+          "billingId": 0,
+          "orderNo": orderNo,
+          "customerId": customerId,
+          "customerName": customerName,
+          "clientId": clientId,
+          "totalAmount": calculatedTotal,
+          "balanceAmount": balanceAmount,
+          "discount": discount,
+          "gst": gst,
+          "discountType": discountType,
+          "paidAmount": paidAmount,
+          "paidAmountType": paidAmountType,
+          "transactionNo": transactionNo,
+          "referenceNo": referenceNo,
+          "paymentStatus": paymentStatus,
+          "paymentDate": formattedDate,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "isDelete": false,
+          "isRefund": false,
+          "refundAmount": 0,
+          "refundRemark": "",
+          "refundType": "",
+          "refundDate": null,
+          "refundTransNo": "",
+          "refundStatus": "",
+          "clientUserId": clientUserId
+        },
+        "orderDetails": orderDetails
+      };
+
+      // Make API call
+      final response = await apiService.postRequest(
+        url: "https://roughbill.com/api/Order/addorder",
+        data: billingData,
+      );
+
+      // Close loading dialog
+      Get.back();
+
+      if (response.statusCode == 200) {
+        // Success
+        Get.snackbar(
+          "Success",
+          "Billing data submitted successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // Call shop detail API to update bill count
+        await shopDetailApi();
+
+        // Clear items after successful submission
+        itemList.clear();
+        update();
+      } else {
+        // Error
+        Get.snackbar(
+          "Error",
+          "Failed to submit billing data: ${response.body}",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } catch (e) {
-      Get.snackbar("Error", "Failed to print: $e");
-    } finally {
-      isPrinting.value = false;
+      // Close loading dialog if open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      // Show error
+      Get.snackbar(
+        "Error",
+        "Exception occurred: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
+
+  // Future<void> printPdfReceipt() async {
+  //   if (isPrinting.value) return; // Prevent multiple prints
+  //
+  //   if (itemList.isEmpty) {
+  //     Get.snackbar('Error', 'No items to print');
+  //     return;
+  //   }
+  //
+  //   try {
+  //     isPrinting.value = true;
+  //     await printController.printPdfReceipt(itemList);
+  //
+  //     Get.snackbar('Success', 'Receipt sent to printer');
+  //   } catch (e) {
+  //     Get.snackbar("Error", "Failed to print: $e");
+  //   } finally {
+  //     isPrinting.value = false;
+  //   }
+  // }
 
   void _updateDateTime() {
     final now = DateTime.now();

@@ -29,6 +29,7 @@ class Order extends StatelessWidget {
   Order({this.customer,this.clientList});
 
   final ScrollController scrollController = ScrollController();
+  Rx<Datum?> selectedClient = Rx<Datum?>(null);
 
 
   @override
@@ -91,28 +92,32 @@ class Order extends StatelessWidget {
                                       ),
                                     )),
                                   ),
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignConstants.padding5),
-                                      child: Text(
-                                        'To : ${customer?.name}',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.appBgColor,
-                                        ),
-                                      )),
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignConstants.padding5),
-                                      child: Text(
-                                        'Mob : ${customer?.mobileNo}',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.appBgColor,
-                                        ),
-                                      )),
+                                  Obx( () =>
+                                    Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: DesignConstants.padding5),
+                                        child: Text(
+                                          'To : ${selectedClient.value?.name ?? customer?.name ?? "Guest"}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.appBgColor,
+                                          ),
+                                        )),
+                                  ),
+                                  Obx( () =>
+                                    Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: DesignConstants.padding5),
+                                        child: Text(
+                                          'Mob : ${selectedClient.value?.mobileNo ?? customer?.mobileNo ?? "N.A"}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.appBgColor,
+                                          ),
+                                        )),
+                                  ),
                                 ],
                               ),
                             ),
@@ -659,7 +664,7 @@ class Order extends StatelessWidget {
                                                 ? null
                                                 : () async {
                                               orderController
-                                                  .printPdfReceipt();
+                                                  .printPdfReceipt(selectedClient.value ?? customer);
                                               await orderController.shopDetailApi();
                                             },
                                             child: orderController
@@ -769,12 +774,22 @@ class Order extends StatelessWidget {
                   ),
                 ),
               ),
-                            ),
-              DraggableFab(
-                targetRoute: AppPages.orderNew,
-                arguments: {'customer': customer,'clientList' : clientList},
-                backgroundColor: AppColors.blueGradient,
-                icon: Icons.receipt,
+              ),
+              Positioned(
+                bottom: 20,
+                left: 20,
+                child: GestureDetector(
+                  onLongPress: () async {
+                    await orderController.getClients();
+                    customerListWidget();
+                  },
+                  child: DraggableFab(
+                    targetRoute: AppPages.orderNew,
+                    arguments: {'customer': customer,'clientList' : clientList},
+                    backgroundColor: AppColors.blueGradient,
+                    icon: Icons.receipt,
+                  ),
+                ),
               ),
             ],
 
@@ -1025,6 +1040,81 @@ class Order extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void customerListWidget(){
+    final TextEditingController searchController = TextEditingController();
+    RxList<Datum> filteredClientList = <Datum>[].obs;
+
+    filteredClientList.assignAll(orderController.clientList);
+
+    void filterClients(String query) {
+      if (query.isEmpty) {
+        filteredClientList.assignAll(orderController.clientList);
+      } else {
+        filteredClientList.assignAll(
+            orderController.clientList.where((client) =>
+            client.name?.toLowerCase().contains(query.toLowerCase()) ?? false
+            ).toList()
+        );
+      }
+    }
+
+    Get.dialog(
+      barrierDismissible: false,
+      Obx(() => orderController.loadingClient.value ?
+      const Center(child: CircularProgressIndicator(),):
+      AlertDialog(
+        title: const Text("Select Client", textAlign: TextAlign.center,),
+        alignment: Alignment.center,
+        content: Container(
+          height: 500,
+          width: 500,
+          child: Column(
+            children: [
+              // Search TextField
+              TextField(
+                controller: searchController,
+                onChanged: filterClients,
+                decoration: const InputDecoration(
+                  hintText: "Search clients...",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // ListView with filtered results
+              Expanded(
+                child: Obx(() => ListView.builder(
+                  itemCount: filteredClientList.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        selectedClient.value = filteredClientList[index];
+                        Get.back();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.blueMarieTime, width: 1)
+                        ),
+                        child: Text(
+                          filteredClientList[index].name ?? "",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24,),
+                        ),
+                      ),
+                    );
+                  },
+                )),
+              ),
+            ],
+          ),
+        ),
+      ),
+      ),
     );
   }
 

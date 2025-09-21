@@ -21,6 +21,7 @@ import '../utils/shared_pref.dart';
 
 class OrderControllerNew extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
+
   // Method to toggle checkbox state
   void toggleCheckbox(int index) {
     if (index >= 0 && index < itemList.length) {
@@ -28,15 +29,17 @@ class OrderControllerNew extends GetxController {
       update();
     }
   }
+
   List<Uint8List?> newItemList = [];
+
   // List to store rate ink objects for each item
   RxList<Ink> rateInkList = <Ink>[].obs;
 
   final DigitalInkRecognizerModelManager modelManager =
-  DigitalInkRecognizerModelManager();
+      DigitalInkRecognizerModelManager();
   final String language = 'en-US';
   late final DigitalInkRecognizer digitalInkRecognizer =
-  DigitalInkRecognizer(languageCode: language);
+      DigitalInkRecognizer(languageCode: language);
   late Ink rateInk = Ink();
   final Ink quantityInk = Ink();
   final Ink descriptionInk = Ink();
@@ -45,16 +48,20 @@ class OrderControllerNew extends GetxController {
   List<StrokePoint> quantityPoints = [];
   String recognizedRate = '';
   String recognizedQuantity = '';
+
   // Current item index for rate input
   RxInt currentRateItemIndex = (-1).obs;
   RxBool showButtons = false.obs;
+
   // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
 
   RxBool loadingClient = true.obs;
-  Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
+  Rx<CustomerResponseModel?> customerResponse =
+      Rx<CustomerResponseModel?>(null);
   RxList<Datum> filteredClientList = <Datum>[].obs;
+
   List<Datum> get clientList => filteredClientList;
 
   ApiService apiService = ApiService();
@@ -106,7 +113,7 @@ class OrderControllerNew extends GetxController {
       Get.lazyPut(() => PrintController(), fenix: true);
     }
     printController = Get.find<PrintController>();
-    
+
     // Request storage permission at app start
     // await requestStoragePermissionOnStart();
 
@@ -220,7 +227,7 @@ class OrderControllerNew extends GetxController {
     recognizedQuantity = '';
     update();
   }
-  
+
   // Method to set the current item for rate input
   void setCurrentRateItem(int index) {
     if (index >= 0 && index < itemList.length) {
@@ -233,36 +240,37 @@ class OrderControllerNew extends GetxController {
         rateInk.strokes.clear();
         ratePoints.clear();
       }
-      
+
       currentRateItemIndex.value = index;
       update();
     }
   }
-  
+
   // Method to update an item's rate after recognition
   Future<void> updateItemRate(int index) async {
     if (index >= 0 && index < itemList.length) {
       // Use the item-specific ink object for recognition
-      Ink inkToUse = (index >= 0 && index < rateInkList.length) 
-          ? rateInkList[index] 
+      Ink inkToUse = (index >= 0 && index < rateInkList.length)
+          ? rateInkList[index]
           : rateInk;
-      
+
       // Check if there are any strokes to recognize
       if (inkToUse.strokes.isEmpty) {
         // If no strokes, don't update the rate and show a message
-        Get.snackbar("Info", "No rate input detected. Please write a rate first.");
+        Get.snackbar(
+            "Info", "No rate input detected. Please write a rate first.");
         return;
       }
-      
+
       // Temporarily set the rateInk to the item's ink for recognition
       Ink tempInk = rateInk;
       rateInk = inkToUse;
-      
+
       await recogniseRateText();
-      
+
       // Restore the original rateInk
       rateInk = tempInk;
-      
+
       if (recognizedRate.isNotEmpty) {
         // Update the item's rate
         itemList[index]['rate'] = recognizedRate;
@@ -283,25 +291,25 @@ class OrderControllerNew extends GetxController {
       }
     }
   }
-  
+
   // Method to cancel rate editing and restore previous state
   void cancelRateEdit([int? index]) {
     // Use provided index if available, otherwise use current index
     int currentIndex = index ?? currentRateItemIndex.value;
-    
+
     // Clear the specific ink for the current rate box
     if (currentIndex >= 0 && currentIndex < rateInkList.length) {
       // Make sure to clear all strokes from this specific ink
       rateInkList[currentIndex] = Ink(); // Replace with a new empty Ink object
     }
-    
+
     // Always clear the temporary ink used for recognition
     rateInk = Ink(); // Replace with a new empty Ink object
     ratePoints.clear();
-    
+
     // Reset current index to exit edit mode
     currentRateItemIndex.value = -1;
-    
+
     // Force UI update
     update();
   }
@@ -396,7 +404,7 @@ class OrderControllerNew extends GetxController {
 
         // Improved regex to better handle decimal points
         recognizedRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
-        
+
         // Handle multiple decimal points - keep only the first one
         if (recognizedRate.contains('.')) {
           final parts = recognizedRate.split('.');
@@ -521,9 +529,9 @@ class OrderControllerNew extends GetxController {
     }
 
     final ui.Image image = await recorder.endRecording().toImage(
-      width.toInt(),
-      height.toInt(),
-    );
+          width.toInt(),
+          height.toInt(),
+        );
 
     final ByteData? byteData = await image.toByteData(
       format: ui.ImageByteFormat.png,
@@ -539,8 +547,7 @@ class OrderControllerNew extends GetxController {
       Get.width, // Keep the width proportional
       85, // Reduced height from 100 to 85 for less vertical space
     );
-    if (particularImage != null &&
-        recognizedQuantity.isNotEmpty) {
+    if (particularImage != null && recognizedQuantity.isNotEmpty) {
       // Add a new item with empty rate
       itemList.add({
         'particulars': particularImage,
@@ -548,7 +555,7 @@ class OrderControllerNew extends GetxController {
         'rate': "0", // Default rate is 0
         'checked': false, // Initialize checkbox state
       });
-      
+
       // Add a new Ink object for this item's rate
       rateInkList.add(Ink());
 
@@ -569,7 +576,7 @@ class OrderControllerNew extends GetxController {
       // Convert Uint8List to ui.Image
       if (item['particulars'] is Uint8List) {
         final codec =
-        await ui.instantiateImageCodec(item['particulars'] as Uint8List);
+            await ui.instantiateImageCodec(item['particulars'] as Uint8List);
         final frameInfo = await codec.getNextFrame();
         final handwrittenImage = frameInfo.image;
 
@@ -635,7 +642,7 @@ class OrderControllerNew extends GetxController {
       ),
       textConfirm: 'Save',
       textCancel: 'Cancel',
-      onCancel: (){
+      onCancel: () {
         Get.back();
       },
       onConfirm: () {
@@ -677,7 +684,8 @@ class OrderControllerNew extends GetxController {
 
           // Apply discount based on type
           if (discountType == 'Percentage' && discountAmount > 0) {
-            finalAmount = calculatedTotal - (calculatedTotal * discountAmount / 100);
+            finalAmount =
+                calculatedTotal - (calculatedTotal * discountAmount / 100);
           } else if (discountType == 'Flat') {
             finalAmount = calculatedTotal - discountAmount;
           }
@@ -693,15 +701,15 @@ class OrderControllerNew extends GetxController {
             padding: const EdgeInsets.all(20),
             child: Table(
               columnWidths: const {
-                0: FixedColumnWidth(150),   // Fixed label width
-                1: FixedColumnWidth(150),      // Remaining space for inputs/values
+                0: FixedColumnWidth(150), // Fixed label width
+                1: FixedColumnWidth(150), // Remaining space for inputs/values
               },
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
-
                 // Total Amount
                 TableRow(children: [
-                  const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Total Amount:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
                     height: 40,
                     alignment: Alignment.centerLeft,
@@ -715,11 +723,13 @@ class OrderControllerNew extends GetxController {
                   ),
                 ]),
 
-                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                const TableRow(
+                    children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
                 // Discount Type
                 TableRow(children: [
-                  const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Discount Type:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Row(
                     children: [
                       Row(
@@ -756,23 +766,28 @@ class OrderControllerNew extends GetxController {
                   )
                 ]),
 
-                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                const TableRow(
+                    children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
                 // Discount Amount
                 TableRow(children: [
                   Text(
-                    discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
+                    discountType == 'Percentage'
+                        ? 'Discount %:'
+                        : 'Discount Amount:',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   SizedBox(
                     width: 100,
                     height: 40,
                     child: TextField(
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
                         prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 0),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -783,11 +798,13 @@ class OrderControllerNew extends GetxController {
                   ),
                 ]),
 
-                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                const TableRow(
+                    children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
                 // Final Amount
                 TableRow(children: [
-                  const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Final Amount:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
                     height: 40,
                     alignment: Alignment.center,
@@ -796,25 +813,31 @@ class OrderControllerNew extends GetxController {
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.blueGradient)),
                   ),
                 ]),
 
-                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                const TableRow(
+                    children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
                 // Amount Paid
                 TableRow(children: [
-                  const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Amount Paid:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(
                     width: 100,
                     height: 40,
                     child: TextField(
                       controller: amountPaid,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         prefixText: '₹ ',
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -825,11 +848,13 @@ class OrderControllerNew extends GetxController {
                   )
                 ]),
 
-                const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                const TableRow(
+                    children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
                 // Balance Amount
                 TableRow(children: [
-                  const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Balance Amount:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
                     height: 40,
                     alignment: Alignment.center,
@@ -838,7 +863,8 @@ class OrderControllerNew extends GetxController {
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.red)),
                   ),
                 ]),
               ],
@@ -846,54 +872,91 @@ class OrderControllerNew extends GetxController {
           );
         },
       ),
-      textConfirm: 'Print Receipt',
+      actions: [
+        GestureDetector(
+          onTap: () async {
+            await submitBillingData(
+                customerId: customer?.custId,
+                customerName: customer?.name,
+                clientId: customer?.clientId
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)),
+            child: const Text(
+              "Save Reciept",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () async {
+            try {
+              Get.back(); // Close dialog
+              isPrinting.value = true;
 
-      confirmTextColor: Colors.white,
-      buttonColor: AppColors.blueGradient,
-      onConfirm: () async {
-        try {
-          Get.back(); // Close dialog
-          isPrinting.value = true;
+              // Calculate final amount based on discount
+              double finalAmount = totalAmount;
+              if (discountType == 'Percentage' && discountAmount > 0) {
+                finalAmount =
+                    totalAmount - (totalAmount * discountAmount / 100);
+              } else if (discountType == 'Flat') {
+                finalAmount = totalAmount - discountAmount;
+              }
+              finalAmount = finalAmount < 0 ? 0 : finalAmount;
 
-          // Calculate final amount based on discount
-          double finalAmount = totalAmount;
-          if (discountType == 'Percentage' && discountAmount > 0) {
-            finalAmount = totalAmount - (totalAmount * discountAmount / 100);
-          } else if (discountType == 'Flat') {
-            finalAmount = totalAmount - discountAmount;
-          }
-          finalAmount = finalAmount < 0 ? 0 : finalAmount;
+              // Pass discount information to print controller
+              // Calculate actual discount amount in flat value
+              double actualDiscountAmount = discountType == 'Percentage'
+                  ? (totalAmount * discountAmount / 100)
+                  : discountAmount;
 
-          // Pass discount information to print controller
-          // Calculate actual discount amount in flat value
-          double actualDiscountAmount = discountType == 'Percentage' ?
-          (totalAmount * discountAmount / 100) : discountAmount;
+              await submitBillingData(
+                  customerId: customer?.custId,
+                  customerName: customer?.name,
+                  clientId: customer?.clientId);
+              await printController.printPdfReceipt(itemList,
+                  discountAmount: actualDiscountAmount,
+                  amountPaid: amountToBePaid);
 
-          await submitBillingData(
-              customerId: customer?.custId,
-              customerName: customer?.name,
-              clientId: customer?.clientId
-
-
-          );
-          await printController.printPdfReceipt(
-              itemList,
-              discountAmount: actualDiscountAmount,
-              amountPaid: amountToBePaid
-          );
-
-          Get.snackbar('Success', 'Receipt sent to printer');
-          await shopDetailApi(); // Update bill count
-        } catch (e) {
-          Get.snackbar("Error", "Failed to print: $e");
-        } finally {
-          isPrinting.value = false;
-        }
-      },
-      textCancel: 'Cancel',
-      onCancel: () {
-        // Just close the dialog
-      },
+              Get.snackbar('Success', 'Receipt sent to printer');
+              await shopDetailApi(); // Update bill count
+            } catch (e) {
+              Get.snackbar("Error", "Failed to print: $e");
+            } finally {
+              isPrinting.value = false;
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)),
+            child: const Text(
+              "Print Receipt",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            Get.back();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(100)),
+            child: const Text(
+              "Cancel",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -920,7 +983,7 @@ class OrderControllerNew extends GetxController {
   void _updateDateTime() {
     final now = DateTime.now();
     formattedDateTime.value =
-    "Date:- ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} "
+        "Date:- ${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} "
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
   }
 
@@ -966,39 +1029,39 @@ class OrderControllerNew extends GetxController {
                     pw.TableRow(
                       children: [
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Sr',
                               textAlign: pw.TextAlign.center,
                               style:
-                              pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Particulars',
                               textAlign: pw.TextAlign.center,
                               style:
-                              pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Qty',
                               textAlign: pw.TextAlign.center,
                               style:
-                              pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Rate',
                               textAlign: pw.TextAlign.center,
                               style:
-                              pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.Padding(
-                          padding: pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(4),
                           child: pw.Text('Amt',
                               textAlign: pw.TextAlign.center,
                               style:
-                              pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -1009,33 +1072,33 @@ class OrderControllerNew extends GetxController {
                       return pw.TableRow(
                         children: [
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text('${idx + 1}',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: item['particulars'] != null
                                 ? pw.Image(pw.MemoryImage(item['particulars']),
-                                height: 30)
+                                    height: 30)
                                 : pw.Text(''),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(item['quantity'] ?? '',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(item['rate'] ?? '',
                                 textAlign: pw.TextAlign.center),
                           ),
                           pw.Padding(
-                            padding: pw.EdgeInsets.all(4),
+                            padding: const pw.EdgeInsets.all(4),
                             child: pw.Text(
                               ((double.tryParse(item['quantity'] ?? '0') ?? 0) *
-                                  (double.tryParse(item['rate'] ?? '0') ??
-                                      0))
+                                      (double.tryParse(item['rate'] ?? '0') ??
+                                          0))
                                   .toStringAsFixed(0),
                               textAlign: pw.TextAlign.center,
                             ),
@@ -1086,7 +1149,7 @@ class OrderControllerNew extends GetxController {
     }
   }
 
-  Future<void>shopDetailApi() async {
+  Future<void> shopDetailApi() async {
     String url = "https://roughbill.com/api/ShopDetail/BillCount";
     var detail = {
       'ShopName': "${ConstantsText.shopName}",
@@ -1100,15 +1163,14 @@ class OrderControllerNew extends GetxController {
     } else {
       print('Error ${response.statusCode}: ${response.body}');
     }
-
-
   }
 
-  void getClients() async {
+  Future<void> getClients() async {
     loadingClient.value = true;
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
-    String url = "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
+    String url =
+        "https://roughbill.com/api/Customer/GetCustomer?clientId=$clientId&ClientUserId=$clientUserId";
 
     try {
       var response = await apiService.getRequest(url: url);
@@ -1174,7 +1236,8 @@ class OrderControllerNew extends GetxController {
 
       // Calculate total amount from items
       final double calculatedTotal = totalAmount;
-      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+      final double balanceAmount =
+          calculatedTotal - double.parse(amountPaid.text);
 
       // Current date time
       final DateTime now = DateTime.now();
