@@ -533,9 +533,9 @@ class BillingController extends GetxController {
           colorText: Colors.white,
         );
       }
-    } catch (e) {
+    } catch (e,s) {
       orderDetailResponse.value = null; // Clear data on error
-      print("Error parsing order data: $e");
+      print("Error parsing order data: $e $s");
       Get.snackbar(
         'Error',
         'An error occurred: $e',
