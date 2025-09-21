@@ -42,10 +42,12 @@ class _BillingState extends State<Billing> {
   @override
   void initState() {
     super.initState();
-    if (widget.billingDetail != null) {
-      billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
-      _populateBillingData();
-    }
+    initialize();
+  }
+
+  Future<void> initialize() async {
+    await billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
+    _populateBillingData();
   }
 
   void _populateBillingData() {
@@ -91,7 +93,6 @@ class _BillingState extends State<Billing> {
         }
       }
 
-      // Update totals
       billingController.totalAmount;
     }
   }

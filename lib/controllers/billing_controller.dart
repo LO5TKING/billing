@@ -511,8 +511,6 @@ class BillingController extends GetxController {
   }
 
   Future<OrderDeatailsResponseModel?> getBillingDetail(BillingReport billDetail) async {
-    // String? clientId = SharedPrefs.getString(ConstantsText.clientId);
-    // int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
     String url = "https://roughbill.com/api/Report/GetOrderDetails?billingId=${billDetail.billingId}&orderNo=${billDetail.orderNo}&clientId=${billDetail.clientId}&customerId=${billDetail.customerId}&clientUserId=${billDetail.clientUserId}";
 
     try {
