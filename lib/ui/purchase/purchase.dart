@@ -75,22 +75,24 @@ class Purchase extends StatelessWidget {
                                       ),
                                     )),
                                   ),
+                                  Obx( () =>
+                                    Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: DesignConstants.padding5),
+                                        child: Text(
+                                          'To : ${customer?.purchaserName ?? "Guest"}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.appBgColor,
+                                          ),
+                                        )),
+                                  ),
                                   Container(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'To : Customer',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.appBgColor,
-                                        ),
-                                      )),
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignConstants.padding5),
-                                      child: Text(
-                                        'Mob : ********00',
+                                        'Mob : ${customer?.mobileNo ?? "N.A"}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,

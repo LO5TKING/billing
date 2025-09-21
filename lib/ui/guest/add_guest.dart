@@ -1,3 +1,5 @@
+import 'package:billing/model/customer_response_model.dart';
+import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +12,9 @@ class AddGuest extends StatelessWidget {
   AddGuest({super.key});
 
   TextEditingController nameController = TextEditingController(text: "Guest");
+  TextEditingController mobileNoController = TextEditingController();
+  TextEditingController gstNoController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +107,7 @@ class AddGuest extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: TextFormField(
+                                  controller: mobileNoController,
                                   keyboardType: TextInputType.number,
                                   onChanged: (value){},
                                   style: GoogleFonts.montserrat(
@@ -141,6 +147,7 @@ class AddGuest extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: TextFormField(
+                                  controller: gstNoController,
                                   keyboardType: TextInputType.emailAddress,
                                   onChanged: (value){},
                                   style: GoogleFonts.montserrat(
@@ -180,6 +187,7 @@ class AddGuest extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: TextFormField(
+                                  controller: addressController,
                                   keyboardType: TextInputType.number,
                                   onChanged: (value){},
                                   style: GoogleFonts.montserrat(
@@ -213,7 +221,14 @@ class AddGuest extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              Get.to(() => Billing(customer: Datum(
+                                  name: nameController.text.isNotEmpty ? nameController.text : "Guest",
+                                  mobileNo: mobileNoController.text.isNotEmpty ? mobileNoController.text : "N.A",
+                                gstNo: gstNoController.text.isNotEmpty ? gstNoController.text : "",
+                                address: addressController.text.isNotEmpty ? addressController.text : "",
+                              ),));
+                            },
                             child: Container(
                               height: 40,
                               width: 100,
@@ -234,7 +249,9 @@ class AddGuest extends StatelessWidget {
                             ),
                           ),
                           InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              Get.back();
+                            },
                             child: Container(
                               height: 40,
                               width: 100,

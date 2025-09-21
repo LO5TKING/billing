@@ -832,12 +832,16 @@ class SearchAddClientDetails extends StatelessWidget {
                       ),
                     ),
                     Obx(() => InkWell(
-                      onTap: (){
+                      onTap: () async {
                         if (!searchAddClientController.isLoading.value) {
                           if (searchAddClientController.formKey.currentState!.validate()) {
                             searchAddClientController.addPurchaser.value
-                                ? searchAddClientController.addPurchaserPostApi() :
-                            searchAddClientController.addClientPostApi();
+                                ? await searchAddClientController.addPurchaserPostApi() :
+                            await searchAddClientController.addClientPostApi();
+
+                            searchAddClientController.addPurchaser.value ?
+                                await searchAddClientController.getPurchaser():
+                            await searchAddClientController.getClients();
                           }
                         }
                       },

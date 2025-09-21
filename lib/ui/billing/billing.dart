@@ -29,6 +29,8 @@ class Billing extends StatelessWidget {
   Billing({this.customer,this.clientList});
 
   final ScrollController scrollController = ScrollController();
+  Rx<Datum?> selectedClient = Rx<Datum?>(null);
+
 
   @override
   Widget build(BuildContext context) {
@@ -81,28 +83,32 @@ class Billing extends StatelessWidget {
                                       ),
                                     )),
                                   ),
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignConstants.padding5),
-                                      child: Text(
-                                        'To : ${customer?.name}',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.appBgColor,
-                                        ),
-                                      )),
-                                  Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignConstants.padding5),
-                                      child: Text(
-                                        'Mob : ${customer?.mobileNo}',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.appBgColor,
-                                        ),
-                                      )),
+                                  Obx( () =>
+                                    Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: DesignConstants.padding5),
+                                        child: Text(
+                                          'To : ${selectedClient.value?.name ?? customer?.name ?? "Guest"}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.appBgColor,
+                                          ),
+                                        )),
+                                  ),
+                                  Obx( () =>
+                                    Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: DesignConstants.padding5),
+                                        child: Text(
+                                          'Mob : ${selectedClient.value?.mobileNo ?? customer?.mobileNo ?? "N.A"}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.appBgColor,
+                                          ),
+                                        )),
+                                  ),
                                 ],
                               ),
                             ),
@@ -537,7 +543,7 @@ class Billing extends StatelessWidget {
                                                 .isPrinting.value
                                                 ? null
                                                 : () async {
-                                              billingController.printPdfReceipt(customer);
+                                              billingController.printPdfReceipt(selectedClient.value ?? customer);
                                               await billingController.shopDetailApi();
                                             },
                                             child: billingController
@@ -653,11 +659,21 @@ class Billing extends StatelessWidget {
                 ),
               ),
               // Add draggable floating action button
-              DraggableFab(
-                targetRoute: AppPages.billingNew,
-                arguments: {'customer': customer,'clientList' : clientList},
-                backgroundColor: AppColors.blueGradient,
-                icon: Icons.receipt,
+              Positioned(
+                bottom: 20,
+                left: 20,
+                child: GestureDetector(
+                  onLongPress: () async {
+                    await billingController.getClients();
+                    customerListWidget();
+                  },
+                  child: DraggableFab(
+                    targetRoute: AppPages.billingNew,
+                    arguments: {'customer': customer,'clientList' : clientList},
+                    backgroundColor: AppColors.blueGradient,
+                    icon: Icons.receipt,
+                  ),
+                ),
               ),
             ],
           ),
@@ -881,6 +897,82 @@ class Billing extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  void customerListWidget(){
+    final TextEditingController searchController = TextEditingController();
+    RxList<Datum> filteredClientList = <Datum>[].obs;
+
+    // Initialize filtered list with all clients
+    filteredClientList.assignAll(billingController.clientList);
+
+    void filterClients(String query) {
+      if (query.isEmpty) {
+        filteredClientList.assignAll(billingController.clientList);
+      } else {
+        filteredClientList.assignAll(
+            billingController.clientList.where((client) =>
+            client.name?.toLowerCase().contains(query.toLowerCase()) ?? false
+            ).toList()
+        );
+      }
+    }
+
+    Get.dialog(
+      barrierDismissible: false,
+      Obx(() => billingController.loadingClient.value ?
+      const Center(child: CircularProgressIndicator(),):
+      AlertDialog(
+        title: const Text("Select Client", textAlign: TextAlign.center,),
+        alignment: Alignment.center,
+        content: Container(
+          height: 500,
+          width: 500,
+          child: Column(
+            children: [
+              // Search TextField
+              TextField(
+                controller: searchController,
+                onChanged: filterClients,
+                decoration: const InputDecoration(
+                  hintText: "Search clients...",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // ListView with filtered results
+              Expanded(
+                child: Obx(() => ListView.builder(
+                  itemCount: filteredClientList.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        selectedClient.value = filteredClientList[index];
+                        Get.back();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.blueMarieTime, width: 1)
+                        ),
+                        child: Text(
+                          filteredClientList[index].name ?? "",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24,),
+                        ),
+                      ),
+                    );
+                  },
+                )),
+              ),
+            ],
+          ),
+        ),
+      ),
+      ),
     );
   }
 

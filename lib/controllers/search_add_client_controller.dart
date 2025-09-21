@@ -82,7 +82,7 @@ class SearchAddClientController extends GetxController{
   }
   
   // API call to add client
-  void addClientPostApi() async {
+  Future<void> addClientPostApi() async {
     isLoading.value = true;
     String url = "https://roughbill.com/api/Customer/add";
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
@@ -275,7 +275,7 @@ class SearchAddClientController extends GetxController{
     }
   }
 
-  void addPurchaserPostApi() async {
+  Future<void> addPurchaserPostApi() async {
     isLoading.value = true;
     String url = "https://roughbill.com/api/Purchaser/add";
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
@@ -335,7 +335,7 @@ class SearchAddClientController extends GetxController{
   }
   
   // API call to search clients
-  void getClients() async {
+  Future<void> getClients() async {
     loadingClient.value = true;
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
@@ -378,7 +378,7 @@ class SearchAddClientController extends GetxController{
     }
   }
 
-  void getPurchaser() async {
+  Future<void> getPurchaser() async {
     loadingClient.value = true;
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);

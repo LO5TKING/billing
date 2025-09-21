@@ -1374,7 +1374,7 @@ class BillingControllerNew extends GetxController {
     }
   }
 
-  void getClients() async {
+  Future<void> getClients() async {
     loadingClient.value = true;
     String? clientId = SharedPrefs.getString(ConstantsText.clientId);
     int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
