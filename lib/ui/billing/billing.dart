@@ -17,20 +17,36 @@ import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_re
 import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
+import '../../model/report_response_model.dart';
 import '../../utils/utility.dart';
 
-class Billing extends StatelessWidget {
-  BillingController billingController = Get.find<BillingController>();
-
+class Billing extends StatefulWidget {
   final Datum? customer;
+  final BillingReport? billingDetail;
 
   final List<Datum>? clientList;
 
-  Billing({this.customer,this.clientList});
+  Billing({this.customer,this.clientList,this.billingDetail});
+
+  @override
+  State<Billing> createState() => _BillingState();
+}
+
+class _BillingState extends State<Billing> {
+  BillingController billingController = Get.find<BillingController>();
 
   final ScrollController scrollController = ScrollController();
+
   Rx<Datum?> selectedClient = Rx<Datum?>(null);
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if(widget.billingDetail != null){
+      billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +104,7 @@ class Billing extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'To : ${selectedClient.value?.name ?? customer?.name ?? "Guest"}',
+                                          'To : ${selectedClient.value?.name ?? widget.customer?.name ?? "Guest"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -101,7 +117,7 @@ class Billing extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'Mob : ${selectedClient.value?.mobileNo ?? customer?.mobileNo ?? "N.A"}',
+                                          'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? "N.A"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -543,7 +559,7 @@ class Billing extends StatelessWidget {
                                                 .isPrinting.value
                                                 ? null
                                                 : () async {
-                                              billingController.printPdfReceipt(selectedClient.value ?? customer);
+                                              billingController.printPdfReceipt(selectedClient.value ?? widget.customer);
                                               await billingController.shopDetailApi();
                                             },
                                             child: billingController
@@ -669,7 +685,7 @@ class Billing extends StatelessWidget {
                   },
                   child: DraggableFab(
                     targetRoute: AppPages.billingNew,
-                    arguments: {'customer': customer,'clientList' : clientList},
+                    arguments: {'customer': widget.customer,'clientList' : widget.clientList},
                     backgroundColor: AppColors.blueGradient,
                     icon: Icons.receipt,
                   ),

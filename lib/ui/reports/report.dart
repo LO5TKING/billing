@@ -1,10 +1,12 @@
 import 'package:billing/controllers/report_controller.dart';
+import 'package:billing/ui/billing/billing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/config/color_constants.dart';
 import '../../app/config/design_constants.dart';
+import '../../model/report_response_model.dart';
 import '../../utils/utility.dart';
 
 class SearchAndReports extends StatelessWidget {
@@ -334,161 +336,159 @@ class SearchAndReports extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: Card(
-                      elevation: 20,
-                      color: Colors.white,
-                      child: Container(
-                        width: Get.width * 0.95,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: DesignConstants.padding5,
-                            vertical: DesignConstants.padding20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: shadowText(
-                                text: 'Reports',
-                                fontsize: DesignConstants.fontSize16,
-                              ),
+                    child: Container(
+                      width: Get.width ,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: DesignConstants.padding5,
+                          vertical: DesignConstants.padding20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: shadowText(
+                              text: 'Reports',
+                              fontsize: DesignConstants.fontSize16,
                             ),
-                            const SizedBox(
-                              height: DesignConstants.padding20,
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        color: AppColors.blueGradient,
-                                      ),
-                                      child: Table(
-                                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                        children: [
-                                          // Table header
-                                          TableRow(
-                                            decoration: BoxDecoration(),
-                                            children: [
-                                              tableHeader('Sr\nNo.'),
-                                              tableHeader('Date'),
-                                              tableHeader('Time'),
-                                              tableHeader('Client\nName'),
-                                              tableHeader('Amount'),
-                                              tableHeader('Balance\nAmount'),
-                                              tableHeader(''),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                          ),
+                          const SizedBox(
+                            height: DesignConstants.padding20,
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5),
+                                      color: AppColors.blueGradient,
                                     ),
-                                    const SizedBox(height: 15),
-                                    Expanded(
-                                      child: Obx(() => reportController.isLoading.value
+                                    child: Table(
+                                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                      children: [
+                                        // Table header
+                                        TableRow(
+                                          decoration: const BoxDecoration(),
+                                          children: [
+                                            tableHeader('Sr\nNo.'),
+                                            tableHeader('Date'),
+                                            tableHeader('Time'),
+                                            tableHeader('Client\nName'),
+                                            tableHeader('Amount'),
+                                            tableHeader('Balance\nAmount'),
+                                            tableHeader(''),
+                                            tableHeader(''),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 15),
+                                  Expanded(
+                                    child: Obx(() => reportController.isLoading.value
+                                      ? const Center(
+                                          child: CircularProgressIndicator(),
+                                        )
+                                      : reportController.reportList.value?.billingReports == null ||
+                                        reportController.reportList.value!.billingReports!.isEmpty
                                         ? const Center(
-                                            child: CircularProgressIndicator(),
+                                            child: Text('No reports found'),
                                           )
-                                        : reportController.reportList.value?.billingReports == null ||
-                                          reportController.reportList.value!.billingReports!.isEmpty
-                                          ? const Center(
-                                              child: Text('No reports found'),
-                                            )
-                                          : SingleChildScrollView(
-                                              child: Column(
-                                                children: List.generate(
-                                                  reportController.reportList.value!.billingReports!.length,
-                                                  (index) {
-                                                    final report = reportController.reportList.value!.billingReports![index];
-                                                    final dateTime = DateTime.parse(report.paymentDate!.toString());
-                                                    final date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-                                                    final time = '${dateTime.hour}:${dateTime.minute}';
+                                        : SingleChildScrollView(
+                                            child: Column(
+                                              children: List.generate(
+                                                reportController.reportList.value!.billingReports!.length,
+                                                (index) {
+                                                  final report = reportController.reportList.value!.billingReports![index];
+                                                  final dateTime = DateTime.parse(report.paymentDate!.toString());
+                                                  final date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+                                                  final time = '${dateTime.hour}:${dateTime.minute}';
 
-                                                    return Padding(
-                                                      padding: const EdgeInsets.symmetric(vertical: 5),
-                                                      child: Card(
-                                                        elevation: 6,
-                                                        color: Colors.white,
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(10),
-                                                        ),
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.all(8.0),
-                                                          child: Table(
-                                                            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                                            children: [
-                                                              TableRow(
-                                                                children: [
-                                                                  tableCell('${index + 1}'),
-                                                                  tableCell(date),
-                                                                  tableCell(time),
-                                                                  tableCell(report.customerName ?? ''),
-                                                                  tableCell('₹${report.totalAmount?.toStringAsFixed(2) ?? '0.00'}'),
-                                                                  tableCell('₹${report.balanceAmount?.toStringAsFixed(2) ?? '0.00'}'),
-                                                                  report.paymentStatus == 'Pending' ? payButton('Pay') : tableCell('Paid'),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
+                                                  return Padding(
+                                                    padding: const EdgeInsets.symmetric(vertical: 5),
+                                                    child: Card(
+                                                      elevation: 6,
+                                                      color: Colors.white,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.all(8.0),
+                                                        child: Table(
+                                                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                                          children: [
+                                                            TableRow(
+                                                              children: [
+                                                                tableCell('${index + 1}'),
+                                                                tableCell(date),
+                                                                tableCell(time),
+                                                                tableCell(report.customerName ?? ''),
+                                                                tableCell('₹${report.totalAmount?.toStringAsFixed(2) ?? '0.00'}'),
+                                                                tableCell('₹${report.balanceAmount?.toStringAsFixed(2) ?? '0.00'}'),
+                                                                report.paymentStatus == 'Pending' ? payButton() : tableCell('Paid'),
+                                                                editButton(report),
+                                                              ],
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
-                                                    );
-                                                  },
-                                                ),
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
-                                      ),
+                                          ),
                                     ),
-                                    Obx(() => reportController.reportList.value != null &&
-                                        reportController.reportList.value!.billingReports != null &&
-                                        reportController.reportList.value!.billingReports!.isNotEmpty
-                                        ? Container(
-                                      alignment: Alignment.bottomRight,
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.blueGradient,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.3),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          shadowText(
-                                            text: 'Total Balance Amount: ',
-                                            textcolor: Colors.white,
-                                            fontsize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          shadowText(
-                                            text: '₹${reportController.totalBalanceAmount.value.toStringAsFixed(2)}',
-                                            textcolor: Colors.white,
-                                            fontsize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                        : const SizedBox(),
+                                  ),
+                                  Obx(() => reportController.reportList.value != null &&
+                                      reportController.reportList.value!.billingReports != null &&
+                                      reportController.reportList.value!.billingReports!.isNotEmpty
+                                      ? Container(
+                                    alignment: Alignment.bottomRight,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.blueGradient,
+                                      borderRadius: BorderRadius.circular(10),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        shadowText(
+                                          text: 'Total Balance Amount: ',
+                                          textcolor: Colors.white,
+                                          fontsize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        shadowText(
+                                          text: '₹${reportController.totalBalanceAmount.value.toStringAsFixed(2)}',
+                                          textcolor: Colors.white,
+                                          fontsize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                      : const SizedBox(),
+                                  ),
+                                ],
                               ),
                             ),
-                                  ],
-                                ),
+                          ),
+                                ],
                               ),
                             ),
                           ),
@@ -540,12 +540,13 @@ class SearchAndReports extends StatelessWidget {
     );
   }
 
-  Widget payButton(String text){
+  Widget payButton(){
     return InkWell(
       onTap: (){},
       child: Container(
-        height: 30,
-        width: 40,
+        height: 35,
+        width: 20,
+        margin: const EdgeInsets.symmetric(horizontal: 5),
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: AppColors.blueGradient,
@@ -557,7 +558,40 @@ class SearchAndReports extends StatelessWidget {
               )
             ]
         ),
-        child: Center(child: shadowText(text: text,textcolor: Colors.white,fontsize: 14)),
+        child: Center(child: IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.attach_money,color: Colors.white),
+          iconSize: 20,
+        )),
+      ),
+    );
+  }
+
+  Widget editButton(BillingReport report){
+    return InkWell(
+      onTap: (){
+        Get.to(() => Billing(billingDetail: report));
+      },
+      child: Container(
+        height: 35,
+        width: 20,
+        margin: const EdgeInsets.symmetric(horizontal: 5),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: AppColors.blueGradient,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  blurRadius: 0.4,
+                  offset: const Offset(3, 4)
+              )
+            ]
+        ),
+        child: Center(child: IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.edit,color: Colors.white),
+          iconSize: 20,
+        )),
       ),
     );
   }

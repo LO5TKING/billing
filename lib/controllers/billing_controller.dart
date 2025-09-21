@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:billing/model/order_detail_response_model.dart';
+import 'package:billing/model/report_response_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
@@ -47,6 +49,8 @@ class BillingController extends GetxController {
   Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
   RxList<Datum> filteredClientList = <Datum>[].obs;
   List<Datum> get clientList => filteredClientList;
+  Rx<OrderDeatailsResponseModel?> orderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
+
 
 
   ApiService apiService = ApiService();
@@ -506,7 +510,42 @@ class BillingController extends GetxController {
     clearPad();
   }
 
-  // Create separate Ink objects for editing
+  Future<OrderDeatailsResponseModel?> getBillingDetail(BillingReport billDetail) async {
+    // String? clientId = SharedPrefs.getString(ConstantsText.clientId);
+    // int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+    String url = "https://roughbill.com/api/Report/GetOrderDetails?billingId=${billDetail.billingId}&orderNo=${billDetail.orderNo}&clientId=${billDetail.clientId}&customerId=${billDetail.customerId}&clientUserId=${billDetail.clientUserId}";
+
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        // Parse the response directly into the observable
+        orderDetailResponse.value = orderDeatailsResponseModelFromJson(response.body);
+
+        return orderDetailResponse.value ;
+      } else {
+        orderDetailResponse.value = null; // Clear data on error
+        Get.snackbar(
+          'Error',
+          'Failed to get order details',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      orderDetailResponse.value = null; // Clear data on error
+      print("Error parsing order data: $e");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+
+  }
 
 
   void editItem(int index) {
