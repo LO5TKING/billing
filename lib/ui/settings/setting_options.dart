@@ -170,7 +170,7 @@ class SettingOptions extends StatelessWidget {
           case 0:
             Get.to(() => ProfileSettings());
           case 1:
-            Get.to(() =>  const PrinterSettings());
+            Get.to(() =>  PrinterSettings());
           case 2:
             Get.to(() =>  const BackupSettings());
           case 3:

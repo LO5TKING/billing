@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../app/config/color_constants.dart';
 import '../../app/config/design_constants.dart';
+import '../../controllers/splash_screen_controller.dart';
 import '../../utils/utility.dart';
 
 class PrinterSettings extends StatelessWidget {
-  const PrinterSettings({super.key});
+  final splashController = Get.find<SplashScreenController>();
+  PrinterSettings({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -57,54 +59,29 @@ class PrinterSettings extends StatelessWidget {
                           ),
                         ),
                         child: Column(
+                          spacing: 20,
                           children: [
                             Row(
                               children: [
                                 const Icon(Icons.print_outlined,size: 40,color: AppColors.blueGradient,),
                                 const SizedBox(width: DesignConstants.padding20,),
                                 shadowText(text: 'Printer Setup'),
-
                               ],
                             ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding30,vertical: DesignConstants.padding10),
-                              child: InkWell(
-                                onTap:() async {},
-                                child: Row(
-                                  children: [
-                                    const SizedBox(
-                                      height: DesignConstants.padding10,
-                                      width: DesignConstants.padding10,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.black,
-                                      ),
-                                    ),
-                                    const SizedBox(width: DesignConstants.padding10,),
-                                    Container(
-                                      child: shadowText(text: 'A4, A5 Thermal Printer',fontWeight: FontWeight.w400),
-                                    )
-                                  ],
+
+                            GestureDetector(
+                              onTap: (){
+                                initializeBluetooth();
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(50),
+                                  color: AppColors.blueGradient
                                 ),
+                                child: Text("Connect to Printer",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16,color: Colors.white),),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding30,vertical: DesignConstants.padding10),
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    height: DesignConstants.padding10,
-                                    width: DesignConstants.padding10,
-                                    child: CircleAvatar(
-                                      backgroundColor: Colors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(width: DesignConstants.padding10,),
-                                  Container(
-                                    child: shadowText(text: 'Bluetooth thermal Printer',fontWeight: FontWeight.w400),
-                                  )
-                                ],
-                              ),
-                            ),
+                            )
                           ],
                         ),
                       ),
@@ -120,9 +97,11 @@ class PrinterSettings extends StatelessWidget {
     );
   }
 
-  Widget printWidget(){
-    return Container(
-
-    );
+  Future<void> initializeBluetooth() async {
+    try {
+      await splashController.initBluetooth();
+    } catch (e) {
+      print('Bluetooth initialization error: $e');
+    }
   }
 }

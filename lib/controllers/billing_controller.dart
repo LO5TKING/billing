@@ -457,7 +457,7 @@ class BillingController extends GetxController {
         'quantity': recognizedQuantity,
         'rate': recognizedRate,
       });
-
+      clearPadAndSignature();
       update();
     } else {
       Get.snackbar("Error", "Field is Empty");
@@ -493,8 +493,8 @@ class BillingController extends GetxController {
 
   double get totalAmount {
     return itemList.fold(0, (sum, item) {
-      final rate = double.tryParse(item['rate'] ?? '0') ?? 0;
-      final quantity = double.tryParse(item['quantity'] ?? '0') ?? 0;
+      final rate = double.tryParse(item['rate']) ?? 0;
+      final quantity = double.tryParse(item['quantity']) ?? 0;
       return sum + (rate * quantity);
     });
   }
@@ -828,7 +828,7 @@ class BillingController extends GetxController {
 
   // Add a method to print PDF receipts with dialog
   Future<void> printPdfReceipt(Datum? customer) async {
-    if (isPrinting.value) return; // Prevent multiple prints
+    if (isPrinting.value) return;
 
     if (itemList.isEmpty) {
       Get.snackbar('Error', 'No items to print');

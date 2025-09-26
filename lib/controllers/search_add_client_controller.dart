@@ -45,11 +45,11 @@ class SearchAddClientController extends GetxController{
     
     // Add listeners to search controllers
     searchNameController.addListener(() {
-      filterClients();
+      addPurchaser.value ? filterPurchaser() : filterClients();
     });
     
     searchMobileController.addListener(() {
-      filterClients();
+      addPurchaser.value ? filterPurchaser() : filterClients();
     });
   }
 
@@ -526,6 +526,41 @@ class SearchAddClientController extends GetxController{
     }).toList();
     
     filteredClientList.value = filtered;
+  }
+
+  void filterPurchaser() {
+    String nameQuery = searchNameController.text.toLowerCase().trim();
+    String mobileQuery = searchMobileController.text.toLowerCase().trim();
+
+    if (nameQuery.isEmpty && mobileQuery.isEmpty) {
+      // If both search fields are empty, show all clients
+      filteredpurchaseList.value = purchaseResponse.value?.data ?? [];
+      return;
+    }
+
+    // Filter the list based on name or mobile number
+    List<PurchaserData> filtered = (purchaseResponse.value?.data ?? []).where((client) {
+      bool nameMatch = nameQuery.isEmpty ||
+          (client.purchaserName?.toLowerCase().contains(nameQuery) ?? false);
+
+      bool mobileMatch = mobileQuery.isEmpty ||
+          (client.mobileNo?.toLowerCase().contains(mobileQuery) ?? false);
+
+      // If only name is provided, filter by name only
+      if (nameQuery.isNotEmpty && mobileQuery.isEmpty) {
+        return nameMatch;
+      }
+
+      // If only mobile is provided, filter by mobile only
+      if (mobileQuery.isNotEmpty && nameQuery.isEmpty) {
+        return mobileMatch;
+      }
+
+      // If both are provided, match both criteria
+      return nameMatch && mobileMatch;
+    }).toList();
+
+    filteredpurchaseList.value = filtered;
   }
   
   @override

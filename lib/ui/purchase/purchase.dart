@@ -169,7 +169,7 @@ class Purchase extends StatelessWidget {
                               IconButton(
                                   onPressed: () async {
                                     await purchaseController.addItem();
-                                    purchaseController.clearPadAndSignature();
+                                    // purchaseController.clearPadAndSignature();
                                   },
                                   hoverColor: Colors.white,
                                   padding: const EdgeInsets.only(right: 3),

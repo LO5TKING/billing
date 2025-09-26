@@ -107,6 +107,10 @@ class ProfileSettingController extends GetxController{
         // Parse the response directly into the observable
         profileData.value = registrationDetailResponseModelFromJson(response.body);
 
+        ConstantsText.shopName = profileData.value?.companyName ?? "";
+        ConstantsText.mobileNo = profileData.value?.mobileNo ?? "";
+        ConstantsText.address = profileData.value?.area ?? "";
+
         loadingProfile.value = false;
         companyName.text = profileData.value?.companyName ?? "";
         personName.text = profileData.value?.personName ?? "";

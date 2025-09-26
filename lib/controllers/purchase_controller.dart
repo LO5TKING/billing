@@ -439,7 +439,7 @@ class PurchaseController extends GetxController {
         'quantity': recognizedQuantity,
         'rate': recognizedRate,
       });
-
+      clearPadAndSignature();
       update();
     } else {
       Get.snackbar("Error", "Field is Empty");

@@ -79,6 +79,10 @@ class LoginController extends GetxController {
         await SharedPrefs.setString(ConstantsText.emailId,loginResponse.emailId ?? "");
         await SharedPrefs.setString(ConstantsText.shopNo,loginResponse.shopNo ?? "");
 
+        ConstantsText.shopName = loginResponse.companyName ?? "";
+        ConstantsText.mobileNo = loginResponse.mobileNo ?? "";
+        ConstantsText.address = loginResponse.area ?? "";
+
         // Login successful
         Get.offAllNamed('/billing_options');
       } else {

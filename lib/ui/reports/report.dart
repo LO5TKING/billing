@@ -432,7 +432,7 @@ class SearchAndReports extends StatelessWidget {
                                                                 tableCell(report.customerName ?? ''),
                                                                 tableCell('₹${report.totalAmount?.toStringAsFixed(2) ?? '0.00'}'),
                                                                 tableCell('₹${report.balanceAmount?.toStringAsFixed(2) ?? '0.00'}'),
-                                                                report.paymentStatus == 'Pending' ? payButton() : tableCell('Paid'),
+                                                                report.paymentStatus == 'Pending' ? payButton(report) : tableCell('Paid'),
                                                                 editButton(report),
                                                               ],
                                                             ),
@@ -540,9 +540,11 @@ class SearchAndReports extends StatelessWidget {
     );
   }
 
-  Widget payButton(){
+  Widget payButton(BillingReport report){
     return InkWell(
-      onTap: (){},
+      onTap: (){
+        Get.to(() => Billing(billingDetail: report,showPaymentDialog: true,));
+      },
       child: Container(
         height: 35,
         width: 20,
@@ -558,11 +560,7 @@ class SearchAndReports extends StatelessWidget {
               )
             ]
         ),
-        child: Center(child: IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.attach_money,color: Colors.white),
-          iconSize: 20,
-        )),
+        child: const Center(child: Icon(Icons.currency_rupee,color: Colors.white,size: 20,)),
       ),
     );
   }
@@ -587,11 +585,7 @@ class SearchAndReports extends StatelessWidget {
               )
             ]
         ),
-        child: Center(child: IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.edit,color: Colors.white),
-          iconSize: 20,
-        )),
+        child: const Center(child: Icon(Icons.edit,color: Colors.white,size: 20,)),
       ),
     );
   }

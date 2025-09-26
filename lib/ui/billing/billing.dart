@@ -27,8 +27,9 @@ class Billing extends StatefulWidget {
   final Datum? customer;
   final BillingReport? billingDetail;
   final List<Datum>? clientList;
+  bool? showPaymentDialog;
 
-  Billing({this.customer, this.clientList, this.billingDetail});
+  Billing({this.customer, this.clientList, this.billingDetail,this.showPaymentDialog});
 
   @override
   State<Billing> createState() => _BillingState();
@@ -46,11 +47,16 @@ class _BillingState extends State<Billing> {
   }
 
   Future<void> initialize() async {
-    await billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
-    _populateBillingData();
+    if(widget.billingDetail != null){
+      await billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
+      await _populateBillingData();
+      if(widget.showPaymentDialog == true){
+        print();
+      }
+    }
   }
 
-  void _populateBillingData() {
+  Future<void> _populateBillingData() async{
     // Clear existing items first
     billingController.itemList.clear();
 
@@ -61,7 +67,7 @@ class _BillingState extends State<Billing> {
       // Set customer details
       selectedClient.value = Datum(
         name: order?.oBilling?.customerName,
-        mobileNo: order?.oBilling?.clientId, // Using clientId as mobile for now
+        mobileNo: null,
       );
 
       // Populate order details as items
@@ -81,7 +87,7 @@ class _BillingState extends State<Billing> {
 
             billingController.itemList.add(item);
           } catch (e) {
-            print('Error decoding base64 image: $e');
+            // print('Error decoding base64 image: $e');
             // Add item without image if base64 decode fails
             final item = {
               'particulars': null,
@@ -314,7 +320,7 @@ class _BillingState extends State<Billing> {
                               IconButton(
                                   onPressed: () async {
                                     await billingController.addItem();
-                                    billingController.clearPadAndSignature();
+                                    // billingController.clearPadAndSignature();
                                   },
                                   hoverColor: Colors.white,
                                   padding: const EdgeInsets.only(right: 3),
@@ -620,9 +626,7 @@ class _BillingState extends State<Billing> {
                                           onPressed: billingController.isPrinting.value
                                               ? null
                                               : () async {
-                                            billingController.printPdfReceipt(
-                                                selectedClient.value ?? widget.customer);
-                                            await billingController.shopDetailApi();
+                                            await print();
                                           },
                                           child: billingController.isPrinting.value
                                               ? const SizedBox(
@@ -733,6 +737,12 @@ class _BillingState extends State<Billing> {
         );
       },
     );
+  }
+
+  Future<void>print() async {
+    billingController.printPdfReceipt(
+        selectedClient.value ?? widget.customer);
+    await billingController.shopDetailApi();
   }
 
   // Helper widget methods - You need to implement these based on your requirements

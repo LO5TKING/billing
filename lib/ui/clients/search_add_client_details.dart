@@ -157,7 +157,7 @@ class SearchAddClientDetails extends StatelessWidget {
                               child: InkWell(
                                 onTap: (){
                                   // Explicitly trigger filtering when search button is clicked
-                                  searchAddClientController.filterClients();
+                                  searchAddClientController.addPurchaser.value ? searchAddClientController.filterPurchaser() : searchAddClientController.filterClients();
                                 },
                                 child: Container(
                                   height: 40,
@@ -175,7 +175,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                   ),
                                   child: InkWell(
                                     onTap: () {
-                                      searchAddClientController.filterClients();
+                                      searchAddClientController.addPurchaser.value ? searchAddClientController.filterPurchaser() : searchAddClientController.filterClients();
                                     },
                                     child: Center(
                                       child: shadowText(text: 'Search',textcolor: Colors.white,fontsize: 16)
@@ -219,7 +219,7 @@ class SearchAddClientDetails extends StatelessWidget {
                               // Clear search fields and reset the filter
                               searchAddClientController.searchNameController.clear();
                               searchAddClientController.searchMobileController.clear();
-                              searchAddClientController.filterClients();
+                              searchAddClientController.addPurchaser.value ? searchAddClientController.filterPurchaser() : searchAddClientController.filterClients();
                             },
                             child: Container(
                               height: 40,
