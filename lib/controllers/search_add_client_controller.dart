@@ -254,13 +254,13 @@ class SearchAddClientController extends GetxController{
 
         // Refresh client list
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to add client',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        // Get.snackbar(
+        //   'Error',
+        //   'Failed to add client',
+        //   snackPosition: SnackPosition.BOTTOM,
+        //   backgroundColor: Colors.red,
+        //   colorText: Colors.white,
+        // );
       }
     } catch (e) {
       Get.snackbar(
@@ -268,7 +268,7 @@ class SearchAddClientController extends GetxController{
         'An error occurred: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
+        colorText: Colors.black,
       );
     } finally {
       isLoading.value = false;
@@ -305,7 +305,7 @@ class SearchAddClientController extends GetxController{
           'Client added successfully',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
-          colorText: Colors.white,
+          colorText: Colors.black,
         );
 
         // Clear form fields
@@ -313,13 +313,13 @@ class SearchAddClientController extends GetxController{
 
         // Refresh client list
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to add client',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        // Get.snackbar(
+        //   'Error',
+        //   'Failed to add client',
+        //   snackPosition: SnackPosition.BOTTOM,
+        //   backgroundColor: Colors.red,
+        //   colorText: Colors.white,
+        // );
       }
     } catch (e) {
       Get.snackbar(
@@ -327,7 +327,7 @@ class SearchAddClientController extends GetxController{
         'An error occurred: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
+        colorText: Colors.black,
       );
     } finally {
       isLoading.value = false;
@@ -356,13 +356,13 @@ class SearchAddClientController extends GetxController{
         loadingClient.value = false;
         customerResponse.value = null; // Clear data on error
         filteredClientList.clear();
-        Get.snackbar(
-          'Error',
-          'Failed to search clients',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.grey,
-          colorText: Colors.black,
-        );
+        // Get.snackbar(
+        //   'Error',
+        //   'Failed to search clients',
+        //   snackPosition: SnackPosition.BOTTOM,
+        //   backgroundColor: Colors.grey,
+        //   colorText: Colors.black,
+        // );
       }
     } catch (e) {
       customerResponse.value = null; // Clear data on error
@@ -373,7 +373,7 @@ class SearchAddClientController extends GetxController{
         'An error occurred: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
-        colorText: Colors.white,
+        colorText: Colors.black,
       );
     }
   }
@@ -399,13 +399,13 @@ class SearchAddClientController extends GetxController{
         loadingClient.value = false;
         purchaseResponse.value = null; // Clear data on error
         filteredpurchaseList.clear();
-        Get.snackbar(
-          'Error',
-          'Failed to search purchaser',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.grey,
-          colorText: Colors.black,
-        );
+        // Get.snackbar(
+        //   'Error',
+        //   'Failed to search purchaser',
+        //   snackPosition: SnackPosition.BOTTOM,
+        //   backgroundColor: Colors.grey,
+        //   colorText: Colors.black,
+        // );
       }
     } catch (e) {
       purchaseResponse.value = null; // Clear data on error

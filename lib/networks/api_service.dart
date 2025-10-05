@@ -39,4 +39,24 @@ class ApiService {
       throw Exception('Failed to make GET request: $e');
     }
   }
+
+  Future<http.Response> putRequest({
+    required String url,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(data),
+      );
+
+      return response;
+    } catch (e) {
+      throw Exception('Failed to make PUT request: $e');
+    }
+  }
+
 }

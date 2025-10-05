@@ -46,16 +46,17 @@ class BillingController extends GetxController {
   String recognizedQuantity = '';
   RxBool showButtons = false.obs;
   RxBool loadingClient = true.obs;
+  RxBool updateBill = false.obs;
   Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
   RxList<Datum> filteredClientList = <Datum>[].obs;
   List<Datum> get clientList => filteredClientList;
   Rx<OrderDeatailsResponseModel?> orderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
+  Rx<OrderDeatailsResponseModel?> oldOrderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
 
 
 
   ApiService apiService = ApiService();
 
-  // Initialize as false to prevent flash
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
 
@@ -491,6 +492,7 @@ class BillingController extends GetxController {
     return images;
   }
 
+
   double get totalAmount {
     return itemList.fold(0, (sum, item) {
       final rate = double.tryParse(item['rate']) ?? 0;
@@ -511,13 +513,12 @@ class BillingController extends GetxController {
   }
 
   Future<OrderDeatailsResponseModel?> getBillingDetail(BillingReport billDetail) async {
-    String url = "https://roughbill.com/api/Report/GetOrderDetails?billingId=${billDetail.billingId}&orderNo=${billDetail.orderNo}&clientId=${billDetail.clientId}&customerId=${billDetail.customerId}&clientUserId=${billDetail.clientUserId}";
+    String url = "https://roughbill.com/api/Report/GetOrderDetails?billingId=${billDetail.billingId}&orderNo=${billDetail.orderNo}&clientId=${billDetail.clientId}&clientUserId=${billDetail.clientUserId}";
 
     try {
       var response = await apiService.getRequest(url: url);
 
       if (response.statusCode == 200) {
-        // Parse the response directly into the observable
         orderDetailResponse.value = orderDeatailsResponseModelFromJson(response.body);
 
         return orderDetailResponse.value ;
@@ -1028,7 +1029,7 @@ class BillingController extends GetxController {
             await submitBillingData(
                 customerId: customer?.custId,
                 customerName: customer?.name,
-                clientId: customer?.clientId
+                clientId: customer?.clientId,
             );
           },
           child: Container(
@@ -1057,8 +1058,6 @@ class BillingController extends GetxController {
               }
               finalAmount = finalAmount < 0 ? 0 : finalAmount;
 
-              // Pass discount information to print controller
-              // Calculate actual discount amount in flat value
               double actualDiscountAmount = discountType == 'Percentage' ?
               (totalAmount * discountAmount / 100) : discountAmount;
 
@@ -1076,7 +1075,7 @@ class BillingController extends GetxController {
               );
 
               Get.snackbar('Success', 'Receipt sent to printer');
-              await shopDetailApi(); // Update bill count
+              // await shopDetailApi(); // Update bill count
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");
             } finally {
@@ -1338,6 +1337,8 @@ class BillingController extends GetxController {
       final DateTime now = DateTime.now();
       final String formattedDate = now.toIso8601String();
       int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+      String? clientIds = SharedPrefs.getString(ConstantsText.clientId);
+
 
       // Prepare order details from itemList
       List<Map<String, dynamic>> orderDetails = [];
@@ -1360,9 +1361,9 @@ class BillingController extends GetxController {
           "orderNo": orderNo,
           "orderDetailsId": 0,
           "billingId": 0,
-          "customerId": customerId,
-          "clientId": clientId,
-          "customerName": customerName,
+          "customerId": customerId ?? 0,
+          "clientId": clientIds ?? 0000,
+          "customerName": customerName ?? "Guest",
           "productName": productName,
           "quantity": qty,
           "pricePerQuantity": rate,
@@ -1380,9 +1381,9 @@ class BillingController extends GetxController {
         "oBilling": {
           "billingId": 0,
           "orderNo": orderNo,
-          "customerId": customerId,
-          "customerName": customerName,
-          "clientId": clientId,
+          "customerId": customerId ?? 0,
+          "customerName": customerName ?? "Guest",
+          "clientId": clientIds ?? 0000,
           "totalAmount": calculatedTotal,
           "balanceAmount": balanceAmount,
           "discount": discount,
@@ -1408,14 +1409,18 @@ class BillingController extends GetxController {
         },
         "orderDetails": orderDetails
       };
+      String url = "https://roughbill.com/api/Order/addorder";
 
-      // Make API call
-      final response = await apiService.postRequest(
-        url: "https://roughbill.com/api/Order/addorder",
-        data: billingData,
-      );
+      if(updateBill.value){
+        url = "https://roughbill.com/api/Order/UpdateOrder";
+      }else{
+        url = "https://roughbill.com/api/Order/addorder";
+      }
 
-      // Close loading dialog
+
+
+      final response = await apiService.postRequest(url: url, data: billingData,);
+
       Get.back();
 
       if (response.statusCode == 200) {
@@ -1427,7 +1432,7 @@ class BillingController extends GetxController {
         );
 
         // Call shop detail API to update bill count
-        await shopDetailApi();
+        // await shopDetailApi();
 
         // Clear items after successful submission
         itemList.clear();

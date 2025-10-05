@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/billing_controller.dart';
@@ -11,18 +13,106 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 // import 'package:pdf/pdf.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
 import '../../model/customer_response_model.dart';
 import '../../utils/utility.dart';
 
-class Purchase extends StatelessWidget {
-  PurchaseController purchaseController = Get.find<PurchaseController>();
-  final ScrollController scrollController = ScrollController();
-
+class Purchase extends StatefulWidget {
   final PurchaserData? customer;
+  final List<PurchaserData>? clientList;
 
-  Purchase({this.customer});
+
+  Purchase({this.customer,this.clientList});
+
+  @override
+  State<Purchase> createState() => _PurchaseState();
+}
+
+class _PurchaseState extends State<Purchase> {
+  PurchaseController purchaseController = Get.find<PurchaseController>();
+
+  final ScrollController scrollController = ScrollController();
+  Rx<PurchaserData?> selectedClient = Rx<PurchaserData?>(null);
+
+
+
+  // void customerListWidget() {
+  //   final TextEditingController searchController = TextEditingController();
+  //   RxList<PurchaserData> filteredClientList = <PurchaserData>[].obs;
+  //
+  //   // Initialize filtered list with all clients
+  //   filteredClientList.assignAll(purchaseController.clientList);
+  //
+  //   void filterClients(String query) {
+  //     if (query.isEmpty) {
+  //       filteredClientList.assignAll(purchaseController.clientList);
+  //     } else {
+  //       filteredClientList.assignAll(
+  //           purchaseController.clientList.where((client) =>
+  //           client.purchaserName?.toLowerCase().contains(query.toLowerCase()) ?? false
+  //           ).toList()
+  //       );
+  //     }
+  //   }
+  //
+  //   Get.dialog(
+  //     barrierDismissible: false,
+  //     Obx(() => purchaseController.loadingClient.value ?
+  //     const Center(child: CircularProgressIndicator(),):
+  //     AlertDialog(
+  //       title: const Text("Select Client", textAlign: TextAlign.center,),
+  //       alignment: Alignment.center,
+  //       content: Container(
+  //         height: 500,
+  //         width: 500,
+  //         child: Column(
+  //           children: [
+  //             // Search TextField
+  //             TextField(
+  //               controller: searchController,
+  //               onChanged: filterClients,
+  //               decoration: const InputDecoration(
+  //                 hintText: "Search clients...",
+  //                 prefixIcon: Icon(Icons.search),
+  //                 border: OutlineInputBorder(),
+  //               ),
+  //             ),
+  //             const SizedBox(height: 10),
+  //             // ListView with filtered results
+  //             Expanded(
+  //               child: Obx(() => ListView.builder(
+  //                 itemCount: filteredClientList.length,
+  //                 itemBuilder: (context, index) {
+  //                   return InkWell(
+  //                     onTap: () {
+  //                       selectedClient.value = filteredClientList[index];
+  //                       Get.back();
+  //                     },
+  //                     child: Container(
+  //                       margin: const EdgeInsets.all(10),
+  //                       padding: const EdgeInsets.all(10),
+  //                       decoration: BoxDecoration(
+  //                           border: Border.all(color: AppColors.blueMarieTime, width: 1)
+  //                       ),
+  //                       child: Text(
+  //                         filteredClientList[index].name ?? "",
+  //                         textAlign: TextAlign.center,
+  //                         style: const TextStyle(fontSize: 24,),
+  //                       ),
+  //                     ),
+  //                   );
+  //                 },
+  //               )),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +169,7 @@ class Purchase extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'To : ${customer?.purchaserName ?? "Guest"}',
+                                          'To : ${widget.customer?.purchaserName ?? "Guest"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -91,7 +181,7 @@ class Purchase extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'Mob : ${customer?.mobileNo ?? "N.A"}',
+                                          'Mob : ${widget.customer?.mobileNo ?? "N.A"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -498,139 +588,115 @@ class Purchase extends StatelessWidget {
                         ),
                       ),
 
-                      // Bottom controls (unchanged)
                       Container(
                         height: 110,
                         padding: EdgeInsets.zero,
-                        child: Obx(
-                              () => Column(
-                            children: [
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.only(
-                                    top: DesignConstants.padding5),
-                                child: Visibility(
-                                  visible: purchaseController.showButtons.value,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        height: 40,
-                                        child: Obx(() => ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                              AppColors.blackLead,
-                                              shape:
-                                              const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(
-                                                          5))),
+                        child: Obx(() => Column(
+                          children: [
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.only(top: DesignConstants.padding5),
+                              child: Visibility(
+                                visible: purchaseController.showButtons.value,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(width: 10),
+                                    Container(
+                                      height: 40,
+                                      child: Obx(() => ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.blackLead,
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(Radius.circular(5))),
+                                          ),
+                                          onPressed: purchaseController.isPrinting.value
+                                              ? null
+                                              : () async {
+                                            await print();
+                                          },
+                                          child: purchaseController.isPrinting.value
+                                              ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
                                             ),
-                                            onPressed: purchaseController
-                                                .isPrinting.value
-                                                ? null
-                                                : () {
-                                              purchaseController
-                                                  .printPdfReceipt(customer);
-                                            },
-                                            child: purchaseController
-                                                .isPrinting.value
-                                                ? const SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child:
-                                              CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                                : const Text(
-                                              'Print Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize:
-                                                  DesignConstants
-                                                      .fontSize16),
-                                            ))),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        height: 40,
-                                        child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                              AppColors.blackLead,
-                                              shape:
-                                              const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(
-                                                          5))),
-                                            ),
-                                            onPressed: () {
-                                              purchaseController.itemList
-                                                  .clear();
-                                            },
-                                            child: const Text(
-                                              'Clear Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        height: 40,
-                                        child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                              AppColors.blackLead,
-                                              shape:
-                                              const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(
-                                                          5))),
-                                            ),
-                                            onPressed: () async {
-                                              await purchaseController.saveReceiptAsPdf();
-                                            },
-                                            child: const Text(
-                                              'Save Receipt',
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: DesignConstants
-                                                      .fontSize16),
-                                            )),
-                                      ),
-                                    ],
-                                  ),
+                                          )
+                                              : const Icon(Icons.print, color: Colors.white, size: 40))),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Container(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.blackLead,
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(Radius.circular(5))),
+                                          ),
+                                          onPressed: () {
+                                            purchaseController.itemList.clear();
+                                          },
+                                          child: const Icon(Icons.clear, color: Colors.white, size: 40)),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Container(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.blackLead,
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(Radius.circular(5))),
+                                          ),
+                                          onPressed: () async {
+                                            await purchaseController.saveReceiptAsPdf();
+                                          },
+                                          child: const Icon(Icons.save, color: Colors.white, size: 40)),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Container(
+                                      height: 40,
+                                      child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.blackLead,
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(Radius.circular(5))),
+                                          ),
+                                          onPressed: () async {
+                                            File? pdfFile = await purchaseController.saveReceiptAsPdf();
+                                            if (pdfFile != null && await pdfFile.exists()) {
+                                              final XFile xfile = XFile(pdfFile.path);
+                                              SharePlus.instance.share(ShareParams(
+                                                  files: [xfile], text: "Here is your receipt!"));
+                                            } else {
+                                              Get.snackbar('Error', 'Unable to share receipt');
+                                            }
+                                          },
+                                          child: const Icon(Icons.share, color: Colors.white, size: 40)),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const Spacer(),
-                              Visibility(
-                                visible: true,
-                                child: Container(
-                                  alignment: Alignment.bottomCenter,
-                                  child: IconButton(
-                                      onPressed: () {
-                                        purchaseController.showButtons.value =
-                                        !purchaseController
-                                            .showButtons.value;
-                                      },
-                                      icon: const Icon(
-                                        Icons.house_siding_rounded,
-                                        size: 30,
-                                        color: AppColors.blackLead,
-                                      )),
-                                ),
+                            ),
+                            const Spacer(),
+                            Visibility(
+                              visible: true,
+                              child: Container(
+                                alignment: Alignment.bottomCenter,
+                                child: IconButton(
+                                    onPressed: () {
+                                      purchaseController.showButtons.value = !purchaseController.showButtons.value;
+                                    },
+                                    icon: const Icon(
+                                      Icons.house_siding_rounded,
+                                      size: 30,
+                                      color: AppColors.blackLead,
+                                    )),
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          ],
+                        )),
                       ),
                     ],
                   ),
@@ -641,6 +707,12 @@ class Purchase extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void>print() async {
+    purchaseController.printPdfReceipt(
+        selectedClient.value ?? widget.customer);
+    // await purchaseController.shopDetailApi();
   }
 
   Widget rateTextBox(double widthFactor) {

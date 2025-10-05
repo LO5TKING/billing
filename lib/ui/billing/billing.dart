@@ -28,8 +28,9 @@ class Billing extends StatefulWidget {
   final BillingReport? billingDetail;
   final List<Datum>? clientList;
   bool? showPaymentDialog;
+  bool? clearPage;
 
-  Billing({this.customer, this.clientList, this.billingDetail,this.showPaymentDialog});
+  Billing({this.customer, this.clientList, this.billingDetail,this.showPaymentDialog,this.clearPage});
 
   @override
   State<Billing> createState() => _BillingState();
@@ -47,12 +48,21 @@ class _BillingState extends State<Billing> {
   }
 
   Future<void> initialize() async {
+
+    if(widget.clearPage == true){
+      billingController.itemList.clear();
+      billingController.clearPadAndSignature();
+    }
+
     if(widget.billingDetail != null){
       await billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
       await _populateBillingData();
+      billingController.updateBill.value = true;
       if(widget.showPaymentDialog == true){
         print();
       }
+    }else{
+      billingController.updateBill.value = false;
     }
   }
 

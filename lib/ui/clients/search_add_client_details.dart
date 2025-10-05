@@ -523,6 +523,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                                                         customer: customer,
                                                                         clientList: searchAddClientController
                                                                             .clientList,
+                                                                        clearPage: true,
                                                                       ));
                                                                     },
                                                                   ),
@@ -534,6 +535,7 @@ class SearchAddClientDetails extends StatelessWidget {
                                                                         customer: customer,
                                                                         clientList: searchAddClientController
                                                                             .clientList,
+                                                                        clearPage: true,
                                                                       ));
                                                                     },
                                                                   ),

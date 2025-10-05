@@ -20,17 +20,33 @@ import '../../model/customer_response_model.dart';
 import '../../utils/draggable_fab.dart';
 import '../../utils/utility.dart';
 
-class Order extends StatelessWidget {
-  OrderController orderController = Get.find<OrderController>();
-
+class Order extends StatefulWidget {
   final Datum? customer;
   final List<Datum>? clientList;
+  bool? clearPage;
 
-  Order({this.customer,this.clientList});
+  Order({this.customer,this.clientList,this.clearPage});
+
+  @override
+  State<Order> createState() => _OrderState();
+}
+
+class _OrderState extends State<Order> {
+  OrderController orderController = Get.find<OrderController>();
 
   final ScrollController scrollController = ScrollController();
+
   Rx<Datum?> selectedClient = Rx<Datum?>(null);
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if(widget.clearPage == true){
+      orderController.itemList.clear();
+      orderController.clearPadAndSignature();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +113,7 @@ class Order extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'To : ${selectedClient.value?.name ?? customer?.name ?? "Guest"}',
+                                          'To : ${selectedClient.value?.name ?? widget.customer?.name ?? "Guest"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -110,7 +126,7 @@ class Order extends StatelessWidget {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'Mob : ${selectedClient.value?.mobileNo ?? customer?.mobileNo ?? "N.A"}',
+                                          'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? "N.A"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -664,7 +680,7 @@ class Order extends StatelessWidget {
                                                 ? null
                                                 : () async {
                                               orderController
-                                                  .printPdfReceipt(selectedClient.value ?? customer);
+                                                  .printPdfReceipt(selectedClient.value ?? widget.customer);
                                               await orderController.shopDetailApi();
                                             },
                                             child: orderController
@@ -785,7 +801,7 @@ class Order extends StatelessWidget {
                   },
                   child: DraggableFab(
                     targetRoute: AppPages.orderNew,
-                    arguments: {'customer': customer,'clientList' : clientList},
+                    arguments: {'customer': widget.customer,'clientList' : widget.clientList},
                     backgroundColor: AppColors.blueGradient,
                     icon: Icons.receipt,
                   ),
@@ -830,7 +846,7 @@ class Order extends StatelessWidget {
                         y: event.localPosition.dy,
                         t: DateTime.now().millisecondsSinceEpoch,
                       ));
-                      
+
                       // Use the current item's ink object if an index is provided
                       if (itemIndex != null && itemIndex >= 0 && itemIndex < orderController.rateInkList.length) {
                         orderController.rateInkList[itemIndex].strokes.add(Stroke());
@@ -1125,18 +1141,17 @@ class Order extends StatelessWidget {
     const double buffer = 5.0;
     double boxWidth = widthFactor is double ? Get.width * widthFactor : widthFactor;
     double boxHeight = 75.0; // Default height for description box
-    
+
     // For rate box, the height is 50
     if (boxWidth < Get.width) {
       boxHeight = 50.0;
     }
-    
+
     return localPosition.dx >= -buffer &&
         localPosition.dx <= boxWidth + buffer &&
         localPosition.dy >= -buffer &&
         localPosition.dy <= boxHeight + buffer;
   }
-
 }
 
 class SignatureStyle extends CustomPainter {
