@@ -752,7 +752,7 @@ class _BillingState extends State<Billing> {
   Future<void>print() async {
     billingController.printPdfReceipt(
         selectedClient.value ?? widget.customer);
-    await billingController.shopDetailApi();
+    // await billingController.shopDetailApi();
   }
 
   // Helper widget methods - You need to implement these based on your requirements

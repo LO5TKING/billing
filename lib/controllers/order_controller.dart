@@ -948,7 +948,7 @@ class OrderController extends GetxController {
               );
 
               Get.snackbar('Success', 'Receipt sent to printer');
-              await shopDetailApi(); // Update bill count
+              // await shopDetailApi(); // Update bill count
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");
             } finally {
@@ -1096,7 +1096,7 @@ class OrderController extends GetxController {
         );
 
         // Call shop detail API to update bill count
-        await shopDetailApi();
+        // await shopDetailApi();
 
         // Clear items after successful submission
         itemList.clear();

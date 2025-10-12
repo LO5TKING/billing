@@ -556,7 +556,7 @@ class _BillingNewState extends State<BillingNew> {
                                                 ? null
                                                 : () async {
                                               billingControllerNew.printPdfReceipt(selectedClient?.value);
-                                              await billingControllerNew.shopDetailApi();
+                                              // await billingControllerNew.shopDetailApi();
                                             },
                                             child: billingControllerNew
                                                 .isPrinting.value

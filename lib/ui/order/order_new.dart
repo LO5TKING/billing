@@ -772,8 +772,8 @@ class _OrderNewState extends State<OrderNew> {
                                                   : () async {
                                                       orderControllerNew
                                                           .printPdfReceipt(selectedClient.value);
-                                                      await orderControllerNew
-                                                          .shopDetailApi();
+                                                      // await orderControllerNew
+                                                      //     .shopDetailApi();
                                                     },
                                               child: orderControllerNew
                                                       .isPrinting.value

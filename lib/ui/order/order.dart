@@ -681,7 +681,7 @@ class _OrderState extends State<Order> {
                                                 : () async {
                                               orderController
                                                   .printPdfReceipt(selectedClient.value ?? widget.customer);
-                                              await orderController.shopDetailApi();
+                                              // await orderController.shopDetailApi();
                                             },
                                             child: orderController
                                                 .isPrinting.value

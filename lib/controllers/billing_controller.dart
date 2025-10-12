@@ -457,6 +457,9 @@ class BillingController extends GetxController {
         'particulars': particularImage,
         'quantity': recognizedQuantity,
         'rate': recognizedRate,
+        'orderDetailsId': 0, // NEW item IDs as zero
+        'billingId': 0,
+        'orderNo': '', // optional, or maintain if needed
       });
       clearPadAndSignature();
       update();
@@ -520,10 +523,10 @@ class BillingController extends GetxController {
 
       if (response.statusCode == 200) {
         orderDetailResponse.value = orderDeatailsResponseModelFromJson(response.body);
-
+        prepareItemListForUpdate();
         return orderDetailResponse.value ;
       } else {
-        orderDetailResponse.value = null; // Clear data on error
+        orderDetailResponse.value = null;
         Get.snackbar(
           'Error',
           'Failed to get order details',
@@ -533,7 +536,7 @@ class BillingController extends GetxController {
         );
       }
     } catch (e,s) {
-      orderDetailResponse.value = null; // Clear data on error
+      orderDetailResponse.value = null;
       print("Error parsing order data: $e $s");
       Get.snackbar(
         'Error',
@@ -1308,6 +1311,7 @@ class BillingController extends GetxController {
   }
 
   // Function to make billing API call
+
   Future<void> submitBillingData({
     String orderNo = '',
     int? customerId = 0,
@@ -1329,20 +1333,24 @@ class BillingController extends GetxController {
         barrierDismissible: false,
       );
 
-      // Calculate total amount from items
+      // Recalculate orderNo if creating new
+      if (!updateBill.value) {
+        orderNo = DateTime.now().millisecondsSinceEpoch.toString();
+      }
+
+      // Calculate total amount and balance
       final double calculatedTotal = totalAmount;
       final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
 
-      // Current date time
       final DateTime now = DateTime.now();
       final String formattedDate = now.toIso8601String();
       int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
       String? clientIds = SharedPrefs.getString(ConstantsText.clientId);
 
+      int billingsId = 0;
 
-      // Prepare order details from itemList
+      // Collect details
       List<Map<String, dynamic>> orderDetails = [];
-      orderNo = DateTime.now().millisecondsSinceEpoch.toString();
 
       for (int i = 0; i < itemList.length; i++) {
         final item = itemList[i];
@@ -1350,17 +1358,21 @@ class BillingController extends GetxController {
         final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
         final double totalPrice = qty * rate;
 
-        // Convert image to base64 if available
+        final int orderDetailsId = item['orderDetailsId'] ?? 0;
+        final int billingId = item['billingId'] ?? 0;
+        billingsId = billingId;
+
         String productName = '';
         if (item['particulars'] is Uint8List) {
           productName = _convertImageToBase64(item['particulars']);
-          // productName = "trying test";
+        } else {
+          productName = item['productName'] ?? '';
         }
 
         orderDetails.add({
           "orderNo": orderNo,
-          "orderDetailsId": 0,
-          "billingId": 0,
+          "orderDetailsId": orderDetailsId,
+          "billingId": billingId,
           "customerId": customerId ?? 0,
           "clientId": clientIds ?? 0000,
           "customerName": customerName ?? "Guest",
@@ -1379,7 +1391,7 @@ class BillingController extends GetxController {
       // Prepare billing data
       Map<String, dynamic> billingData = {
         "oBilling": {
-          "billingId": 0,
+          "billingId": billingsId,
           "orderNo": orderNo,
           "customerId": customerId ?? 0,
           "customerName": customerName ?? "Guest",
@@ -1409,49 +1421,34 @@ class BillingController extends GetxController {
         },
         "orderDetails": orderDetails
       };
-      String url = "https://roughbill.com/api/Order/addorder";
 
-      if(updateBill.value){
-        url = "https://roughbill.com/api/Order/UpdateOrder";
-      }else{
-        url = "https://roughbill.com/api/Order/addorder";
-      }
+      String url = updateBill.value
+          ? "https://roughbill.com/api/Order/UpdateOrder"
+          : "https://roughbill.com/api/Order/addorder";
 
-
-
-      final response = await apiService.postRequest(url: url, data: billingData,);
+      final response = await apiService.postRequest(url: url, data: billingData);
 
       Get.back();
 
       if (response.statusCode == 200) {
-        // Success
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
-
-        // Call shop detail API to update bill count
-        // await shopDetailApi();
-
-        // Clear items after successful submission
         itemList.clear();
         update();
       } else {
-        // Error
         Get.snackbar(
           "Error",
-          "Failed to submit billing data: ${response.body}",
+          "Failed to submit billing  ${response.body}",
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } catch (e) {
-      // Close loading dialog if open
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
-
-      // Show error
       Get.snackbar(
         "Error",
         "Exception occurred: $e",
@@ -1459,6 +1456,41 @@ class BillingController extends GetxController {
       );
     }
   }
+
+  void prepareItemListForUpdate() {
+    itemList.clear();
+
+    // Ensure there are orders and orderDetails in response
+    final apiOrders = orderDetailResponse.value?.orders;
+    if (apiOrders != null && apiOrders.isNotEmpty) {
+      final apiOrderDetails = apiOrders[0]?.orderDetails ?? [];
+      for (var detail in apiOrderDetails) {
+        itemList.add({
+          "orderNo": detail.orderNo ?? '',
+          "orderDetailsId": detail.orderDetailsId ?? 0,
+          "billingId": detail.billingId ?? 0,
+          "customerId": detail.customerId ?? 0,
+          "clientId": detail.clientId ?? '',
+          "customerName": detail.customerName ?? 'Guest',
+          "productName": detail.productName ?? '',
+          "quantity": detail.quantity?.toString() ?? '0', // Always String for parsing
+          "rate": detail.pricePerQuantity?.toString() ?? '0',
+          "totalPrice": detail.totalPrice ?? 0,
+          "productType": detail.productType ?? '',
+          "isDelete": detail.isDelete ?? false,
+          "postedOn": detail.postedOn ?? '',
+          "modifiedOn": detail.modifiedOn ?? '',
+          "clientUserId": detail.clientUserId ?? 0,
+          "particulars": null, // Set if you support image editing from UI
+        });
+
+        print("Loading item: orderDetailsId=${detail.orderDetailsId}, billingId=${detail.billingId}");
+
+      }
+    }
+    // Now, new items can also be added to itemList separately, as user adds them.
+  }
+
 
   Future<void> getClients() async {
     loadingClient.value = true;
