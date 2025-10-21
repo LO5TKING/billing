@@ -299,7 +299,7 @@ class SearchAddClientController extends GetxController{
       var response = await apiService.postRequest(url: url, data : data);
 
       if (response.statusCode == 200) {
-        Get.back(); // Close dialog
+        Get.back();
         Get.snackbar(
           'Success',
           'Client added successfully',

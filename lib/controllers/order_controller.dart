@@ -755,7 +755,7 @@ class OrderController extends GetxController {
                   const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
                     height: 40,
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.black, width: 0.5),
                       borderRadius: BorderRadius.circular(5),
@@ -861,6 +861,7 @@ class OrderController extends GetxController {
                     height: 40,
                     child: TextField(
                       controller: amountPaid,
+                      textAlign: TextAlign.center,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),

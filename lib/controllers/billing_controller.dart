@@ -29,7 +29,6 @@ import '../utils/shared_pref.dart';
 
 class BillingController extends GetxController {
   var itemList = <Map<String, dynamic>>[].obs;
-  List<Uint8List?> newItemList = [];
 
   final DigitalInkRecognizerModelManager modelManager =
       DigitalInkRecognizerModelManager();
@@ -47,11 +46,21 @@ class BillingController extends GetxController {
   RxBool showButtons = false.obs;
   RxBool loadingClient = true.obs;
   RxBool updateBill = false.obs;
+  RxBool showPaymentDialog = false.obs;
   Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
   RxList<Datum> filteredClientList = <Datum>[].obs;
   List<Datum> get clientList => filteredClientList;
   Rx<OrderDeatailsResponseModel?> orderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
   Rx<OrderDeatailsResponseModel?> oldOrderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
+
+  //for editing the details
+  // Add these variables to your controller
+  String currentOrderNo = '';
+  int currentBillingId = 0;
+  int currentCustomerId = 0;
+  String currentCustomerName = '';
+  Rx<BillingReport?> ourReport = Rx<BillingReport?>(null);
+
 
 
 
@@ -443,30 +452,95 @@ class BillingController extends GetxController {
   }
 
   Future<void> addItem() async {
+    // ⭐ CHECK BEFORE ANYTHING
+    print('\n=== BEFORE addItem() - CHECK ITEMLIST ===');
+    for (int i = 0; i < itemList.length; i++) {
+      print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+    }
+
     await recogniseRateText();
+
+    // ⭐ CHECK AFTER recogniseRateText()
+    print('\n=== AFTER recogniseRateText() ===');
+    for (int i = 0; i < itemList.length; i++) {
+      print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+    }
+
     await recogniseQuantityText();
 
+    // ⭐ CHECK AFTER recogniseQuantityText()
+    print('\n=== AFTER recogniseQuantityText() ===');
+    for (int i = 0; i < itemList.length; i++) {
+      print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+    }
+
     Uint8List? particularImage = await convertToPngBytes(
-      Get.width * 0.8, // Keep the width proportional
-      85, // Reduced height from 100 to 85 for less vertical space
+      Get.width * 0.8,
+      85,
     );
+
+    // ⭐ CHECK AFTER convertToPngBytes()
+    print('\n=== AFTER convertToPngBytes() ===');
+    for (int i = 0; i < itemList.length; i++) {
+      print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+    }
+
     if (particularImage != null &&
         recognizedQuantity.isNotEmpty &&
         recognizedRate.isNotEmpty) {
-      itemList.add({
+
+      // ⭐ CREATE NEW ITEM WITH EXPLICIT VALUES
+      final Map<String, dynamic> newItem = {
         'particulars': particularImage,
+        'productName': '',
         'quantity': recognizedQuantity,
         'rate': recognizedRate,
-        'orderDetailsId': 0, // NEW item IDs as zero
-        'billingId': 0,
-        'orderNo': '', // optional, or maintain if needed
-      });
+        'orderDetailsId': 0,
+        'billingId': updateBill.value ? currentBillingId : 0,
+        'orderNo': updateBill.value ? currentOrderNo : '',
+        'customerId': updateBill.value ? currentCustomerId : 0,
+      };
+
+      itemList.add(newItem);
+
+      print('=== NEW ITEM ADDED ===');
+      print('orderDetailsId: ${newItem['orderDetailsId']}');
+      print('billingId: ${newItem['billingId']}');
+
+      // ⭐ CHECK AFTER ADDING
+      print('\n=== AFTER ADDING TO LIST ===');
+      for (int i = 0; i < itemList.length; i++) {
+        print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+      }
+
       clearPadAndSignature();
+
+      // ⭐ CHECK AFTER clearPadAndSignature() - THIS IS LIKELY THE CULPRIT
+      print('\n=== AFTER clearPadAndSignature() ===');
+      for (int i = 0; i < itemList.length; i++) {
+        print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+      }
+
+      itemList.refresh();
+
+      // ⭐ CHECK AFTER refresh()
+      print('\n=== AFTER itemList.refresh() ===');
+      for (int i = 0; i < itemList.length; i++) {
+        print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+      }
+
       update();
+
+      // ⭐ FINAL CHECK
+      print('\n=== ALL ITEMS AFTER ADDING NEW ===');
+      for (int i = 0; i < itemList.length; i++) {
+        print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+      }
     } else {
       Get.snackbar("Error", "Field is Empty");
     }
   }
+
 
   Future<List<ui.Image>> generateReceiptImages(
       List<Map<String, dynamic>> itemList) async {
@@ -523,7 +597,7 @@ class BillingController extends GetxController {
 
       if (response.statusCode == 200) {
         orderDetailResponse.value = orderDeatailsResponseModelFromJson(response.body);
-        prepareItemListForUpdate();
+        // prepareItemListForUpdate();
         return orderDetailResponse.value ;
       } else {
         orderDetailResponse.value = null;
@@ -841,11 +915,12 @@ class BillingController extends GetxController {
 
     // Variables for the dialog
     double discountAmount = 0;
-    double amountToBePaid = totalAmount;
-    double balanceAmount = 0;
+    double amountToBePaid = showPaymentDialog.value ? ourReport.value?.totalAmount ?? 0 : totalAmount;
+    double balanceAmount = showPaymentDialog.value ? ourReport.value?.balanceAmount ?? 0 : 0;
     String discountType = 'Flat'; // 'Flat' or 'Percentage'
+    double? paidAmount = (ourReport.value?.totalAmount ?? 0) - (ourReport.value?.balanceAmount ?? 0);
 
-    amountPaid.text = totalAmount.toString();
+    amountPaid.text = showPaymentDialog.value ? (paidAmount != 0 ? paidAmount.toString() : "0") : totalAmount.toString();
     Get.defaultDialog(
       title: 'Payment Details',
       barrierDismissible: false,
@@ -866,7 +941,7 @@ class BillingController extends GetxController {
           finalAmount = finalAmount < 0 ? 0 : finalAmount;
 
           // Calculate balance
-          balanceAmount = finalAmount - amountToBePaid;
+          balanceAmount = showPaymentDialog.value ? ourReport.value?.balanceAmount ?? 0 : finalAmount - amountToBePaid;
           balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
           return Container(
             width: Get.width * 0.8,
@@ -884,7 +959,7 @@ class BillingController extends GetxController {
                   const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
                     height: 40,
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.black, width: 0.5),
                       borderRadius: BorderRadius.circular(5),
@@ -990,6 +1065,7 @@ class BillingController extends GetxController {
                     height: 40,
                     child: TextField(
                       controller: amountPaid,
+                      textAlign: TextAlign.center,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
@@ -1327,6 +1403,194 @@ class BillingController extends GetxController {
     String paymentStatus = 'Pending',
   }) async {
     try {
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      // Use existing data if in update mode
+      if (updateBill.value) {
+        orderNo = currentOrderNo;
+        customerId = customerId ?? currentCustomerId;
+        customerName = customerName ?? currentCustomerName;
+
+        print('=== UPDATE MODE ===');
+        print('Using orderNo: $orderNo');
+        print('Using billingId: $currentBillingId');
+      } else {
+        orderNo = DateTime.now().millisecondsSinceEpoch.toString();
+        print('=== CREATE MODE ===');
+        print('Generated orderNo: $orderNo');
+      }
+
+      final double calculatedTotal = totalAmount;
+      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+      final DateTime now = DateTime.now();
+      final String formattedDate = now.toIso8601String();
+      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+      String? clientIds = SharedPrefs.getString(ConstantsText.clientId);
+
+      // Use stored billingId for update mode
+      int billingsId = updateBill.value ? currentBillingId : 0;
+
+      // ⭐ ADD THIS DEBUG PRINT HERE - RIGHT BEFORE THE LOOP
+      print('\n=== ITEMLIST INSPECTION BEFORE LOOP ===');
+      for (int i = 0; i < itemList.length; i++) {
+        print('Item $i BEFORE loop:');
+        print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
+        print('  billingId: ${itemList[i]['billingId']}');
+        print('  quantity: ${itemList[i]['quantity']}');
+        print('  Map identity: ${itemList[i].hashCode}'); // Check if same object
+      }
+
+      if (itemList.isNotEmpty) {
+        print('First item: orderDetailsId=${itemList[0]['orderDetailsId']}, billingId=${itemList[0]['billingId']}');
+      }
+
+      // Collect details
+      List<Map<String, dynamic>> orderDetails = [];
+
+      for (int i = 0; i < itemList.length; i++) {
+        final item = itemList[i];
+        final double qty = double.tryParse(item['quantity'] ?? '0') ?? 0;
+        final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
+        final double totalPrice = qty * rate;
+
+        // Read IDs from item
+        final int orderDetailsId = item['orderDetailsId'] ?? 0;
+        final int billingId = item['billingId'] ?? 0;
+
+        print('\n=== PROCESSING ITEM $i ===');
+        print('orderDetailsId: $orderDetailsId');
+        print('billingId: $billingId');
+        print('quantity: $qty, rate: $rate');
+
+        String productName = '';
+        if (item['particulars'] is Uint8List) {
+          productName = _convertImageToBase64(item['particulars']);
+        } else {
+          productName = item['productName'] ?? '';
+        }
+
+        orderDetails.add({
+          "orderNo": orderNo,
+          "orderDetailsId": orderDetailsId,
+          "billingId": billingId,
+          "customerId": customerId ?? 0,
+          "clientId": clientIds ?? '0000',
+          "customerName": customerName ?? "Guest",
+          "productName": productName,
+          "quantity": qty,
+          "pricePerQuantity": rate,
+          "totalPrice": totalPrice,
+          "productType": "",
+          "isDelete": false,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "clientUserId": clientUserId
+        });
+      }
+
+      // Prepare billing data
+      Map<String, dynamic> billingData = {
+        "oBilling": {
+          "billingId": billingsId,
+          "orderNo": orderNo,
+          "customerId": customerId ?? 0,
+          "customerName": customerName ?? "Guest",
+          "clientId": clientIds ?? '0000',
+          "totalAmount": calculatedTotal,
+          "balanceAmount": balanceAmount,
+          "discount": discount,
+          "gst": gst,
+          "discountType": discountType,
+          "paidAmount": paidAmount,
+          "paidAmountType": paidAmountType,
+          "transactionNo": transactionNo,
+          "referenceNo": referenceNo,
+          "paymentStatus": paymentStatus,
+          "paymentDate": formattedDate,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "isDelete": false,
+          "isRefund": false,
+          "refundAmount": 0,
+          "refundRemark": "",
+          "refundType": "",
+          "refundDate": null,
+          "refundTransNo": "",
+          "refundStatus": "",
+          "clientUserId": clientUserId
+        },
+        "orderDetails": orderDetails
+      };
+
+      String url = updateBill.value
+          ? "https://roughbill.com/api/Order/UpdateOrder"
+          : "https://roughbill.com/api/Order/addorder";
+
+      print('\n=== FINAL PAYLOAD ===');
+      print('URL: $url');
+      print('oBilling.billingId: ${billingData['oBilling']['billingId']}');
+      print('orderDetails count: ${orderDetails.length}');
+      for (int i = 0; i < orderDetails.length; i++) {
+        print('Item $i AFTER loop:');
+        print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
+        print('  billingId: ${itemList[i]['billingId']}');
+      }
+
+      final response = await apiService.postRequest(url: url, data: billingData);
+
+      Get.back();
+
+      if (response.statusCode == 200) {
+        Get.snackbar(
+          "Success",
+          "Billing data submitted successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        itemList.clear();
+        currentOrderNo = '';
+        currentBillingId = 0;
+        updateBill.value = false;
+        update();
+      } else {
+        Get.snackbar(
+          "Error",
+          "Failed to submit billing ${response.body}",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e, stackTrace) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      print('ERROR: $e');
+      print('STACKTRACE: $stackTrace');
+      Get.snackbar(
+        "Error",
+        "Exception occurred: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+
+  /*Future<void> submitBillingData({
+    String orderNo = '',
+    int? customerId = 0,
+    String? customerName = '',
+    String? clientId = '',
+    double discount = 0,
+    double gst = 0,
+    String discountType = 'Flat',
+    double paidAmount = 0,
+    String paidAmountType = 'Cash',
+    String transactionNo = '',
+    String referenceNo = '',
+    String paymentStatus = 'Pending',
+  }) async {
+    try {
       // Show loading indicator
       Get.dialog(
         const Center(child: CircularProgressIndicator()),
@@ -1455,41 +1719,75 @@ class BillingController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
-  }
+  }*/
 
-  void prepareItemListForUpdate() {
-    itemList.clear();
+  Future<void> loadBillingDetailForEdit(BillingReport billDetail) async {
+    OrderDeatailsResponseModel? orderDetail = await getBillingDetail(billDetail);
 
-    // Ensure there are orders and orderDetails in response
-    final apiOrders = orderDetailResponse.value?.orders;
-    if (apiOrders != null && apiOrders.isNotEmpty) {
-      final apiOrderDetails = apiOrders[0]?.orderDetails ?? [];
-      for (var detail in apiOrderDetails) {
-        itemList.add({
-          "orderNo": detail.orderNo ?? '',
-          "orderDetailsId": detail.orderDetailsId ?? 0,
-          "billingId": detail.billingId ?? 0,
-          "customerId": detail.customerId ?? 0,
-          "clientId": detail.clientId ?? '',
-          "customerName": detail.customerName ?? 'Guest',
-          "productName": detail.productName ?? '',
-          "quantity": detail.quantity?.toString() ?? '0', // Always String for parsing
-          "rate": detail.pricePerQuantity?.toString() ?? '0',
-          "totalPrice": detail.totalPrice ?? 0,
-          "productType": detail.productType ?? '',
-          "isDelete": detail.isDelete ?? false,
-          "postedOn": detail.postedOn ?? '',
-          "modifiedOn": detail.modifiedOn ?? '',
-          "clientUserId": detail.clientUserId ?? 0,
-          "particulars": null, // Set if you support image editing from UI
-        });
+    if (orderDetail != null && orderDetail.orders?.first.orderDetails != null) {
+      itemList.clear();
+      updateBill.value = true;
 
-        print("Loading item: orderDetailsId=${detail.orderDetailsId}, billingId=${detail.billingId}");
+      if (orderDetail.orders!.first.oBilling != null) {
+        var billing = orderDetail.orders!.first.oBilling!;
+        currentBillingId = billing.billingId ?? 0;
+        currentOrderNo = billing.orderNo ?? '';
+        currentCustomerId = billing.customerId ?? 0;
+        currentCustomerName = billing.customerName ?? '';
 
       }
+
+      for (var detail in orderDetail.orders!.first.orderDetails!) {
+        Uint8List? particularImage;
+        if (detail.productName != null && detail.productName!.isNotEmpty) {
+          try {
+            String base64String = detail.productName!;
+            if (base64String.contains(',')) {
+              base64String = base64String.split(',').last;
+            }
+            particularImage = base64Decode(base64String);
+          } catch (e) {
+            print("Error decoding base64: $e");
+            particularImage = Uint8List(0);
+          }
+        }
+
+        // ⭐ STORE VALUES IN VARIABLES FIRST - DON'T LET THEM BE NULL
+        final int savedOrderDetailsId = detail.orderDetailsId ?? 0;
+        final int savedBillingId = detail.billingId ?? 0;
+        final String savedOrderNo = detail.orderNo ?? '';
+        final int savedCustomerId = detail.customerId ?? 0;
+        final String savedQuantity = detail.quantity?.toString() ?? '0';
+        final String savedRate = detail.pricePerQuantity?.toString() ?? '0';
+        final String savedProductName = detail.productName ?? '';
+
+        // ⭐ CREATE MAP WITH STORED VALUES
+        final Map<String, dynamic> itemMap = {
+          'particulars': particularImage ?? Uint8List(0),
+          'productName': savedProductName,
+          'quantity': savedQuantity,
+          'rate': savedRate,
+          'orderDetailsId': savedOrderDetailsId,
+          'billingId': savedBillingId,
+          'orderNo': savedOrderNo,
+          'customerId': savedCustomerId,
+        };
+
+        itemList.add(itemMap);
+
+      }
+
+
+      // ⭐ IMMEDIATE VERIFICATION
+      // print('\n=== IMMEDIATE VERIFICATION ===');
+      // for (int i = 0; i < itemList.length; i++) {
+      //   print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
+      // }
+
+      update();
     }
-    // Now, new items can also be added to itemList separately, as user adds them.
   }
+
 
 
   Future<void> getClients() async {

@@ -76,12 +76,12 @@ class SearchAndReports extends StatelessWidget {
                                     keyboardType: TextInputType.text,
                                     onChanged: (value) {
                                       reportController.searchName.value = value;
-                                      reportController.setSearchFilters(
-                                        nameController.text,
-                                        mobileController.text,
-                                        reportController.fromDate.value,
-                                        reportController.toDate.value,
-                                      );
+                                      // reportController.setSearchFilters(
+                                      //   nameController.text,
+                                      //   mobileController.text,
+                                      //   reportController.fromDate.value,
+                                      //   reportController.toDate.value,
+                                      // );
                                     },
                                     style: GoogleFonts.montserrat(
                                         fontWeight: FontWeight.w500,
@@ -426,7 +426,7 @@ class SearchAndReports extends StatelessWidget {
                                                           children: [
                                                             TableRow(
                                                               children: [
-                                                                tableCell('${index + 1}'),
+                                                                tableCell('${((reportController.currentPage.value - 1) * reportController.pageSize.value) + index + 1}'),
                                                                 tableCell(date),
                                                                 tableCell(time),
                                                                 tableCell(report.customerName ?? ''),
@@ -621,92 +621,3 @@ class SearchAndReports extends StatelessWidget {
     );
   }
 }
-
-/*
-                        Container(
-                          padding: const EdgeInsets.all(DesignConstants.padding5),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            color: AppColors.blueGradient,
-                          ),
-                          child: Container(
-                            width: Get.width*0.7,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                shadowText(text: 'Sr\nNo.',textcolor: Colors.white,fontsize: 14),
-                                shadowText(text: 'Date',textcolor: Colors.white,fontsize: 14),
-                                shadowText(text: 'Time',textcolor: Colors.white,fontsize: 14),
-                                shadowText(text: 'Client\nName',textcolor: Colors.white,fontsize: 14),
-                                shadowText(text: 'Amount',textcolor: Colors.white,fontsize: 14),
-                                shadowText(text: 'Balance\nAmount',textcolor: Colors.white,fontsize: 14),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: DesignConstants.padding15,),
-                        SizedBox(
-                          width: Get.width,
-                          height: 600,
-                          child: ListView.builder(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              itemCount: 10,
-                              itemBuilder: (context,index){
-                                return SizedBox(
-                                  height: 70,
-                                  width: Get.width,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        height: 50,
-                                        width: Get.width*0.735,
-                                        child: Card(
-                                          elevation: 5,
-                                          color: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            side: const BorderSide(
-                                              color: Colors.grey,
-                                            ),
-                                            borderRadius: BorderRadius.circular(10),
-
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                            children: [
-                                              noShadowText(text: '13',textcolor: Colors.black,fontsize: 14,fontWeight: FontWeight.w400),
-                                              noShadowText(text: '30/08/22',textcolor: Colors.black,fontsize: 14,fontWeight: FontWeight.w400),
-                                              noShadowText(text: '05:45',textcolor: Colors.black,fontsize: 14,fontWeight: FontWeight.w400),
-                                              noShadowText(text: 'ABC',textcolor: Colors.black,fontsize: 14,fontWeight: FontWeight.w400),
-                                              noShadowText(text: '5000',textcolor: Colors.black,fontsize: 14,fontWeight: FontWeight.w400),
-                                              noShadowText(text: '1000',textcolor: Colors.black,fontsize: 14,fontWeight: FontWeight.w400),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Spacer(),
-                                      InkWell(
-                                        onTap: (){},
-                                        child: Container(
-                                          height: 30,
-                                          width: 40,
-                                          decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(10),
-                                              color: AppColors.blueGradient,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    color: Colors.grey.withOpacity(0.3),
-                                                    blurRadius: 0.4,
-                                                    offset: const Offset(3, 4)
-                                                )
-                                              ]
-                                          ),
-                                          child: Center(child: shadowText(text: 'Pay',textcolor: Colors.white,fontsize: 14)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                        )
- */

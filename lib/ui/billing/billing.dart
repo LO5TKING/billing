@@ -44,10 +44,12 @@ class _BillingState extends State<Billing> {
   @override
   void initState() {
     super.initState();
+    billingController.showPaymentDialog.value = widget.showPaymentDialog ?? false;
     initialize();
   }
 
   Future<void> initialize() async {
+
 
     if(widget.clearPage == true){
       billingController.itemList.clear();
@@ -55,8 +57,9 @@ class _BillingState extends State<Billing> {
     }
 
     if(widget.billingDetail != null){
-      await billingController.getBillingDetail(widget.billingDetail ?? BillingReport());
-      await _populateBillingData();
+      await billingController.loadBillingDetailForEdit(widget.billingDetail ?? BillingReport());
+      // await _populateBillingData();
+      billingController.ourReport.value = widget.billingDetail;
       billingController.updateBill.value = true;
       if(widget.showPaymentDialog == true){
         print();
@@ -66,52 +69,6 @@ class _BillingState extends State<Billing> {
     }
   }
 
-  Future<void> _populateBillingData() async{
-    // Clear existing items first
-    billingController.itemList.clear();
-
-    // Get the first order from the response
-    if (billingController.orderDetailResponse.value?.orders?.isNotEmpty == true) {
-      final order = billingController.orderDetailResponse.value?.orders!.first;
-
-      // Set customer details
-      selectedClient.value = Datum(
-        name: order?.oBilling?.customerName,
-        mobileNo: null,
-      );
-
-      // Populate order details as items
-      if (order?.orderDetails?.isNotEmpty == true) {
-        for (var orderDetail in order!.orderDetails!) {
-          try {
-            // Convert base64 string to image bytes
-            final base64String = orderDetail.productName ?? '';
-            final imageBytes = base64Decode(base64String);
-
-            // Create item map with image data
-            final item = {
-              'particulars': imageBytes, // Store as Uint8List for Image.memory
-              'quantity': orderDetail.quantity?.toString() ?? '0',
-              'rate': orderDetail.pricePerQuantity?.toString() ?? '0',
-            };
-
-            billingController.itemList.add(item);
-          } catch (e) {
-            // print('Error decoding base64 image: $e');
-            // Add item without image if base64 decode fails
-            final item = {
-              'particulars': null,
-              'quantity': orderDetail.quantity?.toString() ?? '0',
-              'rate': orderDetail.pricePerQuantity?.toString() ?? '0',
-            };
-            billingController.itemList.add(item);
-          }
-        }
-      }
-
-      billingController.totalAmount;
-    }
-  }
 
   void customerListWidget() {
     final TextEditingController searchController = TextEditingController();
