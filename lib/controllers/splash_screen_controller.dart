@@ -1,8 +1,15 @@
 import 'dart:async';
+import 'package:billing/app/config/color_constants.dart';
+import 'package:billing/model/app_update_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:version/version.dart';
+
+import '../networks/api_service.dart';
 
 class SplashScreenController extends GetxController {
   RxBool isScanning = false.obs;
@@ -13,6 +20,8 @@ class SplashScreenController extends GetxController {
   StreamSubscription? _scanSubscription;
   Rx<String?> savedPrinterId = Rx<String?>(null);
   bool _isDialogShowing = false;
+  ApiService apiService = ApiService();
+  Rx<AppUpdateModel?> appUpdateResponse = Rx<AppUpdateModel?>(null);
 
   @override
   void onInit() {
@@ -109,6 +118,9 @@ class SplashScreenController extends GetxController {
     isScanning(true);
     devicesMsg("Scanning for Bluetooth devices...");
 
+    final Completer<void> dialogCompleter = Completer();
+
+
     try {
       await _scanSubscription?.cancel();
       _scanSubscription = FlutterBluePlus.scanResults.listen(
@@ -134,7 +146,7 @@ class SplashScreenController extends GetxController {
       );
 
       // Show device selection dialog
-      Get.dialog(
+      await Get.dialog(
         AlertDialog(
           title: const Text('Select Bluetooth Device'),
           content: SizedBox(
@@ -170,6 +182,7 @@ class SplashScreenController extends GetxController {
                               try {
                                 await connectToPrinter(device);
                                 Get.back();
+                                dialogCompleter.complete();
                               } catch (e) {
                                 Get.snackbar(
                                   'Error',
@@ -190,6 +203,9 @@ class SplashScreenController extends GetxController {
                 isScanning(false);
                 await FlutterBluePlus.stopScan();
                 Get.back();
+                if (!dialogCompleter.isCompleted) {
+                  dialogCompleter.complete();  // ✅ Ensure completion
+                }
               },
               child: const Text('Close'),
             ),
@@ -329,6 +345,51 @@ class SplashScreenController extends GetxController {
 
   BluetoothDevice? get connectedDevice => _connectedDevice;
 
+  Future<void> appUpdate(context) async {
+    String url = "https://roughbill.com/api/updateapp/getappversion";
+    try {
+      var response = await apiService.getRequest(url: url);
+
+      if (response.statusCode == 200) {
+        appUpdateResponse.value = appUpdateModelFromJson(response.body);
+        await checkForAppUpdate(appUpdateResponse.value,context);
+      } else {
+        appUpdateResponse.value = null;
+        Get.snackbar(
+          'Error',
+          'Failed to get order details',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e,s) {
+      appUpdateResponse.value = null;
+      print("Error parsing order data: $e $s");
+      Get.snackbar(
+        'Error',
+        'An error occurred: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<String> getCurrentAppVersion() async {
+    try {
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      return packageInfo.version;
+    } on Exception catch (e) {
+      print("exception is $e");
+    }
+    return "";
+  }
+
+  bool isUpdateAvailable(String? serverVersion, String currentVersion) {
+    return Version.parse(serverVersion ?? "1.0.0") > Version.parse(currentVersion);
+  }
+
   @override
   void onClose() {
     _scanSubscription?.cancel();
@@ -351,4 +412,122 @@ class SplashScreenController extends GetxController {
     }
     super.onClose();
   }
+
+  Future<void> checkForAppUpdate(AppUpdateModel? data, BuildContext context) async {
+    String currentVersion = await getCurrentAppVersion();
+
+    if (!isUpdateAvailable(data?.data?.appVersion, currentVersion)) return;
+
+    Completer<void> dialogCompleter = Completer<void>();
+
+    Widget buildUpdateDialog({
+      required String title,
+      required String content,
+      required List<Widget> actions,
+    }) {
+      return PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          alignment: Alignment.center,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.system_update, color:  AppColors.blueGradient, size: 28),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Divider(height: 24),
+              Text(
+                content,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+          actions: actions,
+        ),
+      );
+    }
+
+    switch (data?.data?.showPopUp) {
+      case 0:
+        return;
+
+      case 1: // Optional Update
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => buildUpdateDialog(
+            title: "Update Available",
+            content: "A new version is available. Update now for the best experience.",
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  dialogCompleter.complete();
+                },
+                child: const Text("Later",style: TextStyle(color: Colors.black)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  launchUpdateUrl(data?.data?.storeLink);
+                  dialogCompleter.complete();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blueGradient,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text("Update",style: TextStyle(color: Colors.white),),
+              ),
+            ],
+          ),
+        );
+        break;
+
+      case 2: // Forced Update
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => buildUpdateDialog(
+            title: "Update Required",
+            content: "You must update the app to continue using it.",
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  launchUpdateUrl(data?.data?.storeLink);
+                  dialogCompleter.complete();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text("Update"),
+              ),
+            ],
+          ),
+        );
+        break;
+    }
+  }
+
+  void launchUpdateUrl(String? url) async {
+    if (await canLaunchUrl(Uri.parse(url ?? "www.google.com"))) {
+      await launchUrl(Uri.parse(url ?? "www.google.com"));
+    }
+  }
+
+
 }

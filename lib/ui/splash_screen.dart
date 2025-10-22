@@ -24,14 +24,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+
     _initializeBluetooth();
   }
 
   Future<void> _initializeBluetooth() async {
     try {
+      await _splashController.appUpdate(context);
       await _splashController.initBluetooth();
-      // Continue with the app initialization even if no printer is connected
-      // Users can connect a printer later through the print dialog
     } catch (e) {
       print('Bluetooth initialization error: $e');
     }

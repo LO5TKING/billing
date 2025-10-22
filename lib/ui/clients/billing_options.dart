@@ -137,10 +137,10 @@ class BillingOptions extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               billingOptionsBlock(
-                                  text: 'Return',
-                                  icon: Icons.shopping_cart,
+                                  text: 'Queue',
+                                  icon: Icons.queue,
                                   onItemTap: () {
-                                    Get.to(() => const ReturnItems());
+                                    // Get.to(() => const ReturnItems());
                                   }),
                               billingOptionsBlock(
                                   text: 'Settings',
