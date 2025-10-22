@@ -1171,11 +1171,11 @@ class OrderController extends GetxController {
                 pw.Image(pw.MemoryImage(logoBytes), width: 50, height: 50),
                 pw.SizedBox(height: 8),
                 // Business details
-                pw.Text(ConstantsText.shopName,
+                pw.Text(SharedPrefs.getString(ConstantsText.companyName) ?? "",
                     style: pw.TextStyle(
                         fontWeight: pw.FontWeight.bold, fontSize: 18)),
-                pw.Text('${ConstantsText.address}\n'),
-                pw.Text('${ConstantsText.mobileNo}'),
+                pw.Text('${SharedPrefs.getString(ConstantsText.addresss) ?? ""}\n'),
+                pw.Text('${SharedPrefs.getString(ConstantsText.mobileNumber) ?? ""}'),
                 pw.SizedBox(height: 8),
                 // Date and Time
                 pw.Row(
@@ -1316,21 +1316,21 @@ class OrderController extends GetxController {
     return null;
   }
 
-  Future<void>shopDetailApi() async {
-    String url = "https://roughbill.com/api/ShopDetail/BillCount";
-    var detail = {
-      'ShopName': "${ConstantsText.shopName}",
-      'BillPrint': "1",
-    };
-
-    final response = await apiService.postRequest(url: url, data: detail);
-
-    if (response.statusCode == 200) {
-      print('Shop Detail Api Success: ${response.body}');
-    } else {
-      print('Error ${response.statusCode}: ${response.body}');
-    }
-
-
-  }
+  // Future<void>shopDetailApi() async {
+  //   String url = "https://roughbill.com/api/ShopDetail/BillCount";
+  //   var detail = {
+  //     'ShopName': "${ConstantsText.shopName}",
+  //     'BillPrint': "1",
+  //   };
+  //
+  //   final response = await apiService.postRequest(url: url, data: detail);
+  //
+  //   if (response.statusCode == 200) {
+  //     print('Shop Detail Api Success: ${response.body}');
+  //   } else {
+  //     print('Error ${response.statusCode}: ${response.body}');
+  //   }
+  //
+  //
+  // }
 }

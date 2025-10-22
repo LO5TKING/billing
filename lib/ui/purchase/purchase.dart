@@ -17,6 +17,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
 import '../../model/customer_response_model.dart';
+import '../../utils/shared_pref.dart';
 import '../../utils/utility.dart';
 
 class Purchase extends StatefulWidget {
@@ -200,7 +201,7 @@ class _PurchaseState extends State<Purchase> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        ConstantsText.shopName.toUpperCase(),
+                                        SharedPrefs.getString(ConstantsText.companyName) ?? "".toUpperCase(),
                                         style: GoogleFonts.poppins(
                                           fontSize: 28,
                                           fontWeight: FontWeight.bold,
@@ -211,7 +212,7 @@ class _PurchaseState extends State<Purchase> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        ConstantsText.mobileNo,
+                                        SharedPrefs.getString(ConstantsText.mobileNumber) ?? "",
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,

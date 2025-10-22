@@ -20,6 +20,7 @@ import 'dart:math' as math;
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/splash_screen_controller.dart';
+import '../utils/shared_pref.dart';
 
 class PrintController extends GetxController {
   final SplashScreenController _splashController =
@@ -159,7 +160,7 @@ class PrintController extends GetxController {
 
     // Add receipt header with minimal spacing
     bytes += generator.text(
-      ConstantsText.shopName.toUpperCase(),
+      SharedPrefs.getString(ConstantsText.companyName) ?? "".toUpperCase(),
       styles: PosStyles(
           align: PosAlign.center,
           bold: true,
@@ -168,7 +169,7 @@ class PrintController extends GetxController {
     );
 
     bytes += generator.text(
-      '${ConstantsText.address}\n${ConstantsText.mobileNo}',
+      '${SharedPrefs.getString(ConstantsText.addresss) ?? ""}\n${SharedPrefs.getString(ConstantsText.mobileNumber) ?? ""}',
       styles: PosStyles(align: PosAlign.center, fontType: PosFontType.fontA),
     );
     bytes += generator.feed(1);

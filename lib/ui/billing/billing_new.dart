@@ -17,6 +17,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
 import '../../controllers/billing_controller_new.dart';
+import '../../utils/shared_pref.dart';
 import '../../utils/utility.dart';
 
 class BillingNew extends StatefulWidget {
@@ -133,7 +134,7 @@ class _BillingNewState extends State<BillingNew> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        ConstantsText.shopName.toUpperCase(),
+                                        SharedPrefs.getString(ConstantsText.companyName) ?? "".toUpperCase(),
                                         style: GoogleFonts.poppins(
                                           fontSize: 28,
                                           fontWeight: FontWeight.bold,
@@ -144,7 +145,7 @@ class _BillingNewState extends State<BillingNew> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        ConstantsText.mobileNo,
+                                        SharedPrefs.getString(ConstantsText.mobileNumber) ?? "",
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,

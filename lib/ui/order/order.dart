@@ -18,6 +18,7 @@ import '../../app/routes/app_pages.dart';
 import '../../controllers/order_controller.dart';
 import '../../model/customer_response_model.dart';
 import '../../utils/draggable_fab.dart';
+import '../../utils/shared_pref.dart';
 import '../../utils/utility.dart';
 
 class Order extends StatefulWidget {
@@ -146,7 +147,7 @@ class _OrderState extends State<Order> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        ConstantsText.shopName.toUpperCase(),
+                                        SharedPrefs.getString(ConstantsText.companyName) ?? "".toUpperCase(),
                                         style: GoogleFonts.poppins(
                                           fontSize: 28,
                                           fontWeight: FontWeight.bold,
@@ -157,7 +158,7 @@ class _OrderState extends State<Order> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        ConstantsText.mobileNo,
+                                        SharedPrefs.getString(ConstantsText.mobileNumber) ?? "",
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
