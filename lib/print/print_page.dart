@@ -52,7 +52,7 @@ class PrintDialog extends StatelessWidget {
       }
 
       // Print the data
-      await printController.printPdfReceipt(data);
+      // await printController.printPdfReceipt(data);
 
       // Close loading dialog
       Get.back();

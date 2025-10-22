@@ -20,7 +20,7 @@ import '../app/config/constants_text.dart';
 import '../model/customer_response_model.dart';
 import '../networks/api_service.dart';
 import '../utils/activity_indicator.dart';
-import 'package:flutter/services.dart'; // Import this package
+import 'package:flutter/services.dart'; 
 import '../print/print_controller.dart';
 import 'package:image/image.dart' as img;
 import 'dart:convert';
@@ -52,50 +52,30 @@ class BillingController extends GetxController {
   List<Datum> get clientList => filteredClientList;
   Rx<OrderDeatailsResponseModel?> orderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
   Rx<OrderDeatailsResponseModel?> oldOrderDetailResponse = Rx<OrderDeatailsResponseModel?>(null);
-
-  //for editing the details
-  // Add these variables to your controller
   String currentOrderNo = '';
   int currentBillingId = 0;
   int currentCustomerId = 0;
   String currentCustomerName = '';
   Rx<BillingReport?> ourReport = Rx<BillingReport?>(null);
-
-
-
-
   ApiService apiService = ApiService();
-
   RxBool isModelLoading = false.obs;
   RxString downloadStatus = ''.obs;
-
-  // Inject the PrintController
   late PrintController printController;
-
   final RxBool isPrinting = false.obs;
-
   final RxString formattedDateTime = ''.obs;
   Timer? _dateTimeTimer;
-
   final Ink editRateInk = Ink();
   final Ink editQuantityInk = Ink();
   String recognizedEditRate = '';
   String recognizedEditQuantity = '';
-
   TextEditingController amountPaid = TextEditingController();
   TextEditingController discountAmount = TextEditingController();
-
   Future<bool> _downloadModelWithTimeout() async {
     try {
-      // Create a timeout future
       final timeout = Future.delayed(const Duration(seconds: 30), () {
         throw TimeoutException('Model download took too long');
       });
-
-      // Create the download future
       final download = modelManager.downloadModel(language);
-
-      // Race between timeout and download
       final result = await Future.any([download, timeout]);
       return result;
     } on TimeoutException {
@@ -115,38 +95,23 @@ class BillingController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
-
-    // Request storage permission at app start
     await requestStoragePermissionOnStart();
-
-    // Initialize PrintController using lazyPut to prevent multiple instances
     if (!Get.isRegistered<PrintController>()) {
       Get.lazyPut(() => PrintController(), fenix: true);
     }
     printController = Get.find<PrintController>();
-
-    // Start the date time update timer
     _updateDateTime();
     _dateTimeTimer =
         Timer.periodic(const Duration(seconds: 1), (_) => _updateDateTime());
-
     try {
       clearPadAndSignature();
-
-      // Check if model is already downloaded (including local cache check)
       bool downloadedModel = await isModelDownloaded();
-
       if (downloadedModel) {
-        // Model is already downloaded, do nothing
         return;
       }
-
-      // Only show loading for new downloads
       isModelLoading(true);
       downloadStatus('Downloading recognition model...');
-
       try {
-        // Try to download with timeout
         bool success = await _downloadModelWithTimeout();
         if (success) {
           final prefs = await SharedPreferences.getInstance();
@@ -156,7 +121,7 @@ class BillingController extends GetxController {
         }
       } catch (e) {
         print('Model download error: $e');
-        // Show error dialog only for download failures
+        
         Get.dialog(
           AlertDialog(
             title: const Text('Model Download Error'),
@@ -167,7 +132,7 @@ class BillingController extends GetxController {
                 child: const Text('Retry'),
                 onPressed: () {
                   Get.back();
-                  onInit(); // Retry initialization
+                  onInit(); 
                 },
               ),
               TextButton(
@@ -185,7 +150,7 @@ class BillingController extends GetxController {
         downloadStatus('');
       }
     } catch (e) {
-      // Show error dialog only for critical initialization errors
+      
       Get.dialog(
         AlertDialog(
           title: const Text('Initialization Error'),
@@ -196,7 +161,7 @@ class BillingController extends GetxController {
               child: const Text('Retry'),
               onPressed: () {
                 Get.back();
-                onInit(); // Retry initialization
+                onInit(); 
               },
             ),
             TextButton(
@@ -235,31 +200,24 @@ class BillingController extends GetxController {
     recognizedQuantity = '';
     update();
   }
-
   Future<bool> isModelDownloaded() async {
     try {
-      // Check if we have a locally cached result first
+      
       final prefs = await SharedPreferences.getInstance();
       bool previouslyDownloaded =
           prefs.getBool('model_downloaded_$language') ?? false;
-
-      // If we previously downloaded it and there's no internet, return true
       if (previouslyDownloaded) {
         try {
-          // Still try to check with Google, but if it fails, assume it's downloaded
+          
           bool isDownloaded = await modelManager.isModelDownloaded(language);
           return isDownloaded;
         } catch (e) {
           print(
               'Error checking if model is downloaded, but we know it was previously downloaded: $e');
-          return true; // Assume it's still there if previously downloaded
+          return true; 
         }
       }
-
-      // First time, we need to actually check
       bool isDownloaded = await modelManager.isModelDownloaded(language);
-
-      // If it's downloaded, save that information for future offline use
       if (isDownloaded) {
         await prefs.setBool('model_downloaded_$language', true);
       }
@@ -267,8 +225,8 @@ class BillingController extends GetxController {
       return isDownloaded;
     } catch (e) {
       print('Error checking if model is downloaded: $e');
-      // If there's an error checking (likely due to no internet),
-      // assume the model is already downloaded if we've previously downloaded it
+      
+      
       final prefs = await SharedPreferences.getInstance();
       bool previouslyDownloaded =
           prefs.getBool('model_downloaded_$language') ?? false;
@@ -299,14 +257,10 @@ class BillingController extends GetxController {
   Future<void> recogniseRateText() async {
     try {
       final candidates = await digitalInkRecognizer.recognize(rateInk);
-
-      // Initialize recognizedRate as empty
       recognizedRate = '';
 
       if (candidates.isNotEmpty) {
         var text = candidates[0].text;
-
-        // Perform replacements and assign them back to `text`
         text = text
             .toUpperCase()
             .replaceAll('O', '0')
@@ -325,13 +279,13 @@ class BillingController extends GetxController {
 
         recognizedRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
 
-        // If no digits are found after cleaning, set as 'No'
+        
         if (recognizedRate.isEmpty) {
           rateInk.strokes.clear();
           ratePoints.clear();
           Get.snackbar("Error", "Rate Not Recognized");
 
-          // recognizedRate = 'No';
+          
         }
       } else {
         recognizedRate = 'No candidates recognized';
@@ -345,12 +299,10 @@ class BillingController extends GetxController {
     try {
       final candidates = await digitalInkRecognizer.recognize(quantityInk);
 
-      recognizedQuantity = ''; // Initialize recognizedQuantity
+      recognizedQuantity = ''; 
 
       if (candidates.isNotEmpty) {
         var text = candidates[0].text;
-
-        // Perform replacements and assign them back to `text`
         text = text
             .toUpperCase()
             .replaceAll('O', '0')
@@ -369,9 +321,9 @@ class BillingController extends GetxController {
 
         recognizedQuantity = text.replaceAll(RegExp(r'[^0-9.]'), '');
 
-        // If no digits are found after cleaning, set as 'No'
+        
         if (recognizedQuantity.isEmpty) {
-          // recognizedQuantity = 'No';
+          
           quantityInk.strokes.clear();
           quantityPoints.clear();
           Get.snackbar("Error", "Quantity Not Recognized");
@@ -382,12 +334,12 @@ class BillingController extends GetxController {
 
       update();
     } catch (e) {
-      // Error handling
+      
     }
   }
 
   Future<Uint8List?> convertToPngBytes(double width, double height) async {
-    // Increase the size by 50% for better visibility
+    
     width = width * 1.5;
     height = height * 1.5;
 
@@ -396,16 +348,14 @@ class BillingController extends GetxController {
       recorder,
       Rect.fromPoints(Offset.zero, Offset(width, height)),
     );
-
-    // Set white background
     final Paint bgPaint = Paint()..color = AppColors.peachColor;
     canvas.drawRect(Rect.fromLTWH(0, 0, width, height), bgPaint);
 
-    // Draw the handwriting with thicker black strokes
+    
     for (final stroke in descriptionInk.strokes) {
       final paint = Paint()
         ..color = AppColors.stainedGlass
-        ..strokeWidth = 6.0 // Increased stroke width for bolder appearance
+        ..strokeWidth = 6.0 
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..style = PaintingStyle.stroke;
@@ -413,22 +363,22 @@ class BillingController extends GetxController {
       if (stroke.points.length == 1) {
         canvas.drawCircle(
           Offset(stroke.points[0].x * 1.5,
-              stroke.points[0].y * 1.5), // Scale the points
-          3.0, // Increased circle size
+              stroke.points[0].y * 1.5), 
+          3.0, 
           paint,
         );
       } else {
-        // For multiple points, create a smooth path
+        
         final path = Path();
         path.moveTo(stroke.points[0].x * 1.5,
-            stroke.points[0].y * 1.5); // Scale the points
+            stroke.points[0].y * 1.5); 
 
         for (int i = 0; i < stroke.points.length - 1; i++) {
           final p0 = stroke.points[i];
           final p1 = stroke.points[i + 1];
 
           path.quadraticBezierTo(
-            p0.x * 1.5, // Scale the points
+            p0.x * 1.5, 
             p0.y * 1.5,
             (p0.x + p1.x) / 2 * 1.5,
             (p0.y + p1.y) / 2 * 1.5,
@@ -452,34 +402,24 @@ class BillingController extends GetxController {
   }
 
   Future<void> addItem() async {
-    // ⭐ CHECK BEFORE ANYTHING
-    print('\n=== BEFORE addItem() - CHECK ITEMLIST ===');
+    
     for (int i = 0; i < itemList.length; i++) {
       print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
     }
-
     await recogniseRateText();
-
-    // ⭐ CHECK AFTER recogniseRateText()
-    print('\n=== AFTER recogniseRateText() ===');
     for (int i = 0; i < itemList.length; i++) {
       print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
     }
-
     await recogniseQuantityText();
-
-    // ⭐ CHECK AFTER recogniseQuantityText()
     print('\n=== AFTER recogniseQuantityText() ===');
     for (int i = 0; i < itemList.length; i++) {
       print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
     }
-
     Uint8List? particularImage = await convertToPngBytes(
       Get.width * 0.8,
       85,
     );
 
-    // ⭐ CHECK AFTER convertToPngBytes()
     print('\n=== AFTER convertToPngBytes() ===');
     for (int i = 0; i < itemList.length; i++) {
       print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
@@ -489,7 +429,6 @@ class BillingController extends GetxController {
         recognizedQuantity.isNotEmpty &&
         recognizedRate.isNotEmpty) {
 
-      // ⭐ CREATE NEW ITEM WITH EXPLICIT VALUES
       final Map<String, dynamic> newItem = {
         'particulars': particularImage,
         'productName': '',
@@ -507,7 +446,7 @@ class BillingController extends GetxController {
       print('orderDetailsId: ${newItem['orderDetailsId']}');
       print('billingId: ${newItem['billingId']}');
 
-      // ⭐ CHECK AFTER ADDING
+      
       print('\n=== AFTER ADDING TO LIST ===');
       for (int i = 0; i < itemList.length; i++) {
         print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
@@ -515,7 +454,7 @@ class BillingController extends GetxController {
 
       clearPadAndSignature();
 
-      // ⭐ CHECK AFTER clearPadAndSignature() - THIS IS LIKELY THE CULPRIT
+      
       print('\n=== AFTER clearPadAndSignature() ===');
       for (int i = 0; i < itemList.length; i++) {
         print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
@@ -523,7 +462,7 @@ class BillingController extends GetxController {
 
       itemList.refresh();
 
-      // ⭐ CHECK AFTER refresh()
+      
       print('\n=== AFTER itemList.refresh() ===');
       for (int i = 0; i < itemList.length; i++) {
         print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
@@ -531,7 +470,7 @@ class BillingController extends GetxController {
 
       update();
 
-      // ⭐ FINAL CHECK
+      
       print('\n=== ALL ITEMS AFTER ADDING NEW ===');
       for (int i = 0; i < itemList.length; i++) {
         print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
@@ -549,7 +488,7 @@ class BillingController extends GetxController {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
 
-      // Convert Uint8List to ui.Image
+      
       if (item['particulars'] is Uint8List) {
         final codec =
             await ui.instantiateImageCodec(item['particulars'] as Uint8List);
@@ -597,7 +536,7 @@ class BillingController extends GetxController {
 
       if (response.statusCode == 200) {
         orderDetailResponse.value = orderDeatailsResponseModelFromJson(response.body);
-        // prepareItemListForUpdate();
+        
         return orderDetailResponse.value ;
       } else {
         orderDetailResponse.value = null;
@@ -622,11 +561,8 @@ class BillingController extends GetxController {
     }
   }
 
-
   void editItem(int index) {
     final item = itemList[index];
-
-    // Reset the edit ink objects and recognized values
     editRateInk.strokes.clear();
     editQuantityInk.strokes.clear();
     recognizedEditRate = item['rate'];
@@ -639,7 +575,7 @@ class BillingController extends GetxController {
         builder: (context, setState) {
           return Column(
             children: [
-              // Quantity handwriting box
+              
               Text('Quantity $recognizedEditQuantity', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
@@ -651,7 +587,7 @@ class BillingController extends GetxController {
                       border: Border.all(color: AppColors.blueGradient),
                     ),
                     child: ClipRRect(
-                      child: Builder(  // Add Builder widget here
+                      child: Builder(  
                         builder: (quantityContext) => Listener(
                           onPointerDown: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
@@ -663,7 +599,7 @@ class BillingController extends GetxController {
                           onPointerMove: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
                                 event.kind == PointerDeviceKind.touch) {
-                              final RenderObject? object = quantityContext.findRenderObject();  // Use quantityContext
+                              final RenderObject? object = quantityContext.findRenderObject();  
                               final localPosition =
                               (object as RenderBox?)?.globalToLocal(event.position);
                               if (localPosition != null &&
@@ -759,7 +695,7 @@ class BillingController extends GetxController {
 
               const SizedBox(height: 20),
 
-              // Rate handwriting box
+              
               Text('Rate $recognizedEditRate', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
@@ -771,7 +707,7 @@ class BillingController extends GetxController {
                       border: Border.all(color: AppColors.blueGradient),
                     ),
                     child: ClipRRect(
-                      child: Builder(  // Add Builder widget here
+                      child: Builder(  
                         builder: (rateContext) => Listener(
                           onPointerDown: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
@@ -783,7 +719,7 @@ class BillingController extends GetxController {
                           onPointerMove: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
                                 event.kind == PointerDeviceKind.touch) {
-                              final RenderObject? object = rateContext.findRenderObject();  // Use rateContext
+                              final RenderObject? object = rateContext.findRenderObject();  
                               final localPosition =
                               (object as RenderBox?)?.globalToLocal(event.position);
                               if (localPosition != null &&
@@ -903,7 +839,6 @@ class BillingController extends GetxController {
     update();
   }
 
-  // Add a method to print PDF receipts with dialog
   Future<void> printPdfReceipt(Datum? customer) async {
     if (isPrinting.value) return;
 
@@ -912,11 +847,10 @@ class BillingController extends GetxController {
       return;
     }
 
-    // Variables for the dialog
     double discountAmount = 0;
     double amountToBePaid = showPaymentDialog.value ? ourReport.value?.totalAmount ?? 0 : totalAmount;
     double balanceAmount = showPaymentDialog.value ? ourReport.value?.balanceAmount ?? 0 : 0;
-    String discountType = 'Flat'; // 'Flat' or 'Percentage'
+    String discountType = 'Flat'; 
     double? paidAmount = (ourReport.value?.totalAmount ?? 0) - (ourReport.value?.balanceAmount ?? 0);
 
     amountPaid.text = showPaymentDialog.value ? (paidAmount != 0 ? paidAmount.toString() : "0") : totalAmount.toString();
@@ -925,21 +859,21 @@ class BillingController extends GetxController {
       barrierDismissible: false,
       content: StatefulBuilder(
         builder: (context, setState) {
-          // Calculate amounts based on current values
+          
           double calculatedTotal = totalAmount;
           double finalAmount = calculatedTotal;
 
-          // Apply discount based on type
+          
           if (discountType == 'Percentage' && discountAmount > 0) {
             finalAmount = calculatedTotal - (calculatedTotal * discountAmount / 100);
           } else if (discountType == 'Flat') {
             finalAmount = calculatedTotal - discountAmount;
           }
 
-          // Ensure final amount is not negative
+          
           finalAmount = finalAmount < 0 ? 0 : finalAmount;
 
-          // Calculate balance
+          
           balanceAmount = showPaymentDialog.value ? ourReport.value?.balanceAmount ?? 0 : finalAmount - amountToBePaid;
           balanceAmount = balanceAmount < 0 ? 0 : balanceAmount;
           return Container(
@@ -947,13 +881,13 @@ class BillingController extends GetxController {
             padding: const EdgeInsets.all(20),
             child: Table(
               columnWidths: const {
-                0: FixedColumnWidth(150),   // Fixed label width
-                1: FixedColumnWidth(150),      // Remaining space for inputs/values
+                0: FixedColumnWidth(150),   
+                1: FixedColumnWidth(150),      
               },
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
 
-                // Total Amount
+                
                 TableRow(children: [
                   const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
@@ -971,7 +905,7 @@ class BillingController extends GetxController {
 
                 const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                // Discount Type
+                
                 TableRow(children: [
                   const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Row(
@@ -1012,7 +946,7 @@ class BillingController extends GetxController {
 
                 const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                // Discount Amount
+                
                 TableRow(children: [
                   Text(
                     discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
@@ -1039,7 +973,7 @@ class BillingController extends GetxController {
 
                 const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                // Final Amount
+                
                 TableRow(children: [
                   const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
@@ -1056,7 +990,7 @@ class BillingController extends GetxController {
 
                 const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                // Amount Paid
+                
                 TableRow(children: [
                   const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(
@@ -1082,7 +1016,7 @@ class BillingController extends GetxController {
 
                 const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                // Balance Amount
+                
                 TableRow(children: [
                   const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
                   Container(
@@ -1124,10 +1058,8 @@ class BillingController extends GetxController {
         GestureDetector(
           onTap: () async {
             try {
-              Get.back(); // Close dialog
+              Get.back(); 
               isPrinting.value = true;
-
-              // Calculate final amount based on discount
               double finalAmount = totalAmount;
               if (discountType == 'Percentage' && discountAmount > 0) {
                 finalAmount = totalAmount - (totalAmount * discountAmount / 100);
@@ -1143,9 +1075,14 @@ class BillingController extends GetxController {
                   customerId: customer?.custId,
                   customerName: customer?.name,
                   clientId: customer?.clientId
-
-
               );
+
+              print('=== RIGHT BEFORE PRINT ===');
+              print('itemList length: ${itemList.length}');
+              for (int i = 0; i < itemList.length; i++) {
+                print('Item $i exists: ${itemList[i]}');
+              }
+
               await printController.printPdfReceipt(
                   itemList,
                   discountAmount: actualDiscountAmount,
@@ -1153,7 +1090,7 @@ class BillingController extends GetxController {
               );
 
               Get.snackbar('Success', 'Receipt sent to printer');
-              // await shopDetailApi(); // Update bill count
+              
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");
             } finally {
@@ -1197,29 +1134,10 @@ class BillingController extends GetxController {
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
   }
 
-  // Future<void>shopDetailApi() async {
-  //   String url = "https://roughbill.com/api/ShopDetail/BillCount";
-  //   var detail = {
-  //     // 'ShopName': "${ConstantsText.shopName}",
-  //     'BillPrint': "1",
-  //   };
-  //
-  //   final response = await apiService.postRequest(url: url, data: detail);
-  //
-  //   if (response.statusCode == 200) {
-  //     print('Shop Detail Api Success: ${response.body}');
-  //   } else {
-  //     print('Error ${response.statusCode}: ${response.body}');
-  //   }
-  //
-  //
-  // }
-
   Future<File?> saveReceiptAsPdf() async {
     try {
       final pdf = pw.Document();
 
-      // Load Ganesh logo as Uint8List
       final ByteData logoData = await rootBundle.load('assets/ganpati.png');
       final Uint8List logoBytes = logoData.buffer.asUint8List();
 
@@ -1230,17 +1148,17 @@ class BillingController extends GetxController {
             return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
-                // Ganesh logo
+                
                 pw.Image(pw.MemoryImage(logoBytes), width: 50, height: 50),
                 pw.SizedBox(height: 8),
-                // Business details
+                
                 pw.Text(SharedPrefs.getString(ConstantsText.companyName) ?? "",
                     style: pw.TextStyle(
                         fontWeight: pw.FontWeight.bold, fontSize: 18)),
                 pw.Text('${SharedPrefs.getString(ConstantsText.addresss) ?? ""}\n'),
                 pw.Text('${SharedPrefs.getString(ConstantsText.mobileNumber) ?? ""}'),
                 pw.SizedBox(height: 8),
-                // Date and Time
+                
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
@@ -1250,7 +1168,7 @@ class BillingController extends GetxController {
                   ],
                 ),
                 pw.Divider(),
-                // Table Header
+                
                 pw.Table(
                   border: pw.TableBorder.all(),
                   children: [
@@ -1293,7 +1211,7 @@ class BillingController extends GetxController {
                         ),
                       ],
                     ),
-                    // Table Rows
+                    
                     ...itemList.asMap().entries.map((entry) {
                       int idx = entry.key;
                       var item = entry.value;
@@ -1337,7 +1255,7 @@ class BillingController extends GetxController {
                   ],
                 ),
                 pw.Divider(),
-                // Total
+                
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.end,
                   children: [
@@ -1346,7 +1264,7 @@ class BillingController extends GetxController {
                   ],
                 ),
                 pw.SizedBox(height: 16),
-                // Footer
+                
                 pw.Text('Thank you for your business!'),
                 pw.Text('Please visit again'),
               ],
@@ -1355,7 +1273,7 @@ class BillingController extends GetxController {
         ),
       );
 
-      // Request manage external storage permission for Android 14
+      
       var status = await Permission.manageExternalStorage.request();
 
       if (status.isGranted) {
@@ -1385,7 +1303,7 @@ class BillingController extends GetxController {
     return base64Encode(imageBytes);
   }
 
-  // Function to make billing API call
+  
 
   Future<void> submitBillingData({
     String orderNo = '',
@@ -1407,7 +1325,7 @@ class BillingController extends GetxController {
         barrierDismissible: false,
       );
 
-      // Use existing data if in update mode
+      
       if (updateBill.value) {
         orderNo = currentOrderNo;
         customerId = customerId ?? currentCustomerId;
@@ -1429,24 +1347,24 @@ class BillingController extends GetxController {
       int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
       String? clientIds = SharedPrefs.getString(ConstantsText.clientId);
 
-      // Use stored billingId for update mode
+      
       int billingsId = updateBill.value ? currentBillingId : 0;
 
-      // ⭐ ADD THIS DEBUG PRINT HERE - RIGHT BEFORE THE LOOP
+      
       print('\n=== ITEMLIST INSPECTION BEFORE LOOP ===');
       for (int i = 0; i < itemList.length; i++) {
         print('Item $i BEFORE loop:');
         print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
         print('  billingId: ${itemList[i]['billingId']}');
         print('  quantity: ${itemList[i]['quantity']}');
-        print('  Map identity: ${itemList[i].hashCode}'); // Check if same object
+        print('  Map identity: ${itemList[i].hashCode}'); 
       }
 
       if (itemList.isNotEmpty) {
         print('First item: orderDetailsId=${itemList[0]['orderDetailsId']}, billingId=${itemList[0]['billingId']}');
       }
 
-      // Collect details
+      
       List<Map<String, dynamic>> orderDetails = [];
 
       for (int i = 0; i < itemList.length; i++) {
@@ -1455,7 +1373,7 @@ class BillingController extends GetxController {
         final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
         final double totalPrice = qty * rate;
 
-        // Read IDs from item
+        
         final int orderDetailsId = item['orderDetailsId'] ?? 0;
         final int billingId = item['billingId'] ?? 0;
 
@@ -1490,7 +1408,7 @@ class BillingController extends GetxController {
         });
       }
 
-      // Prepare billing data
+      
       Map<String, dynamic> billingData = {
         "oBilling": {
           "billingId": billingsId,
@@ -1548,7 +1466,8 @@ class BillingController extends GetxController {
           "Billing data submitted successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
-        itemList.clear();
+        /// commented so that i can print the bill successfully
+        // itemList.clear();
         currentOrderNo = '';
         currentBillingId = 0;
         updateBill.value = false;
@@ -1573,152 +1492,6 @@ class BillingController extends GetxController {
       );
     }
   }
-
-
-  /*Future<void> submitBillingData({
-    String orderNo = '',
-    int? customerId = 0,
-    String? customerName = '',
-    String? clientId = '',
-    double discount = 0,
-    double gst = 0,
-    String discountType = 'Flat',
-    double paidAmount = 0,
-    String paidAmountType = 'Cash',
-    String transactionNo = '',
-    String referenceNo = '',
-    String paymentStatus = 'Pending',
-  }) async {
-    try {
-      // Show loading indicator
-      Get.dialog(
-        const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false,
-      );
-
-      // Recalculate orderNo if creating new
-      if (!updateBill.value) {
-        orderNo = DateTime.now().millisecondsSinceEpoch.toString();
-      }
-
-      // Calculate total amount and balance
-      final double calculatedTotal = totalAmount;
-      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
-
-      final DateTime now = DateTime.now();
-      final String formattedDate = now.toIso8601String();
-      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
-      String? clientIds = SharedPrefs.getString(ConstantsText.clientId);
-
-      int billingsId = 0;
-
-      // Collect details
-      List<Map<String, dynamic>> orderDetails = [];
-
-      for (int i = 0; i < itemList.length; i++) {
-        final item = itemList[i];
-        final double qty = double.tryParse(item['quantity'] ?? '0') ?? 0;
-        final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
-        final double totalPrice = qty * rate;
-
-        final int orderDetailsId = item['orderDetailsId'] ?? 0;
-        final int billingId = item['billingId'] ?? 0;
-        billingsId = billingId;
-
-        String productName = '';
-        if (item['particulars'] is Uint8List) {
-          productName = _convertImageToBase64(item['particulars']);
-        } else {
-          productName = item['productName'] ?? '';
-        }
-
-        orderDetails.add({
-          "orderNo": orderNo,
-          "orderDetailsId": orderDetailsId,
-          "billingId": billingId,
-          "customerId": customerId ?? 0,
-          "clientId": clientIds ?? 0000,
-          "customerName": customerName ?? "Guest",
-          "productName": productName,
-          "quantity": qty,
-          "pricePerQuantity": rate,
-          "totalPrice": totalPrice,
-          "productType": "",
-          "isDelete": false,
-          "postedOn": formattedDate,
-          "modifiedOn": formattedDate,
-          "clientUserId": clientUserId
-        });
-      }
-
-      // Prepare billing data
-      Map<String, dynamic> billingData = {
-        "oBilling": {
-          "billingId": billingsId,
-          "orderNo": orderNo,
-          "customerId": customerId ?? 0,
-          "customerName": customerName ?? "Guest",
-          "clientId": clientIds ?? 0000,
-          "totalAmount": calculatedTotal,
-          "balanceAmount": balanceAmount,
-          "discount": discount,
-          "gst": gst,
-          "discountType": discountType,
-          "paidAmount": paidAmount,
-          "paidAmountType": paidAmountType,
-          "transactionNo": transactionNo,
-          "referenceNo": referenceNo,
-          "paymentStatus": paymentStatus,
-          "paymentDate": formattedDate,
-          "postedOn": formattedDate,
-          "modifiedOn": formattedDate,
-          "isDelete": false,
-          "isRefund": false,
-          "refundAmount": 0,
-          "refundRemark": "",
-          "refundType": "",
-          "refundDate": null,
-          "refundTransNo": "",
-          "refundStatus": "",
-          "clientUserId": clientUserId
-        },
-        "orderDetails": orderDetails
-      };
-
-      String url = updateBill.value
-          ? "https://roughbill.com/api/Order/UpdateOrder"
-          : "https://roughbill.com/api/Order/addorder";
-
-      final response = await apiService.postRequest(url: url, data: billingData);
-
-      Get.back();
-
-      if (response.statusCode == 200) {
-        Get.snackbar(
-          "Success",
-          "Billing data submitted successfully",
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        itemList.clear();
-        update();
-      } else {
-        Get.snackbar(
-          "Error",
-          "Failed to submit billing  ${response.body}",
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
-    } catch (e) {
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
-      Get.snackbar(
-        "Error",
-        "Exception occurred: $e",
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }*/
 
   Future<void> loadBillingDetailForEdit(BillingReport billDetail) async {
     OrderDeatailsResponseModel? orderDetail = await getBillingDetail(billDetail);
@@ -1751,7 +1524,7 @@ class BillingController extends GetxController {
           }
         }
 
-        // ⭐ STORE VALUES IN VARIABLES FIRST - DON'T LET THEM BE NULL
+        
         final int savedOrderDetailsId = detail.orderDetailsId ?? 0;
         final int savedBillingId = detail.billingId ?? 0;
         final String savedOrderNo = detail.orderNo ?? '';
@@ -1760,7 +1533,7 @@ class BillingController extends GetxController {
         final String savedRate = detail.pricePerQuantity?.toString() ?? '0';
         final String savedProductName = detail.productName ?? '';
 
-        // ⭐ CREATE MAP WITH STORED VALUES
+        
         final Map<String, dynamic> itemMap = {
           'particulars': particularImage ?? Uint8List(0),
           'productName': savedProductName,
@@ -1775,14 +1548,6 @@ class BillingController extends GetxController {
         itemList.add(itemMap);
 
       }
-
-
-      // ⭐ IMMEDIATE VERIFICATION
-      // print('\n=== IMMEDIATE VERIFICATION ===');
-      // for (int i = 0; i < itemList.length; i++) {
-      //   print('Item $i: orderDetailsId=${itemList[i]['orderDetailsId']}, billingId=${itemList[i]['billingId']}');
-      // }
-
       update();
     }
   }
@@ -1799,15 +1564,13 @@ class BillingController extends GetxController {
       var response = await apiService.getRequest(url: url);
 
       if (response.statusCode == 200) {
-        // Parse the response directly into the observable
+        
         customerResponse.value = customerResponseModelFromJson(response.body);
-
-        // Initialize filtered list with all clients
         filteredClientList.value = customerResponse.value?.data ?? [];
 
         loadingClient.value = false;
       } else {
-        customerResponse.value = null; // Clear data on error
+        customerResponse.value = null; 
         filteredClientList.clear();
         Get.snackbar(
           'Error',
@@ -1818,7 +1581,7 @@ class BillingController extends GetxController {
         );
       }
     } catch (e) {
-      customerResponse.value = null; // Clear data on error
+      customerResponse.value = null; 
       filteredClientList.clear();
       print("Error parsing customer data: $e");
       Get.snackbar(
