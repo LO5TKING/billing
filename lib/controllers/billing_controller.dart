@@ -1043,6 +1043,10 @@ class BillingController extends GetxController {
                 customerName: customer?.name,
                 clientId: customer?.clientId,
             );
+            itemList.clear();
+            Get.back();
+            SharedPrefs.remove(ConstantsText.selectedCustomer);
+            SharedPrefs.remove(ConstantsText.selectedCustMob);
           },
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -1088,7 +1092,9 @@ class BillingController extends GetxController {
                   discountAmount: actualDiscountAmount,
                   amountPaid: amountToBePaid
               );
-
+              itemList.clear();
+              SharedPrefs.remove(ConstantsText.selectedCustomer);
+              SharedPrefs.remove(ConstantsText.selectedCustMob);
               Get.snackbar('Success', 'Receipt sent to printer');
               
             } catch (e) {
@@ -1331,13 +1337,13 @@ class BillingController extends GetxController {
         customerId = customerId ?? currentCustomerId;
         customerName = customerName ?? currentCustomerName;
 
-        print('=== UPDATE MODE ===');
-        print('Using orderNo: $orderNo');
-        print('Using billingId: $currentBillingId');
+        // print('=== UPDATE MODE ===');
+        // print('Using orderNo: $orderNo');
+        // print('Using billingId: $currentBillingId');
       } else {
         orderNo = DateTime.now().millisecondsSinceEpoch.toString();
-        print('=== CREATE MODE ===');
-        print('Generated orderNo: $orderNo');
+        // print('=== CREATE MODE ===');
+        // print('Generated orderNo: $orderNo');
       }
 
       final double calculatedTotal = totalAmount;
@@ -1351,18 +1357,18 @@ class BillingController extends GetxController {
       int billingsId = updateBill.value ? currentBillingId : 0;
 
       
-      print('\n=== ITEMLIST INSPECTION BEFORE LOOP ===');
-      for (int i = 0; i < itemList.length; i++) {
-        print('Item $i BEFORE loop:');
-        print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
-        print('  billingId: ${itemList[i]['billingId']}');
-        print('  quantity: ${itemList[i]['quantity']}');
-        print('  Map identity: ${itemList[i].hashCode}'); 
-      }
+      // print('\n=== ITEMLIST INSPECTION BEFORE LOOP ===');
+      // for (int i = 0; i < itemList.length; i++) {
+      //   print('Item $i BEFORE loop:');
+      //   print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
+      //   print('  billingId: ${itemList[i]['billingId']}');
+      //   print('  quantity: ${itemList[i]['quantity']}');
+      //   print('  Map identity: ${itemList[i].hashCode}');
+      // }
 
-      if (itemList.isNotEmpty) {
-        print('First item: orderDetailsId=${itemList[0]['orderDetailsId']}, billingId=${itemList[0]['billingId']}');
-      }
+      // if (itemList.isNotEmpty) {
+      //   print('First item: orderDetailsId=${itemList[0]['orderDetailsId']}, billingId=${itemList[0]['billingId']}');
+      // }
 
       
       List<Map<String, dynamic>> orderDetails = [];
@@ -1377,10 +1383,10 @@ class BillingController extends GetxController {
         final int orderDetailsId = item['orderDetailsId'] ?? 0;
         final int billingId = item['billingId'] ?? 0;
 
-        print('\n=== PROCESSING ITEM $i ===');
-        print('orderDetailsId: $orderDetailsId');
-        print('billingId: $billingId');
-        print('quantity: $qty, rate: $rate');
+        // print('\n=== PROCESSING ITEM $i ===');
+        // print('orderDetailsId: $orderDetailsId');
+        // print('billingId: $billingId');
+        // print('quantity: $qty, rate: $rate');
 
         String productName = '';
         if (item['particulars'] is Uint8List) {
@@ -1446,10 +1452,10 @@ class BillingController extends GetxController {
           ? "https://roughbill.com/api/Order/UpdateOrder"
           : "https://roughbill.com/api/Order/addorder";
 
-      print('\n=== FINAL PAYLOAD ===');
-      print('URL: $url');
-      print('oBilling.billingId: ${billingData['oBilling']['billingId']}');
-      print('orderDetails count: ${orderDetails.length}');
+      // print('\n=== FINAL PAYLOAD ===');
+      // print('URL: $url');
+      // print('oBilling.billingId: ${billingData['oBilling']['billingId']}');
+      // print('orderDetails count: ${orderDetails.length}');
       for (int i = 0; i < orderDetails.length; i++) {
         print('Item $i AFTER loop:');
         print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
@@ -1458,16 +1464,16 @@ class BillingController extends GetxController {
 
       final response = await apiService.postRequest(url: url, data: billingData);
 
-      Get.back();
+      // Get.back();
 
       if (response.statusCode == 200) {
+        Get.back(canPop: true,closeOverlays: true);
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
         /// commented so that i can print the bill successfully
-        // itemList.clear();
         currentOrderNo = '';
         currentBillingId = 0;
         updateBill.value = false;

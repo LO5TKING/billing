@@ -101,7 +101,7 @@ class _BillingNewState extends State<BillingNew> {
                                   Obx(() => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'To : ${selectedClient.value?.name ?? ""}',
+                                      'To : ${selectedClient.value?.name ?? "Guest"}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -113,7 +113,7 @@ class _BillingNewState extends State<BillingNew> {
                                   Obx(() => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Mob : ${selectedClient.value?.mobileNo ?? ""}',
+                                      'Mob : ${selectedClient.value?.mobileNo ?? "N.A"}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,

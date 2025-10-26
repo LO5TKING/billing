@@ -353,7 +353,7 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                     controller: profileSettingsController.password,
                     keyboardType: TextInputType.text,
                     onChanged: (value){},
-                    readOnly: !isEdit.value,
+                    readOnly: true,
                     style: const TextStyle(
                       fontWeight: FontWeight.w400,fontSize: DesignConstants.fontSize24,fontStyle: FontStyle.italic,
                     ),

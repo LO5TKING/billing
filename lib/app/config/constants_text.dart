@@ -21,4 +21,6 @@ class ConstantsText{
   static const gstNumber = "gstnumber";
   static const emailId = "emailid";
   static const shopNo = "shopnno";
+  static const selectedCustomer = "selectedcustomer";
+  static const selectedCustMob = "selectedcustmob";
 }

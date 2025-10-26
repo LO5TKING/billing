@@ -127,7 +127,6 @@ class PrintController extends GetxController {
         await Future.delayed(const Duration(
             milliseconds: 100)); // Increased delay for final commands
       }
-
       Get.snackbar("Printed", "Successfully");
     } catch (e) {
       Get.snackbar("Not Printed", "Unsuccessful: $e");

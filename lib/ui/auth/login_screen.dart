@@ -1,6 +1,7 @@
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:billing/controllers/login_controller.dart';
+import 'package:billing/ui/auth/forget_password_screen.dart';
 import 'package:billing/ui/auth/signup_screen.dart';
 import 'package:billing/validation/validation.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,7 @@ class LoginScreen extends StatelessWidget {
                   child: Form(
                     key: loginController.formKey,
                     child: Column(
+                      spacing: 10,
                     children: [
                       TextFormField(
                         controller: loginController.mobileNo,
@@ -75,7 +77,6 @@ class LoginScreen extends StatelessWidget {
                           prefixIcon: const Icon(Icons.phone_iphone_outlined),
                         ),
                       ),
-                      const SizedBox(height: 20),
                       TextFormField(
                         controller: loginController.password,
                         validator: Validation.validatePassword,
@@ -97,7 +98,6 @@ class LoginScreen extends StatelessWidget {
                           prefixIcon: const Icon(Icons.lock),
                         ),
                       ),
-                      const SizedBox(height: 30),
                       Obx(() => ElevatedButton(
                         onPressed: loginController.isLoading.value
                             ? null
@@ -124,19 +124,45 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                       )),
-                      const SizedBox(height: 20),
-                      TextButton(
-                        onPressed: () {
-                          Get.to(() => SignupScreen());
-                        },
-                        child: const Text(
-                          "Don't have an account? Sign Up",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 16,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Get.to(() => SignupScreen());
+                            },
+                            child: Container(
+                              padding: EdgeInsets.only(top: 10),
+
+                              child: Text(
+                                "Don't have an account? Sign Up",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.blue,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                           ),
-                        ),
+                          GestureDetector(
+                            onTap: () {
+                              Get.to(() => ForgotPasswordScreen());
+                            },
+                            child: Container(
+                              padding: EdgeInsets.only(top: 10),
+                              child: Text(
+                                "Forget Password",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.blue,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+
                     ],
                   )),
                 ),

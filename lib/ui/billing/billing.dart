@@ -57,9 +57,13 @@ class _BillingState extends State<Billing> {
       billingController.clearPadAndSignature();
     }
 
+    if(widget.customer != null){
+      SharedPrefs.setString(ConstantsText.selectedCustomer, widget.customer?.name ?? "");
+      SharedPrefs.setString(ConstantsText.selectedCustMob, widget.customer?.mobileNo ?? "");
+    }
+
     if(widget.billingDetail != null){
       await billingController.loadBillingDetailForEdit(widget.billingDetail ?? BillingReport());
-      // await _populateBillingData();
       billingController.ourReport.value = widget.billingDetail;
       billingController.updateBill.value = true;
       if(widget.showPaymentDialog == true){
@@ -121,6 +125,8 @@ class _BillingState extends State<Billing> {
                     return InkWell(
                       onTap: () {
                         selectedClient.value = filteredClientList[index];
+                        SharedPrefs.setString(ConstantsText.selectedCustomer, selectedClient.value?.name ?? "");
+                        SharedPrefs.setString(ConstantsText.selectedCustMob, selectedClient.value?.mobileNo ?? "");
                         Get.back();
                       },
                       child: Container(
@@ -201,7 +207,7 @@ class _BillingState extends State<Billing> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'To : ${selectedClient.value?.name ?? widget.customer?.name ?? "Guest"}',
+                                        'To : ${selectedClient.value?.name ?? SharedPrefs.getString(ConstantsText.selectedCustomer) ?? widget.customer?.name ?? "Guest"}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
@@ -213,7 +219,7 @@ class _BillingState extends State<Billing> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: DesignConstants.padding5),
                                       child: Text(
-                                        'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? "N.A"}',
+                                        'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMob) ??widget.customer?.mobileNo ?? "N.A"}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,

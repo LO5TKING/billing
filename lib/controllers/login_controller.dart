@@ -90,10 +90,10 @@ class LoginController extends GetxController {
         final responseData = response.body;
         Get.snackbar(
           'Login Failed',
-          responseData,
+          "Invalid mobile number or password.",
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
+          colorText: Colors.black,
         );
       }
     } catch (e) {
