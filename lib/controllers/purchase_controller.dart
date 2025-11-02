@@ -1452,9 +1452,11 @@ class PurchaseController extends GetxController {
 
       if (response.statusCode == 200) {
         // Success
+        Get.back(canPop: true,closeOverlays: true);
+
         Get.snackbar(
           "Success",
-          "Billing data submitted successfully",
+          "Purchase data submitted successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
 

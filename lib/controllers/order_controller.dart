@@ -771,163 +771,167 @@ class OrderController extends GetxController {
                       ),
                     ),
                   ),
-                Table(
-                  columnWidths: const {
-                    0: FixedColumnWidth(150),   // Fixed label width
-                    1: FixedColumnWidth(150),      // Remaining space for inputs/values
-                  },
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                  children: [
-                    // Total Amount
-                    TableRow(children: [
-                      const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 0.5),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ]),
-
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
-
-                    // Discount Type
-                    TableRow(children: [
-                      const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          Row(
-                            children: [
-                              Radio(
-                                value: 'Flat',
-                                groupValue: discountType,
-                                onChanged: (value) {
-                                  setState(() {
-                                    discountType = value.toString();
-                                    discountAmount = 0;
-                                  });
-                                },
-                              ),
-                              const Text('Flat Amount'),
-                            ],
+                Container(
+                  width: Get.width * 0.8,
+                  padding: const EdgeInsets.all(20),
+                  child: Table(
+                    columnWidths: const {
+                      0: FixedColumnWidth(150),   // Fixed label width
+                      1: FixedColumnWidth(150),      // Remaining space for inputs/values
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    children: [
+                      // Total Amount
+                      TableRow(children: [
+                        const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 0.5),
+                            borderRadius: BorderRadius.circular(5),
                           ),
-                          Row(
-                            children: [
-                              Radio(
-                                value: 'Percentage',
-                                groupValue: discountType,
-                                onChanged: (value) {
-                                  setState(() {
-                                    discountType = value.toString();
-                                    discountAmount = 0;
-                                  });
-                                },
-                              ),
-                              const Text('Percentage'),
-                            ],
-                          ),
-                        ],
-                      )
-                    ]),
-
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
-
-                    // Discount Amount
-                    TableRow(children: [
-                      Text(
-                        discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(
-                        width: 100,
-                        height: 40,
-                        child: TextField(
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              discountAmount = double.tryParse(value) ?? 0;
-                              // Validation will automatically run in the next build
-                            });
-                          },
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                      ),
-                    ]),
+                      ]),
 
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                    // Final Amount
-                    TableRow(children: [
-                      const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 0.5),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
-                      ),
-                    ]),
-
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
-
-                    // Amount Paid
-                    TableRow(children: [
-                      const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(
-                        width: 100,
-                        height: 40,
-                        child: TextField(
-                          controller: amountPaid,
-                          textAlign: TextAlign.center,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: errorMessage != null ? Colors.red : Colors.grey,
-                              ),
+                      // Discount Type
+                      TableRow(children: [
+                        const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Radio(
+                                  value: 'Flat',
+                                  groupValue: discountType,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      discountType = value.toString();
+                                      discountAmount = 0;
+                                    });
+                                  },
+                                ),
+                                const Text('Flat Amount'),
+                              ],
                             ),
-                            prefixText: '₹ ',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            Row(
+                              children: [
+                                Radio(
+                                  value: 'Percentage',
+                                  groupValue: discountType,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      discountType = value.toString();
+                                      discountAmount = 0;
+                                    });
+                                  },
+                                ),
+                                const Text('Percentage'),
+                              ],
+                            ),
+                          ],
+                        )
+                      ]),
+
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                      // Discount Amount
+                      TableRow(children: [
+                        Text(
+                          discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          height: 40,
+                          child: TextField(
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                discountAmount = double.tryParse(value) ?? 0;
+                                // Validation will automatically run in the next build
+                              });
+                            },
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              amountToBePaid = double.tryParse(value) ?? 0;
-                              // Validation will automatically run in the next build
-                            });
-                          },
                         ),
-                      )
-                    ]),
+                      ]),
 
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                    // Balance Amount
-                    TableRow(children: [
-                      const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 0.5),
-                          borderRadius: BorderRadius.circular(5),
+                      // Final Amount
+                      TableRow(children: [
+                        const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 0.5),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
                         ),
-                        child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                      ),
-                    ]),
-                  ],
+                      ]),
+
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                      // Amount Paid
+                      TableRow(children: [
+                        const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(
+                          width: 100,
+                          height: 40,
+                          child: TextField(
+                            controller: amountPaid,
+                            textAlign: TextAlign.center,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: errorMessage != null ? Colors.red : Colors.grey,
+                                ),
+                              ),
+                              prefixText: '₹ ',
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                amountToBePaid = double.tryParse(value) ?? 0;
+                                // Validation will automatically run in the next build
+                              });
+                            },
+                          ),
+                        )
+                      ]),
+
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                      // Balance Amount
+                      TableRow(children: [
+                        const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 0.5),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                        ),
+                      ]),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -964,9 +968,10 @@ class OrderController extends GetxController {
             );
 
             itemList.clear();
-            Get.back();
             SharedPrefs.remove(ConstantsText.selectedCustomerOrder1);
             SharedPrefs.remove(ConstantsText.selectedCustMobOrder1);
+            update();
+            refresh();
           },
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -1172,7 +1177,8 @@ class OrderController extends GetxController {
       Get.back();
 
       if (response.statusCode == 200) {
-        // Success
+
+        Get.back(canPop: true,closeOverlays: true);
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",

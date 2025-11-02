@@ -1453,6 +1453,7 @@ class BillingControllerNew extends GetxController {
 
       if (response.statusCode == 200) {
         // Success
+        Get.back(canPop: true,closeOverlays: true);
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",
