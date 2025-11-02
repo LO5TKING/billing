@@ -851,14 +851,12 @@ class BillingController extends GetxController {
     String discountType = 'Flat';
     double? paidAmount = (ourReport.value?.totalAmount ?? 0) - (ourReport.value?.balanceAmount ?? 0);
 
-    // Initialize with proper values
     double amountToBePaid = showPaymentDialog.value ? paidAmount : totalAmount;
 
     amountPaid.text = showPaymentDialog.value
         ? (paidAmount != 0 ? paidAmount.toString() : "0")
         : totalAmount.toString();
 
-    // Error message state
     String? errorMessage;
 
     Get.defaultDialog(
@@ -879,7 +877,13 @@ class BillingController extends GetxController {
 
           finalAmount = finalAmount < 0 ? 0 : finalAmount;
 
-          // FIXED: Calculate balance inside setState so it updates reactively
+          // FIXED: Re-validate amount paid whenever finalAmount changes
+          if (amountToBePaid > finalAmount) {
+            errorMessage = 'Amount paid cannot exceed final amount of ₹${finalAmount.toStringAsFixed(2)}';
+          } else {
+            errorMessage = null;
+          }
+
           double balanceAmount = showPaymentDialog.value
               ? (ourReport.value?.balanceAmount ?? 0) - (amountToBePaid - paidAmount)
               : finalAmount - amountToBePaid;
@@ -891,7 +895,6 @@ class BillingController extends GetxController {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ADDED: Error message display
                 if (errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -948,7 +951,6 @@ class BillingController extends GetxController {
                                     setState(() {
                                       discountType = value.toString();
                                       discountAmount = 0;
-                                      errorMessage = null; // Clear error on change
                                     });
                                   },
                                 ),
@@ -964,7 +966,6 @@ class BillingController extends GetxController {
                                     setState(() {
                                       discountType = value.toString();
                                       discountAmount = 0;
-                                      errorMessage = null; // Clear error on change
                                     });
                                   },
                                 ),
@@ -995,7 +996,7 @@ class BillingController extends GetxController {
                             onChanged: (value) {
                               setState(() {
                                 discountAmount = double.tryParse(value) ?? 0;
-                                errorMessage = null; // Clear error on change
+                                // Validation will automatically run in the next build
                               });
                             },
                           ),
@@ -1041,13 +1042,7 @@ class BillingController extends GetxController {
                             onChanged: (value) {
                               setState(() {
                                 amountToBePaid = double.tryParse(value) ?? 0;
-
-                                // FIXED: Validation for amount greater than final amount
-                                if (amountToBePaid > finalAmount) {
-                                  errorMessage = 'Amount paid cannot exceed final amount of ₹${finalAmount.toStringAsFixed(2)}';
-                                } else {
-                                  errorMessage = null;
-                                }
+                                // Validation will automatically run in the next build
                               });
                             },
                           ),
@@ -1080,7 +1075,6 @@ class BillingController extends GetxController {
       actions: [
         GestureDetector(
           onTap: () async {
-            // FIXED: Validate before submission
             double finalAmount = totalAmount;
             if (discountType == 'Percentage' && discountAmount > 0) {
               finalAmount = totalAmount - (totalAmount * discountAmount / 100);
@@ -1097,7 +1091,7 @@ class BillingController extends GetxController {
                 'Amount paid cannot exceed final amount of ₹${finalAmount.toStringAsFixed(2)}',
                 backgroundColor: Colors.red.shade100,
               );
-              return; // Prevent submission
+              return;
             }
 
             await submitBillingData(
@@ -1126,7 +1120,6 @@ class BillingController extends GetxController {
         GestureDetector(
           onTap: () async {
             try {
-              // FIXED: Validate before printing
               double finalAmount = totalAmount;
               if (discountType == 'Percentage' && discountAmount > 0) {
                 finalAmount = totalAmount - (totalAmount * discountAmount / 100);
@@ -1143,7 +1136,7 @@ class BillingController extends GetxController {
                   'Amount paid cannot exceed final amount of ₹${finalAmount.toStringAsFixed(2)}',
                   backgroundColor: Colors.red.shade100,
                 );
-                return; // Prevent printing
+                return;
               }
 
               Get.back();
@@ -1212,6 +1205,7 @@ class BillingController extends GetxController {
       ],
     );
   }
+
 
 
 

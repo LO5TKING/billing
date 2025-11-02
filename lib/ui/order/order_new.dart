@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:billing/app/config/color_constants.dart';
 import 'package:billing/app/config/design_constants.dart';
 import 'package:flutter/material.dart' hide Ink;
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
 import '../../app/routes/app_pages.dart';
@@ -758,47 +761,40 @@ class _OrderNewState extends State<OrderNew> {
                                               )),
                                         ),
                                         const SizedBox(width: 10),
+                                        const SizedBox(width: 10),
                                         Container(
                                           height: 40,
                                           child: Obx(() => ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:
-                                                    AppColors.blueGradient,
+                                                AppColors.blueGradient,
                                                 shape:
-                                                    const RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                                Radius.circular(
-                                                                    5))),
+                                                const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                    BorderRadius.all(
+                                                        Radius.circular(
+                                                            5))),
                                               ),
                                               onPressed: orderControllerNew
-                                                      .isPrinting.value
+                                                  .isPrinting.value
                                                   ? null
                                                   : () async {
-                                                      orderControllerNew
-                                                          .printPdfReceipt(selectedClient.value);
-                                                      // await orderControllerNew
-                                                      //     .shopDetailApi();
-                                                    },
+                                                orderControllerNew
+                                                    .printPdfReceipt(selectedClient.value ?? widget.customer);
+                                                // await orderControllerNew.shopDetailApi();
+                                              },
                                               child: orderControllerNew
-                                                      .isPrinting.value
+                                                  .isPrinting.value
                                                   ? const SizedBox(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                        strokeWidth: 2,
-                                                      ),
-                                                    )
-                                                  : const Text(
-                                                      'Print Receipt',
-                                                      style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize:
-                                                              DesignConstants
-                                                                  .fontSize16),
-                                                    ))),
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                                  : const Icon(Icons.print,color: Colors.white,size: 40,))),
                                         ),
                                         const SizedBox(width: 10),
                                         Container(
@@ -806,25 +802,19 @@ class _OrderNewState extends State<OrderNew> {
                                           child: ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:
-                                                    AppColors.blueGradient,
+                                                AppColors.blueGradient,
                                                 shape:
-                                                    const RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                                Radius.circular(
-                                                                    5))),
+                                                const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                    BorderRadius.all(
+                                                        Radius.circular(
+                                                            5))),
                                               ),
                                               onPressed: () {
                                                 orderControllerNew.itemList
                                                     .clear();
                                               },
-                                              child: const Text(
-                                                'Clear Receipt',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: DesignConstants
-                                                        .fontSize16),
-                                              )),
+                                              child: const Icon(Icons.clear,color: Colors.white,size: 40,)),
                                         ),
                                         const SizedBox(width: 10),
                                         Container(
@@ -832,25 +822,43 @@ class _OrderNewState extends State<OrderNew> {
                                           child: ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:
-                                                    AppColors.blueGradient,
+                                                AppColors.blueGradient,
                                                 shape:
-                                                    const RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                                Radius.circular(
-                                                                    5))),
+                                                const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                    BorderRadius.all(
+                                                        Radius.circular(
+                                                            5))),
                                               ),
                                               onPressed: () async {
-                                                await orderControllerNew
-                                                    .saveReceiptAsPdf();
+                                                await orderControllerNew.saveReceiptAsPdf();
                                               },
-                                              child: const Text(
-                                                'Save Receipt',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: DesignConstants
-                                                        .fontSize16),
-                                              )),
+                                              child: const Icon(Icons.save,color: Colors.white,size: 40,)),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Container(
+                                          height: 40,
+                                          child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                AppColors.blueGradient,
+                                                shape:
+                                                const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                    BorderRadius.all(
+                                                        Radius.circular(
+                                                            5))),
+                                              ),
+                                              onPressed: () async {
+                                                File? pdfFile = await orderControllerNew.saveReceiptAsPdf();
+                                                if (pdfFile != null && await pdfFile.exists()) {
+                                                  final XFile xfile = XFile(pdfFile.path);
+                                                  SharePlus.instance.share(ShareParams(files: [xfile],text: "Here is your receipt!"));
+                                                } else {
+                                                  Get.snackbar('Error', 'Unable to share receipt');
+                                                }
+                                              },
+                                              child: const Icon(Icons.share,color: Colors.white,size: 40,)),
                                         ),
                                       ],
                                     ),

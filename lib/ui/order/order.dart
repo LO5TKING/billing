@@ -736,6 +736,7 @@ class _OrderState extends State<Order> {
                                             },
                                             child: const Icon(Icons.save,color: Colors.white,size: 40,)),
                                       ),
+                                      const SizedBox(width: 10),
                                       Container(
                                         height: 40,
                                         child: ElevatedButton(
