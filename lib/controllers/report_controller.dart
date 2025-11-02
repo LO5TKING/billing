@@ -163,4 +163,11 @@ class ReportController extends GetxController {
     currentPage.value = 1;
     getReports(); // Make API call without filters
   }
+
+  @override
+  void onClose() {
+    // TODO: implement onClose
+    super.onClose();
+
+  }
 }

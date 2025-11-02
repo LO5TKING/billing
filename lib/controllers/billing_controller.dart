@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:billing/controllers/report_controller.dart';
 import 'package:billing/model/order_detail_response_model.dart';
 import 'package:billing/model/report_response_model.dart';
 import 'package:flutter/gestures.dart';
@@ -1101,7 +1102,7 @@ class BillingController extends GetxController {
                 paidAmount: paidAmt
             );
             itemList.clear();
-            Get.back();
+            // ReportController().getReports();
             SharedPrefs.remove(ConstantsText.selectedCustomerBill1);
             SharedPrefs.remove(ConstantsText.selectedCustMobBill1);
           },
@@ -1840,7 +1841,8 @@ class BillingController extends GetxController {
       // Get.back();
 
       if (response.statusCode == 200) {
-        Get.back(canPop: true,closeOverlays: true);
+        Get.back(canPop: true,closeOverlays: true,result: true);
+        // ReportController().getReports();
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",

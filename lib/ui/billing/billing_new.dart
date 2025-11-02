@@ -591,7 +591,7 @@ class _BillingNewState extends State<BillingNew> {
                                               billingControllerNew.itemList
                                                   .clear();
                                             },
-                                            child: const Icon(Icons.cleaning_services_sharp,color: Colors.white,size: 40,)
+                                            child: const Icon(Icons.clear,color: Colors.white,size: 40,)
                                         ),
                                       ),
                                       const SizedBox(width: 10),
