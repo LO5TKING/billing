@@ -7,6 +7,7 @@ class DraggableFab extends StatefulWidget {
   final IconData icon;
   final Color backgroundColor;
   final Color iconColor;
+  final bool noNavigation;
 
   const DraggableFab({
     Key? key,
@@ -15,6 +16,7 @@ class DraggableFab extends StatefulWidget {
     this.icon = Icons.add,
     this.backgroundColor = Colors.blue,
     this.iconColor = Colors.white,
+    this.noNavigation = false
   }) : super(key: key);
 
   @override
@@ -30,18 +32,12 @@ class _DraggableFabState extends State<DraggableFab> {
         heroTag: widget.targetRoute,
         backgroundColor: widget.backgroundColor,
         onPressed: () {
-          Get.offNamed(widget.targetRoute, arguments: widget.arguments);
+          if(!widget.noNavigation) {
+            Get.offNamed(widget.targetRoute, arguments: widget.arguments);
+          }
         },
         child: Icon(widget.icon, color: widget.iconColor),
       ),
     );
   }
 }
-
-
-/* setState(() {
-            // Update position based on drag
-            _x = (_x + details.delta.dx).clamp(0, _screenWidth - 56);
-            _y = (_y - details.delta.dy).clamp(0, _screenHeight - 56);
-          });
-          */

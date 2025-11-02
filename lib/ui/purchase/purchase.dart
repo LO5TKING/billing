@@ -16,7 +16,9 @@ import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_re
 import 'package:share_plus/share_plus.dart';
 
 import '../../app/config/constants_text.dart';
+import '../../app/routes/app_pages.dart';
 import '../../model/customer_response_model.dart';
+import '../../utils/draggable_fab.dart';
 import '../../utils/shared_pref.dart';
 import '../../utils/utility.dart';
 
@@ -39,81 +41,83 @@ class _PurchaseState extends State<Purchase> {
 
 
 
-  // void customerListWidget() {
-  //   final TextEditingController searchController = TextEditingController();
-  //   RxList<PurchaserData> filteredClientList = <PurchaserData>[].obs;
-  //
-  //   // Initialize filtered list with all clients
-  //   filteredClientList.assignAll(purchaseController.clientList);
-  //
-  //   void filterClients(String query) {
-  //     if (query.isEmpty) {
-  //       filteredClientList.assignAll(purchaseController.clientList);
-  //     } else {
-  //       filteredClientList.assignAll(
-  //           purchaseController.clientList.where((client) =>
-  //           client.purchaserName?.toLowerCase().contains(query.toLowerCase()) ?? false
-  //           ).toList()
-  //       );
-  //     }
-  //   }
-  //
-  //   Get.dialog(
-  //     barrierDismissible: false,
-  //     Obx(() => purchaseController.loadingClient.value ?
-  //     const Center(child: CircularProgressIndicator(),):
-  //     AlertDialog(
-  //       title: const Text("Select Client", textAlign: TextAlign.center,),
-  //       alignment: Alignment.center,
-  //       content: Container(
-  //         height: 500,
-  //         width: 500,
-  //         child: Column(
-  //           children: [
-  //             // Search TextField
-  //             TextField(
-  //               controller: searchController,
-  //               onChanged: filterClients,
-  //               decoration: const InputDecoration(
-  //                 hintText: "Search clients...",
-  //                 prefixIcon: Icon(Icons.search),
-  //                 border: OutlineInputBorder(),
-  //               ),
-  //             ),
-  //             const SizedBox(height: 10),
-  //             // ListView with filtered results
-  //             Expanded(
-  //               child: Obx(() => ListView.builder(
-  //                 itemCount: filteredClientList.length,
-  //                 itemBuilder: (context, index) {
-  //                   return InkWell(
-  //                     onTap: () {
-  //                       selectedClient.value = filteredClientList[index];
-  //                       Get.back();
-  //                     },
-  //                     child: Container(
-  //                       margin: const EdgeInsets.all(10),
-  //                       padding: const EdgeInsets.all(10),
-  //                       decoration: BoxDecoration(
-  //                           border: Border.all(color: AppColors.blueMarieTime, width: 1)
-  //                       ),
-  //                       child: Text(
-  //                         filteredClientList[index].name ?? "",
-  //                         textAlign: TextAlign.center,
-  //                         style: const TextStyle(fontSize: 24,),
-  //                       ),
-  //                     ),
-  //                   );
-  //                 },
-  //               )),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //     ),
-  //   );
-  // }
+  void customerListWidget() {
+    final TextEditingController searchController = TextEditingController();
+    RxList<PurchaserData> filteredClientList = <PurchaserData>[].obs;
+
+    // Initialize filtered list with all clients
+    filteredClientList.assignAll(purchaseController.clientList);
+
+    void filterClients(String query) {
+      if (query.isEmpty) {
+        filteredClientList.assignAll(purchaseController.clientList);
+      } else {
+        filteredClientList.assignAll(
+            purchaseController.clientList.where((client) =>
+            client.purchaserName?.toLowerCase().contains(query.toLowerCase()) ?? false
+            ).toList()
+        );
+      }
+    }
+
+    Get.dialog(
+      barrierDismissible: false,
+      Obx(() => purchaseController.loadingClient.value ?
+      const Center(child: CircularProgressIndicator(),):
+      AlertDialog(
+        title: const Text("Select Client", textAlign: TextAlign.center,),
+        alignment: Alignment.center,
+        content: Container(
+          height: 500,
+          width: 500,
+          child: Column(
+            children: [
+              // Search TextField
+              TextField(
+                controller: searchController,
+                onChanged: filterClients,
+                decoration: const InputDecoration(
+                  hintText: "Search clients...",
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // ListView with filtered results
+              Expanded(
+                child: Obx(() => ListView.builder(
+                  itemCount: filteredClientList.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        selectedClient.value = filteredClientList[index];
+                        Get.back();
+                        SharedPrefs.setString(ConstantsText.selectedCustomerPurchase1, selectedClient.value?.purchaserName ?? "");
+                        SharedPrefs.setString(ConstantsText.selectedCustMobPurchase1, selectedClient.value?.mobileNo ?? "");
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.blueMarieTime, width: 1)
+                        ),
+                        child: Text(
+                          filteredClientList[index].purchaserName ?? "",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24,),
+                        ),
+                      ),
+                    );
+                  },
+                )),
+              ),
+            ],
+          ),
+        ),
+      ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,29 +170,33 @@ class _PurchaseState extends State<Purchase> {
                                       ),
                                     )),
                                   ),
-                                  Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: DesignConstants.padding5),
-                                        child: Text(
-                                          'To : ${widget.customer?.purchaserName ?? "Guest"}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.appBgColor,
-                                          ),
-                                        )),
-
+                                  Obx(() =>
                                     Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: DesignConstants.padding5),
-                                        child: Text(
-                                          'Mob : ${widget.customer?.mobileNo ?? "N.A"}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.appBgColor,
-                                          ),
-                                        )),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: DesignConstants.padding5),
+                                          child: Text(
+                                            'To : ${selectedClient.value?.purchaserName ?? widget.customer?.purchaserName ?? SharedPrefs.getString(ConstantsText.selectedCustomerPurchase1) ??"Guest"}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.appBgColor,
+                                            ),
+                                          )),
+                                  ),
+
+                                    Obx(() =>
+                                      Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: DesignConstants.padding5),
+                                          child: Text(
+                                            'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobPurchase1)?? "N.A"}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.appBgColor,
+                                            ),
+                                          )),
+                                    ),
                                 ],
                               ),
                             ),
@@ -700,6 +708,23 @@ class _PurchaseState extends State<Purchase> {
                         )),
                       ),
                     ],
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 20,
+                left: 20,
+                child: GestureDetector(
+                  onLongPress: () async {
+                    await purchaseController.getPurchaser();
+                    customerListWidget();
+                  },
+                  child: DraggableFab(
+                    targetRoute: AppPages.billingNew,
+                    arguments: {'customer': widget.customer,'clientList' : widget.clientList},
+                    backgroundColor: AppColors.blackLead,
+                    icon: Icons.receipt,
+                    noNavigation: true,
                   ),
                 ),
               ),

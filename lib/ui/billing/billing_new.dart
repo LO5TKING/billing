@@ -101,7 +101,7 @@ class _BillingNewState extends State<BillingNew> {
                                   Obx(() => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'To : ${selectedClient.value?.name ?? "Guest"}',
+                                      'To : ${selectedClient.value?.name ?? SharedPrefs.getString(ConstantsText.selectedCustomerBill2) ?? "Guest"}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -113,7 +113,7 @@ class _BillingNewState extends State<BillingNew> {
                                   Obx(() => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Mob : ${selectedClient.value?.mobileNo ?? "N.A"}',
+                                      'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobBill2) ??"N.A"}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -962,6 +962,8 @@ class _BillingNewState extends State<BillingNew> {
                     return InkWell(
                       onTap: () {
                         selectedClient.value = filteredClientList[index];
+                        SharedPrefs.setString(ConstantsText.selectedCustomerBill2, selectedClient.value?.name ?? "");
+                        SharedPrefs.setString(ConstantsText.selectedCustMobBill2, selectedClient.value?.mobileNo ?? "");
                         Get.back();
                       },
                       child: Container(

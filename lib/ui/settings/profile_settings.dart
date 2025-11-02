@@ -394,10 +394,10 @@ class _ProfileSettingsState extends State<ProfileSettings> {
                     ),
                   ),
                 ),
-                const Spacer(),
-                IconButton(icon: const Icon(Icons.upload,size: 25),onPressed: () {
+                // const Spacer(),
+                // IconButton(icon: const Icon(Icons.upload,size: 25),onPressed: () {
 
-                },),
+                // },),
               ],
             ),
           ),
@@ -411,24 +411,27 @@ class _ProfileSettingsState extends State<ProfileSettings> {
               children: [
                 shadowText(text: 'Profile Upload',fontsize: DesignConstants.fontSize24,fontWeight: FontWeight.w400),
                 const Spacer(),
-                const SizedBox(
-                  width: 150,
-                  height: 100,
-                  child: Card(
-                    elevation: 20,
-                    color: Colors.white,
-                    shape: CircleBorder(
-                      side: BorderSide(
-                        color: Colors.white,
-                      ),
+                GestureDetector(
 
+                  child: const SizedBox(
+                    width: 150,
+                    height: 100,
+                    child: Card(
+                      elevation: 20,
+                      color: Colors.white,
+                      shape: CircleBorder(
+                        side: BorderSide(
+                          color: Colors.white,
+                        ),
+
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
-                IconButton(icon: const Icon(Icons.upload,size: 25),onPressed: () {
-
-                },),
+                // const Spacer(),
+                // IconButton(icon: const Icon(Icons.upload,size: 25),onPressed: () {
+                //
+                // },),
               ],
             ),
           ),

@@ -985,11 +985,37 @@ class BillingControllerNew extends GetxController {
       actions: [
         GestureDetector(
           onTap: () async {
+
+            double finalAmount = totalAmount;
+            if (discountType == 'Percentage' && discountAmount > 0) {
+              finalAmount = totalAmount - (totalAmount * discountAmount / 100);
+            } else if (discountType == 'Flat') {
+              finalAmount = totalAmount - discountAmount;
+            }
+            finalAmount = finalAmount < 0 ? 0 : finalAmount;
+
+            double paidAmt = double.tryParse(amountPaid.text) ?? 0;
+
+            if (paidAmt > finalAmount) {
+              Get.snackbar(
+                'Error',
+                'Amount paid cannot exceed final amount of ₹${finalAmount.toStringAsFixed(2)}',
+                backgroundColor: Colors.red.shade100,
+              );
+              return; // Prevent submission
+            }
+
             await submitBillingData(
             customerId: customer?.custId,
             customerName: customer?.name,
             clientId: customer?.clientId
             );
+
+            itemList.clear();
+            Get.back();
+            SharedPrefs.remove(ConstantsText.selectedCustomerBill2);
+            SharedPrefs.remove(ConstantsText.selectedCustMobBill2);
+
           },
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -1032,7 +1058,9 @@ class BillingControllerNew extends GetxController {
                   discountAmount: actualDiscountAmount,
                   amountPaid: amountToBePaid
               );
-
+              itemList.clear();
+              SharedPrefs.remove(ConstantsText.selectedCustomerBill2);
+              SharedPrefs.remove(ConstantsText.selectedCustMobBill2);
               Get.snackbar('Success', 'Receipt sent to printer');
               // await shopDetailApi(); // Update bill count
             } catch (e) {
@@ -1387,8 +1415,8 @@ class BillingControllerNew extends GetxController {
         // Call shop detail API to update bill count
         // await shopDetailApi();
 
-        // Clear items after successful submission
-        itemList.clear();
+        //
+        // itemList.clear();
         update();
       } else {
         // Error

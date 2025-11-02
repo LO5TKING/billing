@@ -60,7 +60,9 @@ class LoginScreen extends StatelessWidget {
                         controller: loginController.mobileNo,
                         validator: Validation.validateMobileNumber,
                         keyboardType: TextInputType.phone,
+                        maxLength: 10,
                         decoration: InputDecoration(
+                          counterText: "",
                           labelText: 'Mobile No.',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),

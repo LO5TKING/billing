@@ -114,7 +114,7 @@ class _OrderState extends State<Order> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'To : ${selectedClient.value?.name ?? widget.customer?.name ?? "Guest"}',
+                                          'To : ${selectedClient.value?.name ?? SharedPrefs.getString(ConstantsText.selectedCustomerOrder1) ?? widget.customer?.name ?? "Guest"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -127,7 +127,7 @@ class _OrderState extends State<Order> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: DesignConstants.padding5),
                                         child: Text(
-                                          'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? "N.A"}',
+                                          'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobOrder1) ?? widget.customer?.mobileNo ?? "N.A"}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
@@ -1109,6 +1109,8 @@ class _OrderState extends State<Order> {
                     return InkWell(
                       onTap: () {
                         selectedClient.value = filteredClientList[index];
+                        SharedPrefs.setString(ConstantsText.selectedCustomerOrder1, selectedClient.value?.name ?? "");
+                        SharedPrefs.setString(ConstantsText.selectedCustMobOrder1, selectedClient.value?.mobileNo ?? "");
                         Get.back();
                       },
                       child: Container(

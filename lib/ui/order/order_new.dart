@@ -97,30 +97,34 @@ class _OrderNewState extends State<OrderNew> {
                                             ),
                                           )),
                                     ),
-                                    Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal:
-                                                DesignConstants.padding5),
-                                        child: Text(
-                                          'To : ${selectedClient.value?.name}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.appBgColor,
-                                          ),
-                                        )),
-                                    Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal:
-                                                DesignConstants.padding5),
-                                        child: Text(
-                                          'Mob : ${selectedClient.value?.mobileNo}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.appBgColor,
-                                          ),
-                                        )),
+                                    Obx(() =>
+                                      Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal:
+                                                  DesignConstants.padding5),
+                                          child: Text(
+                                            'To : ${selectedClient.value?.name ?? SharedPrefs.getString(ConstantsText.selectedCustomerOrder2) ?? "Guest"}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.appBgColor,
+                                            ),
+                                          )),
+                                    ),
+                                    Obx( () =>
+                                      Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal:
+                                                  DesignConstants.padding5),
+                                          child: Text(
+                                            'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobOrder2) ?? "N.A"}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.appBgColor,
+                                            ),
+                                          )),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -134,7 +138,7 @@ class _OrderNewState extends State<OrderNew> {
                                             horizontal:
                                                 DesignConstants.padding5),
                                         child: Text(
-                                          SharedPrefs.getString(ConstantsText.mobileNumber) ?? "".toUpperCase(),
+                                          SharedPrefs.getString(ConstantsText.companyName) ?? "".toUpperCase(),
                                           style: GoogleFonts.poppins(
                                             fontSize: 28,
                                             fontWeight: FontWeight.bold,
@@ -1227,6 +1231,8 @@ class _OrderNewState extends State<OrderNew> {
                     return InkWell(
                       onTap: () {
                         selectedClient.value = filteredClientList[index];
+                        SharedPrefs.setString(ConstantsText.selectedCustomerOrder2, selectedClient.value?.name ?? "");
+                        SharedPrefs.setString(ConstantsText.selectedCustMobOrder2, selectedClient.value?.mobileNo ?? "");
                         Get.back();
                       },
                       child: Container(
