@@ -68,7 +68,7 @@ class BillingControllerNew extends GetxController {
   String recognizedEditQuantity = '';
 
   TextEditingController amountPaid = TextEditingController();
-  TextEditingController discountAmount = TextEditingController();
+  TextEditingController discountAmountText = TextEditingController();
 
   Future<bool> _downloadModelWithTimeout() async {
     try {
@@ -204,6 +204,7 @@ class BillingControllerNew extends GetxController {
   void onClose() {
     _dateTimeTimer?.cancel();
     digitalInkRecognizer.close();
+    discountAmountText.clear();
     super.onClose();
   }
 
@@ -766,7 +767,7 @@ class BillingControllerNew extends GetxController {
       textConfirm: 'Save',
       textCancel: 'Cancel',
       onCancel: () {
-        Get.back();
+        // Get.back();
       },
       onConfirm: () {
         if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
@@ -856,163 +857,168 @@ class BillingControllerNew extends GetxController {
                       ),
                     ),
                   ),
-                Table(
-                  columnWidths: const {
-                    0: FixedColumnWidth(150),   // Fixed label width
-                    1: FixedColumnWidth(150),      // Remaining space for inputs/values
-                  },
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                  children: [
-                    // Total Amount
-                    TableRow(children: [
-                      const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 0.5),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ]),
-
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
-
-                    // Discount Type
-                    TableRow(children: [
-                      const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          Row(
-                            children: [
-                              Radio(
-                                value: 'Flat',
-                                groupValue: discountType,
-                                onChanged: (value) {
-                                  setState(() {
-                                    discountType = value.toString();
-                                    discountAmount = 0;
-                                  });
-                                },
-                              ),
-                              const Text('Flat Amount'),
-                            ],
+                Container(
+                  width: Get.width * 0.8,
+                  padding: const EdgeInsets.all(20),
+                  child: Table(
+                    columnWidths: const {
+                      0: FixedColumnWidth(150),   // Fixed label width
+                      1: FixedColumnWidth(150),      // Remaining space for inputs/values
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    children: [
+                      // Total Amount
+                      TableRow(children: [
+                        const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 0.5),
+                            borderRadius: BorderRadius.circular(5),
                           ),
-                          Row(
-                            children: [
-                              Radio(
-                                value: 'Percentage',
-                                groupValue: discountType,
-                                onChanged: (value) {
-                                  setState(() {
-                                    discountType = value.toString();
-                                    discountAmount = 0;
-                                  });
-                                },
-                              ),
-                              const Text('Percentage'),
-                            ],
-                          ),
-                        ],
-                      )
-                    ]),
-
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
-
-                    // Discount Amount
-                    TableRow(children: [
-                      Text(
-                        discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(
-                        width: 100,
-                        height: 40,
-                        child: TextField(
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              discountAmount = double.tryParse(value) ?? 0;
-                              // Validation will automatically run in the next build
-                            });
-                          },
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('₹ ${calculatedTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
-                      ),
-                    ]),
+                      ]),
 
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                    // Final Amount
-                    TableRow(children: [
-                      const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 0.5),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
-                      ),
-                    ]),
-
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
-
-                    // Amount Paid
-                    TableRow(children: [
-                      const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(
-                        width: 100,
-                        height: 40,
-                        child: TextField(
-                          controller: amountPaid,
-                          textAlign: TextAlign.center,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: errorMessage != null ? Colors.red : Colors.grey,
-                              ),
+                      // Discount Type
+                      TableRow(children: [
+                        const Text('Discount Type:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                Radio(
+                                  value: 'Flat',
+                                  groupValue: discountType,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      discountType = value.toString();
+                                      discountAmount = 0;
+                                    });
+                                  },
+                                ),
+                                const Text('Flat Amount'),
+                              ],
                             ),
-                            prefixText: '₹ ',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            Row(
+                              children: [
+                                Radio(
+                                  value: 'Percentage',
+                                  groupValue: discountType,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      discountType = value.toString();
+                                      discountAmount = 0;
+                                    });
+                                  },
+                                ),
+                                const Text('Percentage'),
+                              ],
+                            ),
+                          ],
+                        )
+                      ]),
+
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                      // Discount Amount
+                      TableRow(children: [
+                        Text(
+                          discountType == 'Percentage' ? 'Discount %:' : 'Discount Amount:',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          height: 40,
+                          child: TextField(
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            controller: discountAmountText,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                discountAmount = double.tryParse(value) ?? 0;
+                                // Validation will automatically run in the next build
+                              });
+                            },
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              amountToBePaid = double.tryParse(value) ?? 0;
-                              // Validation will automatically run in the next build
-                            });
-                          },
                         ),
-                      )
-                    ]),
+                      ]),
 
-                    const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
 
-                    // Balance Amount
-                    TableRow(children: [
-                      const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 0.5),
-                          borderRadius: BorderRadius.circular(5),
+                      // Final Amount
+                      TableRow(children: [
+                        const Text('Final Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 0.5),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text('₹ ${finalAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.blueGradient)),
                         ),
-                        child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                      ),
-                    ]),
-                  ],
+                      ]),
+
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                      // Amount Paid
+                      TableRow(children: [
+                        const Text('Amount Paid:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(
+                          width: 100,
+                          height: 40,
+                          child: TextField(
+                            controller: amountPaid,
+                            textAlign: TextAlign.center,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: errorMessage != null ? Colors.red : Colors.grey,
+                                ),
+                              ),
+                              prefixText: '₹ ',
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                amountToBePaid = double.tryParse(value) ?? 0;
+                                // Validation will automatically run in the next build
+                              });
+                            },
+                          ),
+                        )
+                      ]),
+
+                      const TableRow(children: [SizedBox(height: 12), SizedBox(height: 12)]),
+
+                      // Balance Amount
+                      TableRow(children: [
+                        const Text('Balance Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black, width: 0.5),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text('₹ ${balanceAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                        ),
+                      ]),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1363,9 +1369,24 @@ class BillingControllerNew extends GetxController {
         barrierDismissible: false,
       );
 
-      // Calculate total amount from items
-      final double calculatedTotal = totalAmount;
-      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+      // Step 1: Get the base total amount from items
+      final double baseTotal = totalAmount;
+
+      // Step 2: Get discount value from text field
+      final double discountAmount = double.tryParse(discountAmountText.text) ?? 0.0;
+
+      // Step 3: Apply discount to get total after discount
+      final double totalAfterDiscount = baseTotal - discountAmount;
+
+      // Step 4: Add GST if applicable (assuming GST is a percentage)
+      final double gstAmount = (totalAfterDiscount * gst) / 100;
+      final double finalTotal = totalAfterDiscount + gstAmount;
+
+      // Step 5: Get paid amount from text field
+      final double paidAmountValue = double.tryParse(amountPaid.text) ?? 0.0;
+
+      // Step 6: Calculate balance amount (final total - paid amount)
+      final double balanceAmount = finalTotal - paidAmountValue;
 
       // Current date time
       final DateTime now = DateTime.now();
@@ -1386,16 +1407,15 @@ class BillingControllerNew extends GetxController {
         String productName = '';
         if (item['particulars'] is Uint8List) {
           productName = _convertImageToBase64(item['particulars']);
-          // productName = "trying test";
         }
 
         orderDetails.add({
           "orderNo": orderNo,
           "orderDetailsId": 0,
           "billingId": 0,
-          "customerId": customerId,
-          "clientId": clientId,
-          "customerName": customerName,
+          "customerId": customerId ?? 0,
+          "clientId": clientId ?? "0000",
+          "customerName": customerName ?? "Guest",
           "productName": productName,
           "quantity": qty,
           "pricePerQuantity": rate,
@@ -1413,15 +1433,15 @@ class BillingControllerNew extends GetxController {
         "oBilling": {
           "billingId": 0,
           "orderNo": orderNo,
-          "customerId": customerId,
-          "customerName": customerName,
-          "clientId": clientId,
-          "totalAmount": calculatedTotal,
-          "balanceAmount": balanceAmount,
-          "discount": discount,
+          "customerId": customerId ?? 0,
+          "customerName": customerName ?? "Guest",
+          "clientId": clientId ?? '0000',
+          "totalAmount": finalTotal, // Use calculated final total
+          "balanceAmount": balanceAmount, // Use calculated balance
+          "discount": discountAmount, // Use parsed discount amount
           "gst": gst,
           "discountType": discountType,
-          "paidAmount": paidAmount,
+          "paidAmount": paidAmountValue, // Use parsed paid amount
           "paidAmountType": paidAmountType,
           "transactionNo": transactionNo,
           "referenceNo": referenceNo,
@@ -1448,29 +1468,28 @@ class BillingControllerNew extends GetxController {
         data: billingData,
       );
 
-      // Close loading dialog
-      Get.back();
+      // Close loading dialog first
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
 
       if (response.statusCode == 200) {
-        // Success
-        Get.back(canPop: true,closeOverlays: true);
+        // Success - navigate back with result
+        Get.back(result: true); // Return true to indicate success
+
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
 
-        // Call shop detail API to update bill count
-        // await shopDetailApi();
-
-        //
-        // itemList.clear();
+        // Update UI
         update();
       } else {
         // Error
         Get.snackbar(
           "Error",
-          "Failed to submit billing data: ${response.body}",
+          "Failed to submit billing  ${response.body}",
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -1488,6 +1507,7 @@ class BillingControllerNew extends GetxController {
       );
     }
   }
+
 
   Future<void> getClients() async {
     loadingClient.value = true;

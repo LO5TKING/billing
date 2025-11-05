@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:billing/networks/api_service.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
@@ -70,7 +71,12 @@ class OrderController extends GetxController {
   final RxString formattedDateTime = ''.obs;
   Timer? _dateTimeTimer;
   TextEditingController amountPaid = TextEditingController();
-  TextEditingController discountAmount = TextEditingController();
+  TextEditingController discountAmountText = TextEditingController();
+
+  final Ink editRateInk = Ink();
+  final Ink editQuantityInk = Ink();
+  String recognizedEditRate = '';
+  String recognizedEditQuantity = '';
 
   Future<bool> _downloadModelWithTimeout() async {
     try {
@@ -209,6 +215,7 @@ class OrderController extends GetxController {
   void onClose() {
     _dateTimeTimer?.cancel();
     digitalInkRecognizer.close();
+    discountAmountText.clear();
     super.onClose();
   }
 
@@ -612,6 +619,279 @@ class OrderController extends GetxController {
 
   void editItem(int index) {
     final item = itemList[index];
+    editRateInk.strokes.clear();
+    editQuantityInk.strokes.clear();
+    recognizedEditRate = item['rate'];
+    recognizedEditQuantity = item['quantity'];
+
+    Get.defaultDialog(
+      title: 'Edit Item',
+      barrierDismissible: false,
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            children: [
+
+              Text('Quantity $recognizedEditQuantity', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 75,
+                    width: Get.width * 0.6,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.blueGradient),
+                    ),
+                    child: ClipRRect(
+                      child: Builder(
+                        builder: (quantityContext) => Listener(
+                          onPointerDown: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              editQuantityInk.strokes.add(Stroke());
+                              setState(() {});
+                            }
+                          },
+                          onPointerMove: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              final RenderObject? object = quantityContext.findRenderObject();
+                              final localPosition =
+                              (object as RenderBox?)?.globalToLocal(event.position);
+                              if (localPosition != null &&
+                                  editQuantityInk.strokes.isNotEmpty) {
+                                editQuantityInk.strokes.last.points.add(
+                                  StrokePoint(
+                                    x: localPosition.dx,
+                                    y: localPosition.dy,
+                                    t: DateTime.now().millisecondsSinceEpoch,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            }
+                          },
+                          onPointerUp: (event) {
+                            setState(() {});
+                          },
+                          child: CustomPaint(
+                            painter: SignatureStyle(ink: editQuantityInk),
+                            size: Size.infinite,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () {
+                        editQuantityInk.strokes.clear();
+                        setState(() {});
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          final candidates = await digitalInkRecognizer.recognize(editQuantityInk);
+                          if (candidates.isNotEmpty) {
+                            var text = candidates[0].text;
+                            text = text
+                                .toUpperCase()
+                                .replaceAll('O', '0')
+                                .replaceAll('I', '1')
+                                .replaceAll('L', '1')
+                                .replaceAll('U', '4')
+                                .replaceAll('A', '4')
+                                .replaceAll('Z', '2')
+                                .replaceAll('\\', '1')
+                                .replaceAll('/', '1')
+                                .replaceAll('H', '4')
+                                .replaceAll('B', '3')
+                                .replaceAll('S', '5')
+                                .replaceAll('Z', '2')
+                                .replaceAll('T', '7');
+
+                            recognizedEditQuantity = text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            if (recognizedEditQuantity.isEmpty) {
+                              Get.snackbar("Error", "Quantity Not Recognized");
+                            }
+                          } else {
+                            Get.snackbar("Error", "No candidates recognized");
+                          }
+                          setState(() {});
+                        } catch (e) {
+                          Get.snackbar("Error", "Recognition failed: $e");
+                        }
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: AppColors.blueGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              const SizedBox(height: 20),
+
+
+              Text('Rate $recognizedEditRate', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 75,
+                    width: Get.width * 0.6,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.blueGradient),
+                    ),
+                    child: ClipRRect(
+                      child: Builder(
+                        builder: (rateContext) => Listener(
+                          onPointerDown: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              editRateInk.strokes.add(Stroke());
+                              setState(() {});
+                            }
+                          },
+                          onPointerMove: (event) {
+                            if (event.kind == PointerDeviceKind.stylus ||
+                                event.kind == PointerDeviceKind.touch) {
+                              final RenderObject? object = rateContext.findRenderObject();
+                              final localPosition =
+                              (object as RenderBox?)?.globalToLocal(event.position);
+                              if (localPosition != null &&
+                                  editRateInk.strokes.isNotEmpty) {
+                                editRateInk.strokes.last.points.add(
+                                  StrokePoint(
+                                    x: localPosition.dx,
+                                    y: localPosition.dy,
+                                    t: DateTime.now().millisecondsSinceEpoch,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            }
+                          },
+                          onPointerUp: (event) {
+                            setState(() {});
+                          },
+                          child: CustomPaint(
+                            painter: SignatureStyle(ink: editRateInk),
+                            size: Size.infinite,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () {
+                        editRateInk.strokes.clear();
+                        setState(() {});
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.cancel_outlined, color: AppColors.blackLead),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -0,
+                    right: -0,
+                    child: GestureDetector(
+                      onTap: () async {
+                        try {
+                          final candidates = await digitalInkRecognizer.recognize(editRateInk);
+                          if (candidates.isNotEmpty) {
+                            var text = candidates[0].text;
+                            text = text
+                                .toUpperCase()
+                                .replaceAll('O', '0')
+                                .replaceAll('I', '1')
+                                .replaceAll('L', '1')
+                                .replaceAll('U', '4')
+                                .replaceAll('A', '4')
+                                .replaceAll('Z', '2')
+                                .replaceAll('\\', '1')
+                                .replaceAll('/', '1')
+                                .replaceAll('H', '4')
+                                .replaceAll('B', '3')
+                                .replaceAll('S', '5')
+                                .replaceAll('Z', '2')
+                                .replaceAll('T', '7');
+
+                            recognizedEditRate = text.replaceAll(RegExp(r'[^0-9.]'), '');
+                            if (recognizedEditRate.isEmpty) {
+                              Get.snackbar("Error", "Rate Not Recognized");
+                            }
+                          } else {
+                            Get.snackbar("Error", "No candidates recognized");
+                          }
+                          setState(() {});
+                        } catch (e) {
+                          Get.snackbar("Error", "Recognition failed: $e");
+                        }
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: AppColors.blueGradient,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          );
+        },
+      ),
+      textConfirm: 'Save',
+      textCancel: 'Cancel',
+      onCancel: () {
+        // Get.back();
+      },
+      onConfirm: () {
+        if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
+          itemList[index]['quantity'] = recognizedEditQuantity;
+          itemList[index]['rate'] = recognizedEditRate;
+          update();
+          Get.back();
+        } else {
+          Get.snackbar("Error", "Quantity and Rate cannot be empty");
+        }
+      },
+    );
+  }
+
+/*  void editItem(int index) {
+    final item = itemList[index];
 
     Get.defaultDialog(
       title: 'Edit Item',
@@ -646,7 +926,7 @@ class OrderController extends GetxController {
         Get.back();
       },
     );
-  }
+  }*/
 
   void deleteItem(int index) {
     itemList.removeAt(index);
@@ -851,6 +1131,7 @@ class OrderController extends GetxController {
                           height: 40,
                           child: TextField(
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            controller: discountAmountText,
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
@@ -1088,9 +1369,24 @@ class OrderController extends GetxController {
         barrierDismissible: false,
       );
 
-      // Calculate total amount from items
-      final double calculatedTotal = totalAmount;
-      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+      // Step 1: Get the base total amount from items
+      final double baseTotal = totalAmount;
+
+      // Step 2: Get discount value from text field
+      final double discountAmount = double.tryParse(discountAmountText.text) ?? 0.0;
+
+      // Step 3: Apply discount to get total after discount
+      final double totalAfterDiscount = baseTotal - discountAmount;
+
+      // Step 4: Add GST if applicable (assuming GST is a percentage)
+      final double gstAmount = (totalAfterDiscount * gst) / 100;
+      final double finalTotal = totalAfterDiscount + gstAmount;
+
+      // Step 5: Get paid amount from text field
+      final double paidAmountValue = double.tryParse(amountPaid.text) ?? 0.0;
+
+      // Step 6: Calculate balance amount (final total - paid amount)
+      final double balanceAmount = finalTotal - paidAmountValue;
 
       // Current date time
       final DateTime now = DateTime.now();
@@ -1111,16 +1407,15 @@ class OrderController extends GetxController {
         String productName = '';
         if (item['particulars'] is Uint8List) {
           productName = _convertImageToBase64(item['particulars']);
-          // productName = "trying test";
         }
 
         orderDetails.add({
           "orderNo": orderNo,
           "orderDetailsId": 0,
           "billingId": 0,
-          "customerId": customerId,
-          "clientId": clientId,
-          "customerName": customerName,
+          "customerId": customerId ?? 0,
+          "clientId": clientId ?? "0000",
+          "customerName": customerName ?? "Guest",
           "productName": productName,
           "quantity": qty,
           "pricePerQuantity": rate,
@@ -1138,15 +1433,15 @@ class OrderController extends GetxController {
         "oBilling": {
           "billingId": 0,
           "orderNo": orderNo,
-          "customerId": customerId,
-          "customerName": customerName,
-          "clientId": clientId,
-          "totalAmount": calculatedTotal,
-          "balanceAmount": balanceAmount,
-          "discount": discount,
+          "customerId": customerId ?? 0,
+          "customerName": customerName ?? "Guest",
+          "clientId": clientId ?? "0000",
+          "totalAmount": finalTotal, // Use calculated final total
+          "balanceAmount": balanceAmount, // Use calculated balance
+          "discount": discountAmount, // Use parsed discount amount
           "gst": gst,
           "discountType": discountType,
-          "paidAmount": paidAmount,
+          "paidAmount": paidAmountValue, // Use parsed paid amount
           "paidAmountType": paidAmountType,
           "transactionNo": transactionNo,
           "referenceNo": referenceNo,
@@ -1173,28 +1468,28 @@ class OrderController extends GetxController {
         data: billingData,
       );
 
-      // Close loading dialog
-      Get.back();
+      // Close loading dialog first
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
 
       if (response.statusCode == 200) {
+        // Success - navigate back with result
+        Get.back(result: true); // Return true to trigger callback
 
-        Get.back(canPop: true,closeOverlays: true);
         Get.snackbar(
           "Success",
           "Billing data submitted successfully",
           snackPosition: SnackPosition.BOTTOM,
         );
 
-        // Call shop detail API to update bill count
-        // await shopDetailApi();
-
-        // itemList.clear();
+        // Update UI
         update();
       } else {
         // Error
         Get.snackbar(
           "Error",
-          "Failed to submit billing data: ${response.body}",
+          "Failed to submit billing  ${response.body}",
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -1212,6 +1507,7 @@ class OrderController extends GetxController {
       );
     }
   }
+
 
   void _updateDateTime() {
     final now = DateTime.now();

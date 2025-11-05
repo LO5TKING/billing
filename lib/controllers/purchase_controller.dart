@@ -65,7 +65,7 @@ class PurchaseController extends GetxController {
   String recognizedEditQuantity = '';
 
   TextEditingController amountPaid = TextEditingController();
-  TextEditingController discountAmount = TextEditingController();
+  TextEditingController discountAmountText = TextEditingController();
 
   Rx<CustomerResponseModel?> customerResponse = Rx<CustomerResponseModel?>(null);
   Rx<PurchaserResponseModel?> purchaserResponse = Rx<PurchaserResponseModel?>(null);
@@ -674,8 +674,6 @@ class PurchaseController extends GetxController {
 
   void editItem(int index) {
     final item = itemList[index];
-
-    // Reset the edit ink objects and recognized values
     editRateInk.strokes.clear();
     editQuantityInk.strokes.clear();
     recognizedEditRate = item['rate'];
@@ -688,8 +686,8 @@ class PurchaseController extends GetxController {
         builder: (context, setState) {
           return Column(
             children: [
-              // Quantity handwriting box
-              Text('Quantity', style: TextStyle(fontWeight: FontWeight.bold)),
+
+              Text('Quantity $recognizedEditQuantity', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -700,7 +698,7 @@ class PurchaseController extends GetxController {
                       border: Border.all(color: AppColors.blueGradient),
                     ),
                     child: ClipRRect(
-                      child: Builder(  // Add Builder widget here
+                      child: Builder(
                         builder: (quantityContext) => Listener(
                           onPointerDown: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
@@ -712,7 +710,7 @@ class PurchaseController extends GetxController {
                           onPointerMove: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
                                 event.kind == PointerDeviceKind.touch) {
-                              final RenderObject? object = quantityContext.findRenderObject();  // Use quantityContext
+                              final RenderObject? object = quantityContext.findRenderObject();
                               final localPosition =
                               (object as RenderBox?)?.globalToLocal(event.position);
                               if (localPosition != null &&
@@ -793,24 +791,23 @@ class PurchaseController extends GetxController {
                         }
                       },
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.blueGradient,
                           shape: BoxShape.circle,
                         ),
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         child: const Icon(Icons.check, color: Colors.white, size: 20),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 10),
-              Text('Recognized: $recognizedEditQuantity',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
+              const SizedBox(height: 10),
 
-              // Rate handwriting box
-              Text('Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+
+
+              Text('Rate $recognizedEditRate', style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold)),
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -821,7 +818,7 @@ class PurchaseController extends GetxController {
                       border: Border.all(color: AppColors.blueGradient),
                     ),
                     child: ClipRRect(
-                      child: Builder(  // Add Builder widget here
+                      child: Builder(
                         builder: (rateContext) => Listener(
                           onPointerDown: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
@@ -833,7 +830,7 @@ class PurchaseController extends GetxController {
                           onPointerMove: (event) {
                             if (event.kind == PointerDeviceKind.stylus ||
                                 event.kind == PointerDeviceKind.touch) {
-                              final RenderObject? object = rateContext.findRenderObject();  // Use rateContext
+                              final RenderObject? object = rateContext.findRenderObject();
                               final localPosition =
                               (object as RenderBox?)?.globalToLocal(event.position);
                               if (localPosition != null &&
@@ -914,20 +911,18 @@ class PurchaseController extends GetxController {
                         }
                       },
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.blueGradient,
                           shape: BoxShape.circle,
                         ),
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         child: const Icon(Icons.check, color: Colors.white, size: 20),
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 10),
-              Text('Recognized: $recognizedEditRate',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
             ],
           );
         },
@@ -935,7 +930,7 @@ class PurchaseController extends GetxController {
       textConfirm: 'Save',
       textCancel: 'Cancel',
       onCancel: () {
-        Get.back();
+        // Get.back();
       },
       onConfirm: () {
         if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
@@ -1114,6 +1109,7 @@ class PurchaseController extends GetxController {
                           child: TextField(
                             keyboardType:
                             const TextInputType.numberWithOptions(decimal: true),
+                            controller: discountAmountText,
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
                               prefixText: discountType == 'Percentage' ? '% ' : '₹ ',
@@ -1362,9 +1358,24 @@ class PurchaseController extends GetxController {
         barrierDismissible: false,
       );
 
-      // Calculate total amount from items
-      final double calculatedTotal = totalAmount;
-      final double balanceAmount = calculatedTotal - double.parse(amountPaid.text);
+      // Step 1: Get the base total amount from items
+      final double baseTotal = totalAmount;
+
+      // Step 2: Get discount value (from parameter)
+      final double discountAmount = discount;
+
+      // Step 3: Apply discount to get total after discount
+      final double totalAfterDiscount = baseTotal - discountAmount;
+
+      // Step 4: Add GST if applicable (assuming GST is a percentage)
+      final double gstAmount = (totalAfterDiscount * gst) / 100;
+      final double finalTotal = totalAfterDiscount + gstAmount;
+
+      // Step 5: Get paid amount from text field
+      final double paidAmountValue = double.tryParse(amountPaid.text) ?? 0.0;
+
+      // Step 6: Calculate balance amount (final total - paid amount)
+      final double balanceAmount = finalTotal - paidAmountValue;
 
       // Current date time
       final DateTime now = DateTime.now();
@@ -1385,7 +1396,6 @@ class PurchaseController extends GetxController {
         String productName = '';
         if (item['particulars'] is Uint8List) {
           productName = _convertImageToBase64(item['particulars']);
-          // productName = "trying test";
         }
 
         orderDetails.add({
@@ -1415,12 +1425,12 @@ class PurchaseController extends GetxController {
           "customerId": customerId,
           "customerName": customerName,
           "clientId": clientId,
-          "totalAmount": calculatedTotal,
-          "balanceAmount": balanceAmount,
-          "discount": discount,
+          "totalAmount": finalTotal, // Use calculated final total
+          "balanceAmount": balanceAmount, // Use calculated balance
+          "discount": discountAmount, // Use discount amount
           "gst": gst,
           "discountType": discountType,
-          "paidAmount": paidAmount,
+          "paidAmount": paidAmountValue, // Use parsed paid amount
           "paidAmountType": paidAmountType,
           "transactionNo": transactionNo,
           "referenceNo": referenceNo,
@@ -1447,12 +1457,14 @@ class PurchaseController extends GetxController {
         data: billingData,
       );
 
-      // Close loading dialog
-      Get.back();
+      // Close loading dialog first
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
 
       if (response.statusCode == 200) {
-        // Success
-        Get.back(canPop: true,closeOverlays: true);
+        // Success - navigate back with result
+        Get.back(result: true); // Return true to trigger callback
 
         Get.snackbar(
           "Success",
@@ -1460,14 +1472,13 @@ class PurchaseController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
 
-        // Call shop detail API to update bill count
-        // await shopDetailApi();
+        // Update UI
         update();
       } else {
         // Error
         Get.snackbar(
           "Error",
-          "Failed to submit billing data: ${response.body}",
+          "Failed to submit billing  ${response.body}",
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -1485,6 +1496,7 @@ class PurchaseController extends GetxController {
       );
     }
   }
+
 
   void _updateDateTime() {
     final now = DateTime.now();

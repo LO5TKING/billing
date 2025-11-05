@@ -70,7 +70,7 @@ class BillingController extends GetxController {
   String recognizedEditRate = '';
   String recognizedEditQuantity = '';
   TextEditingController amountPaid = TextEditingController();
-  TextEditingController discountAmount = TextEditingController();
+  TextEditingController discountAmountText = TextEditingController();
   Future<bool> _downloadModelWithTimeout() async {
     try {
       final timeout = Future.delayed(const Duration(seconds: 30), () {
@@ -187,6 +187,7 @@ class BillingController extends GetxController {
   void onClose() {
     _dateTimeTimer?.cancel();
     digitalInkRecognizer.close();
+    discountAmountText.clear();
     super.onClose();
   }
 
@@ -820,7 +821,7 @@ class BillingController extends GetxController {
       textConfirm: 'Save',
       textCancel: 'Cancel',
       onCancel: () {
-        Get.back();
+        // Get.back();
       },
       onConfirm: () {
         if (recognizedEditQuantity.isNotEmpty && recognizedEditRate.isNotEmpty) {
@@ -988,6 +989,7 @@ class BillingController extends GetxController {
                           width: 100,
                           height: 40,
                           child: TextField(
+                            controller: discountAmountText,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: InputDecoration(
                               border: const OutlineInputBorder(),
@@ -1683,7 +1685,6 @@ class BillingController extends GetxController {
     return base64Encode(imageBytes);
   }
 
-  
 
   Future<void> submitBillingData({
     String orderNo = '',
@@ -1705,6 +1706,178 @@ class BillingController extends GetxController {
         barrierDismissible: false,
       );
 
+      // Get discount value from text field
+      discount = double.tryParse(discountAmountText.text) ?? 0.0;
+
+      if (updateBill.value) {
+        orderNo = currentOrderNo;
+        customerId = customerId ?? currentCustomerId;
+        customerName = customerName ?? currentCustomerName;
+      } else {
+        orderNo = DateTime.now().millisecondsSinceEpoch.toString();
+      }
+
+      // Step 1: Get the base total amount
+      final double baseTotal = totalAmount;
+
+      // Step 2: Apply discount to get the final total
+      final double discountAmount = discount;
+      final double totalAfterDiscount = baseTotal - discountAmount;
+
+      // Step 3: Add GST if applicable (assuming GST is a percentage)
+      final double gstAmount = (totalAfterDiscount * gst) / 100;
+      final double finalTotal = totalAfterDiscount + gstAmount;
+
+      // Step 4: Calculate balance amount (final total - paid amount)
+      final double paidAmountValue = double.tryParse(amountPaid.text) ?? 0.0;
+      final double balanceAmount = finalTotal - paidAmountValue;
+
+      final DateTime now = DateTime.now();
+      final String formattedDate = now.toIso8601String();
+      int? clientUserId = SharedPrefs.getInt(ConstantsText.clientUserId);
+      String? clientIds = SharedPrefs.getString(ConstantsText.clientId);
+
+      int billingsId = updateBill.value ? currentBillingId : 0;
+
+      List<Map<String, dynamic>> orderDetails = [];
+
+      for (int i = 0; i < itemList.length; i++) {
+        final item = itemList[i];
+        final double qty = double.tryParse(item['quantity'] ?? '0') ?? 0;
+        final double rate = double.tryParse(item['rate'] ?? '0') ?? 0;
+        final double totalPrice = qty * rate;
+
+        final int orderDetailsId = item['orderDetailsId'] ?? 0;
+        final int billingId = item['billingId'] ?? 0;
+
+        String productName = '';
+        if (item['particulars'] is Uint8List) {
+          productName = _convertImageToBase64(item['particulars']);
+        } else {
+          productName = item['productName'] ?? '';
+        }
+
+        orderDetails.add({
+          "orderNo": orderNo,
+          "orderDetailsId": orderDetailsId,
+          "billingId": billingId,
+          "customerId": customerId ?? 0,
+          "clientId": clientIds ?? '0000',
+          "customerName": customerName ?? "Guest",
+          "productName": productName,
+          "quantity": qty,
+          "pricePerQuantity": rate,
+          "totalPrice": totalPrice,
+          "productType": "",
+          "isDelete": false,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "clientUserId": clientUserId
+        });
+      }
+
+      Map<String, dynamic> billingData = {
+        "oBilling": {
+          "billingId": billingsId,
+          "orderNo": orderNo,
+          "customerId": customerId ?? 0,
+          "customerName": customerName ?? "Guest",
+          "clientId": clientIds ?? '0000',
+          "totalAmount": finalTotal, // Use calculated final total
+          "balanceAmount": balanceAmount, // Use calculated balance
+          "discount": discountAmount,
+          "gst": gst,
+          "discountType": discountType,
+          "paidAmount": paidAmountValue, // Use parsed paid amount
+          "paidAmountType": paidAmountType,
+          "transactionNo": transactionNo,
+          "referenceNo": referenceNo,
+          "paymentStatus": paymentStatus,
+          "paymentDate": formattedDate,
+          "postedOn": formattedDate,
+          "modifiedOn": formattedDate,
+          "isDelete": false,
+          "isRefund": false,
+          "refundAmount": 0,
+          "refundRemark": "",
+          "refundType": "",
+          "refundDate": null,
+          "refundTransNo": "",
+          "refundStatus": "",
+          "clientUserId": clientUserId
+        },
+        "orderDetails": orderDetails
+      };
+
+      String url = updateBill.value
+          ? "https://roughbill.com/api/Order/UpdateOrder"
+          : "https://roughbill.com/api/Order/addorder";
+
+      final response = await apiService.postRequest(url: url, data: billingData);
+
+      // Close loading dialog first
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      if (response.statusCode == 200) {
+        Get.back(result: true); // Return true for success
+
+        Get.snackbar(
+          "Success",
+          "Billing data submitted successfully",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+
+        // Reset values
+        currentOrderNo = '';
+        currentBillingId = 0;
+        updateBill.value = false;
+        update();
+      } else {
+        Get.snackbar(
+          "Error",
+          "Failed to submit billing ${response.body}",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e, stackTrace) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      print('ERROR: $e');
+      print('STACKTRACE: $stackTrace');
+      Get.snackbar(
+        "Error",
+        "Exception occurred: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+
+
+  /*Future<void> submitBillingData({
+    String orderNo = '',
+    int? customerId = 0,
+    String? customerName = '',
+    String? clientId = '',
+    double discount = 0,
+    double gst = 0,
+    String discountType = 'Flat',
+    double paidAmount = 0,
+    String paidAmountType = 'Cash',
+    String transactionNo = '',
+    String referenceNo = '',
+    String paymentStatus = 'Pending',
+  }) async {
+    try {
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      discount = double.tryParse(discountAmountText.text) ?? 0.0;
       
       if (updateBill.value) {
         orderNo = currentOrderNo;
@@ -1716,8 +1889,7 @@ class BillingController extends GetxController {
         // print('Using billingId: $currentBillingId');
       } else {
         orderNo = DateTime.now().millisecondsSinceEpoch.toString();
-        // print('=== CREATE MODE ===');
-        // print('Generated orderNo: $orderNo');
+
       }
 
       final double calculatedTotal = totalAmount;
@@ -1729,21 +1901,6 @@ class BillingController extends GetxController {
 
       
       int billingsId = updateBill.value ? currentBillingId : 0;
-
-      
-      // print('\n=== ITEMLIST INSPECTION BEFORE LOOP ===');
-      // for (int i = 0; i < itemList.length; i++) {
-      //   print('Item $i BEFORE loop:');
-      //   print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
-      //   print('  billingId: ${itemList[i]['billingId']}');
-      //   print('  quantity: ${itemList[i]['quantity']}');
-      //   print('  Map identity: ${itemList[i].hashCode}');
-      // }
-
-      // if (itemList.isNotEmpty) {
-      //   print('First item: orderDetailsId=${itemList[0]['orderDetailsId']}, billingId=${itemList[0]['billingId']}');
-      // }
-
       
       List<Map<String, dynamic>> orderDetails = [];
 
@@ -1756,11 +1913,6 @@ class BillingController extends GetxController {
         
         final int orderDetailsId = item['orderDetailsId'] ?? 0;
         final int billingId = item['billingId'] ?? 0;
-
-        // print('\n=== PROCESSING ITEM $i ===');
-        // print('orderDetailsId: $orderDetailsId');
-        // print('billingId: $billingId');
-        // print('quantity: $qty, rate: $rate');
 
         String productName = '';
         if (item['particulars'] is Uint8List) {
@@ -1798,7 +1950,7 @@ class BillingController extends GetxController {
           "clientId": clientIds ?? '0000',
           "totalAmount": calculatedTotal,
           "balanceAmount": balanceAmount,
-          "discount": discount,
+          "discount": double.tryParse(discountAmountText.text ?? "0.0") ?? discount,
           "gst": gst,
           "discountType": discountType,
           "paidAmount": paidAmount,
@@ -1826,19 +1978,7 @@ class BillingController extends GetxController {
           ? "https://roughbill.com/api/Order/UpdateOrder"
           : "https://roughbill.com/api/Order/addorder";
 
-      // print('\n=== FINAL PAYLOAD ===');
-      // print('URL: $url');
-      // print('oBilling.billingId: ${billingData['oBilling']['billingId']}');
-      // print('orderDetails count: ${orderDetails.length}');
-      for (int i = 0; i < orderDetails.length; i++) {
-        print('Item $i AFTER loop:');
-        print('  orderDetailsId: ${itemList[i]['orderDetailsId']}');
-        print('  billingId: ${itemList[i]['billingId']}');
-      }
-
       final response = await apiService.postRequest(url: url, data: billingData);
-
-      // Get.back();
 
       if (response.statusCode == 200) {
         Get.back(canPop: true,closeOverlays: true,result: true);
@@ -1872,7 +2012,7 @@ class BillingController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
-  }
+  }*/
 
   Future<void> loadBillingDetailForEdit(BillingReport billDetail) async {
     OrderDeatailsResponseModel? orderDetail = await getBillingDetail(billDetail);
