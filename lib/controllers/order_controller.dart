@@ -1250,7 +1250,6 @@ class OrderController extends GetxController {
 
             itemList.clear();
             SharedPrefs.remove(ConstantsText.selectedCustomerOrder1);
-            SharedPrefs.remove(ConstantsText.selectedCustMobOrder1);
             update();
             refresh();
           },
@@ -1309,7 +1308,6 @@ class OrderController extends GetxController {
 
               itemList.clear();
               SharedPrefs.remove(ConstantsText.selectedCustomerOrder1);
-              SharedPrefs.remove(ConstantsText.selectedCustMobOrder1);
               Get.snackbar('Success', 'Receipt sent to printer');
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");

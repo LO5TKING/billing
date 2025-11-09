@@ -26,9 +26,4 @@ class ConstantsText{
   static const selectedCustomerOrder1 = "selectedcustomerorder1";
   static const selectedCustomerOrder2 = "selectedcustomerorder2";
   static const selectedCustomerPurchase1 = "selectedcustomerpurchase1";
-  static const selectedCustMobBill1 = "selectedcustmobbill1";
-  static const selectedCustMobBill2 = "selectedcustmobbill2";
-  static const selectedCustMobOrder1 = "selectedcustmoborder1";
-  static const selectedCustMobOrder2 = "selectedcustmoborder2";
-  static const selectedCustMobPurchase1 = "selectedcustmobpurchase1";
 }

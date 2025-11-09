@@ -106,7 +106,7 @@ class _OrderNewState extends State<OrderNew> {
                                               horizontal:
                                                   DesignConstants.padding5),
                                           child: Text(
-                                            'To : ${selectedClient.value?.name ?? SharedPrefs.getString(ConstantsText.selectedCustomerOrder2) ?? "Guest"}',
+                                            'To : ${selectedClient.value?.name ?? SharedPrefs.getDatum(ConstantsText.selectedCustomerOrder2)?.name ?? "Guest"}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -120,7 +120,7 @@ class _OrderNewState extends State<OrderNew> {
                                               horizontal:
                                                   DesignConstants.padding5),
                                           child: Text(
-                                            'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobOrder2) ?? "N.A"}',
+                                            'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getDatum(ConstantsText.selectedCustomerOrder2)?.mobileNo ?? "N.A"}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -780,7 +780,7 @@ class _OrderNewState extends State<OrderNew> {
                                                   ? null
                                                   : () async {
                                                 orderControllerNew
-                                                    .printPdfReceipt(selectedClient.value ?? widget.customer);
+                                                    .printPdfReceipt(selectedClient.value ?? SharedPrefs.getDatum(ConstantsText.selectedCustomerOrder2) ??widget.customer);
                                                 // await orderControllerNew.shopDetailApi();
                                               },
                                               child: orderControllerNew
@@ -1239,8 +1239,7 @@ class _OrderNewState extends State<OrderNew> {
                     return InkWell(
                       onTap: () {
                         selectedClient.value = filteredClientList[index];
-                        SharedPrefs.setString(ConstantsText.selectedCustomerOrder2, selectedClient.value?.name ?? "");
-                        SharedPrefs.setString(ConstantsText.selectedCustMobOrder2, selectedClient.value?.mobileNo ?? "");
+                        SharedPrefs.setDatum(ConstantsText.selectedCustomerOrder2, selectedClient.value);
                         Get.back();
                       },
                       child: Container(

@@ -92,8 +92,7 @@ class _PurchaseState extends State<Purchase> {
                       onTap: () {
                         selectedClient.value = filteredClientList[index];
                         Get.back();
-                        SharedPrefs.setString(ConstantsText.selectedCustomerPurchase1, selectedClient.value?.purchaserName ?? "");
-                        SharedPrefs.setString(ConstantsText.selectedCustMobPurchase1, selectedClient.value?.mobileNo ?? "");
+                        SharedPrefs.setPurchase(ConstantsText.selectedCustomerPurchase1, selectedClient.value);
                       },
                       child: Container(
                         margin: const EdgeInsets.all(10),
@@ -175,7 +174,7 @@ class _PurchaseState extends State<Purchase> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: DesignConstants.padding5),
                                           child: Text(
-                                            'To : ${selectedClient.value?.purchaserName ?? widget.customer?.purchaserName ?? SharedPrefs.getString(ConstantsText.selectedCustomerPurchase1) ??"Guest"}',
+                                            'To : ${selectedClient.value?.purchaserName ?? widget.customer?.purchaserName ?? SharedPrefs.getPurchase(ConstantsText.selectedCustomerPurchase1)?.purchaserName ??"Guest"}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -189,7 +188,7 @@ class _PurchaseState extends State<Purchase> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: DesignConstants.padding5),
                                           child: Text(
-                                            'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobPurchase1)?? "N.A"}',
+                                            'Mob : ${selectedClient.value?.mobileNo ?? widget.customer?.mobileNo ?? SharedPrefs.getPurchase(ConstantsText.selectedCustomerPurchase1)?.mobileNo ?? "N.A"}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -737,7 +736,7 @@ class _PurchaseState extends State<Purchase> {
 
   Future<void>print() async {
     purchaseController.printPdfReceipt(
-        selectedClient.value ?? widget.customer);
+        selectedClient.value ?? SharedPrefs.getPurchase(ConstantsText.selectedCustomerPurchase1) ?? widget.customer);
     // await purchaseController.shopDetailApi();
   }
 

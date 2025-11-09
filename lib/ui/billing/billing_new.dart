@@ -101,7 +101,7 @@ class _BillingNewState extends State<BillingNew> {
                                   Obx(() => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'To : ${selectedClient.value?.name ?? SharedPrefs.getString(ConstantsText.selectedCustomerBill2) ?? "Guest"}',
+                                      'To : ${selectedClient.value?.name ?? SharedPrefs.getDatum(ConstantsText.selectedCustomerBill2)?.name ?? "Guest"}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -113,7 +113,7 @@ class _BillingNewState extends State<BillingNew> {
                                   Obx(() => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: DesignConstants.padding5),
                                     child: Text(
-                                      'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getString(ConstantsText.selectedCustMobBill2) ??"N.A"}',
+                                      'Mob : ${selectedClient.value?.mobileNo ?? SharedPrefs.getDatum(ConstantsText.selectedCustomerBill2)?.mobileNo ??"N.A"}',
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -556,7 +556,7 @@ class _BillingNewState extends State<BillingNew> {
                                                 .isPrinting.value
                                                 ? null
                                                 : () async {
-                                              billingControllerNew.printPdfReceipt(selectedClient?.value);
+                                              billingControllerNew.printPdfReceipt(selectedClient.value ?? SharedPrefs.getDatum(ConstantsText.selectedCustomerBill2));
                                               // await billingControllerNew.shopDetailApi();
                                             },
                                             child: billingControllerNew
@@ -960,10 +960,9 @@ class _BillingNewState extends State<BillingNew> {
                   itemCount: filteredClientList.length,
                   itemBuilder: (context, index) {
                     return InkWell(
-                      onTap: () {
+                      onTap: () async {
                         selectedClient.value = filteredClientList[index];
-                        SharedPrefs.setString(ConstantsText.selectedCustomerBill2, selectedClient.value?.name ?? "");
-                        SharedPrefs.setString(ConstantsText.selectedCustMobBill2, selectedClient.value?.mobileNo ?? "");
+                        await SharedPrefs.setDatum(ConstantsText.selectedCustomerBill2, selectedClient.value);
                         Get.back();
                       },
                       child: Container(

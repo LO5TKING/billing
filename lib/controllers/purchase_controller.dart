@@ -1239,7 +1239,9 @@ class PurchaseController extends GetxController {
             );
 
             itemList.clear();
-            Get.back();
+            SharedPrefs.remove(ConstantsText.selectedCustomerPurchase1);
+            update();
+            refresh();
           },
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -1293,6 +1295,7 @@ class PurchaseController extends GetxController {
                   amountPaid: paidAmt);
 
               itemList.clear();
+              SharedPrefs.remove(ConstantsText.selectedCustomerPurchase1);
               Get.snackbar('Success', 'Receipt sent to printer');
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");
@@ -1425,9 +1428,9 @@ class PurchaseController extends GetxController {
           "customerId": customerId,
           "customerName": customerName,
           "clientId": clientId,
-          "totalAmount": finalTotal, // Use calculated final total
-          "balanceAmount": balanceAmount, // Use calculated balance
-          "discount": discountAmount, // Use discount amount
+          "totalAmount": finalTotal,
+          "balanceAmount": balanceAmount,
+          "discount": discountAmount,
           "gst": gst,
           "discountType": discountType,
           "paidAmount": paidAmountValue, // Use parsed paid amount

@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:billing/model/purchaser_response_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../model/customer_response_model.dart';
 
 class SharedPrefs {
   static SharedPreferences? _prefs;
@@ -46,5 +51,59 @@ class SharedPrefs {
   // Clear all preferences
   static Future<void> clear() async {
     await _prefs?.clear();
+  }
+
+  static Future<void> setJson(String key, Map<String, dynamic> value) async {
+    await _prefs?.setString(key, jsonEncode(value));
+  }
+
+  static Map<String, dynamic>? getJson(String key) {
+    final str = _prefs?.getString(key);
+    if (str == null || str.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(str);
+      if (decoded is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ---- Model-specific helpers for Datum ----
+  static Future<void> setDatum(String key, Datum? value) async {
+    if (value == null) {
+      await _prefs?.remove(key);
+      return;
+    }
+    await _prefs?.setString(key, jsonEncode(value.toJson()));
+  }
+
+  static Datum? getDatum(String key) {
+    final map = getJson(key);
+    if (map == null) return null;
+    try {
+      return Datum.fromJson(map);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ---- Model-specific helpers for PurchaserData ----
+  static Future<void> setPurchase(String key, PurchaserData? value) async {
+    if (value == null) {
+      await _prefs?.remove(key);
+      return;
+    }
+    await _prefs?.setString(key, jsonEncode(value.toJson()));
+  }
+
+  static PurchaserData? getPurchase(String key) {
+    final map = getJson(key);
+    if (map == null) return null;
+    try {
+      return PurchaserData.fromJson(map);
+    } catch (_) {
+      return null;
+    }
   }
 }

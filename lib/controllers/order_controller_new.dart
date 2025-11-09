@@ -1171,7 +1171,6 @@ class OrderControllerNew extends GetxController {
             itemList.clear();
             Get.back();
             SharedPrefs.remove(ConstantsText.selectedCustomerOrder2);
-            SharedPrefs.remove(ConstantsText.selectedCustMobOrder2);
           },
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -1228,7 +1227,6 @@ class OrderControllerNew extends GetxController {
 
               itemList.clear();
               SharedPrefs.remove(ConstantsText.selectedCustomerOrder2);
-              SharedPrefs.remove(ConstantsText.selectedCustMobOrder2);
               Get.snackbar('Success', 'Receipt sent to printer');
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");

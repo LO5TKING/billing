@@ -1106,7 +1106,6 @@ class BillingController extends GetxController {
             itemList.clear();
             // ReportController().getReports();
             SharedPrefs.remove(ConstantsText.selectedCustomerBill1);
-            SharedPrefs.remove(ConstantsText.selectedCustMobBill1);
           },
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -1169,7 +1168,6 @@ class BillingController extends GetxController {
               );
               itemList.clear();
               SharedPrefs.remove(ConstantsText.selectedCustomerBill1);
-              SharedPrefs.remove(ConstantsText.selectedCustMobBill1);
               Get.snackbar('Success', 'Receipt sent to printer');
             } catch (e) {
               Get.snackbar("Error", "Failed to print: $e");
@@ -1762,7 +1760,7 @@ class BillingController extends GetxController {
           "orderDetailsId": orderDetailsId,
           "billingId": billingId,
           "customerId": customerId ?? 0,
-          "clientId": clientIds ?? '0000',
+          "clientId": clientIds,
           "customerName": customerName ?? "Guest",
           "productName": productName,
           "quantity": qty,
